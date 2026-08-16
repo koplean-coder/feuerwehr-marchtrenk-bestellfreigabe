@@ -147,7 +147,7 @@ export function LeihgeraeteSection({
                 </div>
               </div> :
 
-            <div data-ev-id="ev_e7be4e289f" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div data-ev-id="ev_e7be4e289f" className="grid grid-cols-4 gap-2">
                 {([{ key: 'price_day' as const, label: '1 Tag' }, { key: 'price_2days' as const, label: '2 Tage' }, { key: 'price_3days' as const, label: '3 Tage' }, { key: 'price_week' as const, label: 'Woche' }]).map(({ key, label }) =>
               <div data-ev-id="ev_e7b86eab07" key={key} className="flex flex-col gap-1">
                     <span data-ev-id="ev_0d8eb24ff5" className="text-xs font-medium text-muted-foreground">{label}</span>
@@ -161,9 +161,9 @@ export function LeihgeraeteSection({
                     setEditData((prev) => ({ ...prev, [key]: parseFloat(val) || 0 }));
                   }}
                   placeholder="0,00"
-                  className="w-full px-3 py-2.5 border border-input rounded-lg pr-8 text-right font-medium bg-background" />
+                  className="w-full min-w-[80px] px-2 py-2 border border-input rounded-lg pr-7 text-right font-medium bg-background text-sm" />
 
-                      <span data-ev-id="ev_c8c1494749" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
+                      <span data-ev-id="ev_c8c1494749" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
                     </div>
                   </div>
               )}
@@ -380,7 +380,7 @@ export function LeihgeraeteSection({
                 </div>
               </div> :
 
-          <div data-ev-id="ev_9eec8bee81" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div data-ev-id="ev_9eec8bee81" className="grid grid-cols-4 gap-2">
                 {([
             { key: 'price_day' as const, label: '1 Tag' },
             { key: 'price_2days' as const, label: '2 Tage' },
@@ -399,9 +399,9 @@ export function LeihgeraeteSection({
                   setNewItem((prev) => ({ ...prev, [key]: parseFloat(val) || 0 }));
                 }}
                 placeholder="0,00"
-                className="w-full px-3 py-2.5 border border-input rounded-lg pr-8 text-right font-medium focus:border-primary focus:ring-1 focus:ring-primary" />
+                className="w-full min-w-[80px] px-2 py-2 border border-input rounded-lg pr-7 text-right font-medium text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
 
-                      <span data-ev-id="ev_e72135218b" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                      <span data-ev-id="ev_e72135218b" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
                     </div>
                   </div>
             )}
