@@ -232,9 +232,11 @@ export function Layout({ children }: LayoutProps) {
     // Sitzungen basierend auf Settings und Rollen/Funktionen ODER Einladungen
     const userRoleForSitzungen = effectiveProfile?.role || profile?.role;
     const userFunctionsForSitzungen = effectiveProfile?.functions || profile?.functions || [];
+    // Case-insensitive comparison for functions
+    const sitzungenViewRolesLower = sitzungenViewRoles.map(r => r.toLowerCase());
     const hasRoleBasedSitzungenAccess = effectiveIsAdmin || effectiveIsKommandant ||
-      (userRoleForSitzungen && sitzungenViewRoles.includes(userRoleForSitzungen)) ||
-      userFunctionsForSitzungen.some(f => sitzungenViewRoles.includes(f));
+      (userRoleForSitzungen && sitzungenViewRolesLower.includes(userRoleForSitzungen.toLowerCase())) ||
+      userFunctionsForSitzungen.some(f => sitzungenViewRolesLower.includes(f.toLowerCase()));
     // Also show menu if user has any meeting invitations
     const canViewSitzungen = hasRoleBasedSitzungenAccess || hasMeetingInvitations;
     if (canViewSitzungen) {

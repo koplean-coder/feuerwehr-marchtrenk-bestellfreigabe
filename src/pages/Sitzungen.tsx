@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { Layout } from '@/components/Layout';
 import { useMeetings, type MeetingType, type Meeting } from '@/hooks/useMeetings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import {
   Users,
   Calendar,
@@ -23,7 +24,7 @@ type Tab = 'kommandositzung' | 'erweitertes_kommando';
 
 export default function Sitzungen() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { effectiveProfile: profile } = useSimulation();
   const { meetings, loading, canManage, canAccess, hasRoleAccess, invitedMeetings, createMeeting, generateMeetingNumber } = useMeetings();
   const [activeTab, setActiveTab] = useState<Tab>('kommandositzung');
   const [showNewMeetingModal, setShowNewMeetingModal] = useState(false);

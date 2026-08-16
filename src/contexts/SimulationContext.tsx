@@ -95,19 +95,22 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     : isBereichsleiter;
   const effectiveIsMitglied = effectiveRole === 'mitglied';
   
-  // Function checks
+  // Function checks - case-insensitive
+  const effectiveFunctionsLower = effectiveFunctions.map(f => f.toLowerCase());
+  const profileFunctionsLower = profile?.functions?.map(f => f.toLowerCase()) || [];
+  
   const effectiveHasKassierFunction = isSimulationActive
-    ? effectiveFunctions.includes('kassier')
-    : (profile?.functions?.includes('kassier') ?? false);
+    ? effectiveFunctionsLower.includes('kassier')
+    : profileFunctionsLower.includes('kassier');
   const effectiveHasKommandomitgliedFunction = isSimulationActive
-    ? effectiveFunctions.includes('kommandomitglied')
-    : (profile?.functions?.includes('kommandomitglied') ?? false);
+    ? effectiveFunctionsLower.includes('kommandomitglied')
+    : profileFunctionsLower.includes('kommandomitglied');
   const effectiveHasSchriftfuehrerFunction = isSimulationActive
-    ? effectiveFunctions.includes('schriftfuehrer')
-    : (profile?.functions?.includes('schriftfuehrer') ?? false);
+    ? effectiveFunctionsLower.includes('schriftfuehrer')
+    : profileFunctionsLower.includes('schriftfuehrer');
   const effectiveHasLieferantenErfassenFunction = isSimulationActive
-    ? effectiveFunctions.includes('lieferanten_erfassen')
-    : (profile?.functions?.includes('lieferanten_erfassen') ?? false);
+    ? effectiveFunctionsLower.includes('lieferanten_erfassen')
+    : profileFunctionsLower.includes('lieferanten_erfassen');
   
   // Permission helpers
   const canViewAllOrders = effectiveIsAdmin || effectiveIsKommandant || effectiveHasKassierFunction;

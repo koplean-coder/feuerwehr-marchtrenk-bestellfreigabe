@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import type { Database } from '@/integrations/supabase/types';
 
 export type MeetingType = Database['public']['Enums']['meeting_type'];
@@ -164,26 +165,30 @@ interface InvitedMeetingInfo {
 }
 
 export function useMeetings() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveUserId, effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [invitedMeetings, setInvitedMeetings] = useState<InvitedMeetingInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canManage = profile?.role === 'admin' || 
-                   profile?.role === 'kommandant' || 
-                   profile?.functions?.some(f => {
-                     const lower = typeof f === 'string' ? f.toLowerCase() : '';
-                     return lower === 'kdt_stellvertreter' || 
-                            lower === 'kdt-stellvertreter' || 
-                            (lower.includes('kdt') && (lower.includes('stv') || lower.includes('stellvertreter')));
+  // Use effective (simulated) profile for permission checks
+  const effectiveFunctionsLower = effectiveProfile?.functions?.map(f => f.toLowerCase()) || [];
+  
+  const canManage = effectiveIsAdmin || 
+                   effectiveIsKommandant || 
+                   effectiveFunctionsLower.some(f => {
+                     return f === 'kdt_stellvertreter' || 
+                            f === 'kdt-stellvertreter' || 
+                            (f.includes('kdt') && (f.includes('stv') || f.includes('stellvertreter')));
                    });
 
   // Check if user has general role-based access to a meeting type
+  // Case-insensitive function comparison - uses effective (simulated) profile
   const hasRoleAccess = (meetingType: MeetingType) => {
-    if (profile?.role === 'admin' || profile?.role === 'kommandant') return true;
-    if (profile?.functions?.includes('kommandomitglied')) return true;
-    if (meetingType === 'erweitertes_kommando' && profile?.functions?.includes('erweitertes_kommando')) return true;
+    if (effectiveIsAdmin || effectiveIsKommandant) return true;
+    if (effectiveFunctionsLower.includes('kommandomitglied')) return true;
+    if (meetingType === 'erweitertes_kommando' && effectiveFunctionsLower.includes('erweitertes_kommando')) return true;
     return false;
   };
 
@@ -379,7 +384,8 @@ export function useMeetings() {
 }
 
 export function useMeetingDetail(meetingId: string | undefined) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveUserId, effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [attendance, setAttendance] = useState<MeetingAttendance[]>([]);
   const [agendaItems, setAgendaItems] = useState<MeetingAgendaItem[]>([]);
@@ -391,13 +397,15 @@ export function useMeetingDetail(meetingId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canManage = profile?.role === 'admin' || 
-                   profile?.role === 'kommandant' || 
-                   profile?.functions?.some(f => {
-                     const lower = typeof f === 'string' ? f.toLowerCase() : '';
-                     return lower === 'kdt_stellvertreter' || 
-                            lower === 'kdt-stellvertreter' || 
-                            (lower.includes('kdt') && (lower.includes('stv') || lower.includes('stellvertreter')));
+  // Use effective (simulated) profile for permission checks
+  const effectiveFunctionsLower = effectiveProfile?.functions?.map(f => f.toLowerCase()) || [];
+  
+  const canManage = effectiveIsAdmin || 
+                   effectiveIsKommandant || 
+                   effectiveFunctionsLower.some(f => {
+                     return f === 'kdt_stellvertreter' || 
+                            f === 'kdt-stellvertreter' || 
+                            (f.includes('kdt') && (f.includes('stv') || f.includes('stellvertreter')));
                    });
 
   const isDeadlinePassed = useCallback(() => {

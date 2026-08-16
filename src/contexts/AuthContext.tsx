@@ -211,23 +211,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isBereichsleiter = profile?.role === 'bereichsleiter';
   const isKommandant = profile?.role === 'kommandant';
   
+  // Case-insensitive function checks
+  const profileFunctionsLower = profile?.functions?.map(f => f.toLowerCase()) || [];
+  
   // Lieferanten erfassen: Admin, Bereichsleiter, Kommandant ODER Benutzer mit Funktion 'lieferanten_erfassen'
-  const hasLieferantenErfassenFunction = profile?.functions?.includes('lieferanten_erfassen') ?? false;
+  const hasLieferantenErfassenFunction = profileFunctionsLower.includes('lieferanten_erfassen');
   const canManageSuppliers = isAdmin || isBereichsleiter || isKommandant || hasLieferantenErfassenFunction;
   
   const canAccessSettings = isAdmin || isKommandant;
   const canCreateUsers = isAdmin || isKommandant;
   
   // Kassier, Schriftführer und Kommandant dürfen PDF immer herunterladen
-  const hasKassierFunction = profile?.functions?.includes('kassier') ?? false;
-  const hasSchriftfuehrerFunction = profile?.functions?.includes('schriftfuehrer') ?? false;
+  const hasKassierFunction = profileFunctionsLower.includes('kassier');
+  const hasSchriftfuehrerFunction = profileFunctionsLower.includes('schriftfuehrer');
   const canViewPdf = isKommandant || hasKassierFunction || hasSchriftfuehrerFunction;
   
   // Admin, Kommandant und Kassier dürfen Mindestbestellwert und Bestelltage bearbeiten
   const canEditOrderFields = isAdmin || isKommandant || hasKassierFunction;
   
   // Admin, Kommandant und Kommandomitglieder dürfen alle Bestellungen sehen
-  const hasKommandomitgliedFunction = profile?.functions?.includes('kommandomitglied') ?? false;
+  const hasKommandomitgliedFunction = profileFunctionsLower.includes('kommandomitglied');
   const canViewAllOrders = isAdmin || isKommandant || hasKommandomitgliedFunction;
   
   // Admin, Kommandant und Kassier dürfen Rabatte & Konditionen bearbeiten

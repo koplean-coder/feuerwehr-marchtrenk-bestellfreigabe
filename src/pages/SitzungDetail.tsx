@@ -7,6 +7,7 @@ import { useProfiles } from '@/hooks/useProfiles';
 import { useBeschlussRegister } from '@/hooks/useBeschlussRegister';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { formatDate } from '@/utils/formatters';
 import {
   ArrowLeft,
@@ -159,7 +160,7 @@ const normalizeToCategoryKey = (input: string): string => {
 export default function SitzungDetail() {
   const { id } = useParams<{id: string;}>();
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { effectiveProfile: profile, effectiveUserId, effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
   const { profiles } = useProfiles();
   const { gueltigeBeschluesse } = useBeschlussRegister();
   const {
