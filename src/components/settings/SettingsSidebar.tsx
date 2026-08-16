@@ -54,6 +54,7 @@ const allNavItems: NavItem[] = [
 
 // Module
 { id: 'leihgeraete', label: 'Leihgeräte', icon: Package, category: 'module' },
+{ id: 'leihvertraege', label: 'Leihverträge', icon: FileText, category: 'module' },
 { id: 'probleme', label: 'Problemberichte', icon: AlertTriangle, category: 'module' },
 { id: 'aufgaben', label: 'Aufgaben', icon: CheckSquare, category: 'module' },
 { id: 'tagesordnung', label: 'Tagesordnung', icon: ListChecks, category: 'module' }];

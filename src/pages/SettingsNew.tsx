@@ -29,6 +29,7 @@ import { MitgliederSection } from '@/components/settings/sections/MitgliederSect
 import { FunktionenSection } from '@/components/settings/sections/FunktionenSection';
 import { EmailVorlagenSection } from '@/components/settings/sections/EmailVorlagenSection';
 import { LeihgeraeteSection } from '@/components/settings/sections/LeihgeraeteSection';
+import { LeihvertraegeSection } from '@/components/settings/sections/LeihvertraegeSection';
 import { AufgabenSection } from '@/components/settings/sections/AufgabenSection';
 import { ModulBerechtigungenSection } from '@/components/settings/sections/ModulBerechtigungenSection';
 import { TagesordnungSection } from '@/components/settings/sections/TagesordnungSection';
@@ -63,7 +64,7 @@ export default function SettingsNew() {
   // Handle URL parameter for direct section navigation (e.g., /einstellungen?section=probleme)
   useEffect(() => {
     const sectionParam = searchParams.get('section');
-    const validSections: SettingsSection[] = ['freigaben', 'eskalation', 'erinnerungen', 'pdf', 'email-empfaenger', 'system', 'zugriffsrechte', 'mitglieder', 'funktionen', 'email-vorlagen', 'email-design', 'leihgeraete', 'probleme', 'aufgaben', 'modul-berechtigungen', 'tagesordnung'];
+    const validSections: SettingsSection[] = ['freigaben', 'eskalation', 'erinnerungen', 'pdf', 'email-empfaenger', 'system', 'zugriffsrechte', 'mitglieder', 'funktionen', 'email-vorlagen', 'email-design', 'leihgeraete', 'leihvertraege', 'probleme', 'aufgaben', 'modul-berechtigungen', 'tagesordnung'];
     if (sectionParam && validSections.includes(sectionParam as SettingsSection)) {
       setActiveSection(sectionParam as SettingsSection);
       // Clear the URL param after processing
@@ -283,7 +284,15 @@ export default function SettingsNew() {
             toggleActive={toggleRentalItemActive}
             canAccessSettings={canAccessSettings} />);
 
-
+      case 'leihvertraege':
+        return (
+          <LeihvertraegeSection
+            rentalContractHeader={settings.rentalContractHeader}
+            updateRentalContractHeader={settings.updateRentalContractHeader}
+            rentalContractClauses={settings.rentalContractClauses}
+            updateRentalContractClauses={settings.updateRentalContractClauses}
+            rentalOverduePerDay={settings.rentalOverduePerDay}
+            updateRentalOverduePerDay={settings.updateRentalOverduePerDay} />);
 
       case 'probleme':
         return <ProblemReportsAdmin />;

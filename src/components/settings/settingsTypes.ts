@@ -11,6 +11,7 @@ export type SettingsSection =
   | 'email-vorlagen'
   | 'email-design'
   | 'leihgeraete'
+  | 'leihvertraege'
   | 'probleme'
   | 'aufgaben'
   | 'modul-berechtigungen'
