@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 export interface BeschlussRegister {
   id: string;
@@ -71,13 +72,18 @@ export interface BeschlussStats {
 }
 
 export function useBeschlussRegister() {
-  const { user, profile, isAdmin, isKommandant } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
+  const isAdmin = effectiveIsAdmin;
+  const isKommandant = effectiveIsKommandant;
   const [beschluesse, setBeschluesse] = useState<BeschlussRegister[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const hasSchriftfuehrerFunction = profile?.functions?.includes('schriftfuehrer') ?? false;
-  const hasKommandomitgliedFunction = profile?.functions?.includes('kommandomitglied') ?? false;
+  const profileFunctionsLower = profile?.functions?.map(f => f.toLowerCase()) || [];
+  const hasSchriftfuehrerFunction = profileFunctionsLower.includes('schriftfuehrer');
+  const hasKommandomitgliedFunction = effectiveHasKommandomitgliedFunction || profileFunctionsLower.includes('kommandomitglied');
   const canManage = isAdmin || isKommandant || hasSchriftfuehrerFunction;
   const canCreate = canManage || hasKommandomitgliedFunction;
 

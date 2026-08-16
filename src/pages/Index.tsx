@@ -83,7 +83,22 @@ import type { Order } from '@/hooks/useOrders';
 
 export default function Index() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { profile, isBereichsleiter, isKommandant, isAdmin, user } = useAuth();
+  const { user } = useAuth();
+  const {
+    effectiveUserId,
+    effectiveIsAdmin,
+    effectiveIsKommandant,
+    effectiveIsBereichsleiter,
+    effectiveHasKassierFunction,
+    effectiveHasKommandomitgliedFunction,
+    effectiveProfile,
+    isSimulationActive
+  } = useSimulation();
+  // Use effective (simulated) values
+  const profile = effectiveProfile;
+  const isBereichsleiter = effectiveIsBereichsleiter;
+  const isKommandant = effectiveIsKommandant;
+  const isAdmin = effectiveIsAdmin;
   const {
     orders,
     pendingForMe,
@@ -124,15 +139,7 @@ export default function Index() {
   const { decisions } = useCommandDecisions();
   const { pendingDecisions: pendingCommandDecisions, canVote: canVoteOnDecisions } = usePendingCommandDecisionsForUser(decisions);
 
-  // === SIMULATION CONTEXT (global) ===
-  const {
-    effectiveUserId,
-    effectiveIsAdmin,
-    effectiveIsKommandant,
-    effectiveIsBereichsleiter,
-    effectiveHasKassierFunction,
-    effectiveHasKommandomitgliedFunction
-  } = useSimulation();
+  // === SIMULATION CONTEXT (already imported above) ===
 
   // Modul-Berechtigungen für Nutzer-Rolle
   const { hasModuleAccess } = useModulePermissions();

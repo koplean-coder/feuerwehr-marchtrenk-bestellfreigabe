@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { useSettings } from '@/hooks/useSettings';
 import { useOrdersContext, type Order, type OrderStatus, type OrderHistory, type EmailStatus, type InvoiceTo } from '@/contexts/OrdersContext';
 
@@ -10,7 +11,12 @@ export type { Order, OrderStatus, OrderHistory, EmailStatus, InvoiceTo };
 export function useOrders() {
   // Gemeinsamer State aus Context - alle Komponenten teilen dieselben Daten
   const { orders, loading, fetchOrders } = useOrdersContext();
-  const { user, profile, isBereichsleiter, isKommandant, isAdmin } = useAuth();
+  const { user, profile: authProfile } = useAuth();
+  const { effectiveProfile, effectiveIsBereichsleiter, effectiveIsKommandant, effectiveIsAdmin } = useSimulation();
+  const profile = effectiveProfile;
+  const isBereichsleiter = effectiveIsBereichsleiter;
+  const isKommandant = effectiveIsKommandant;
+  const isAdmin = effectiveIsAdmin;
   const { freigabebetragKdt, freigabebetragKommandomitglied, notificationEmail, schriftfuehrerEmail, kassierEmail } = useSettings();
 
   // Push-Notification an Benutzer senden

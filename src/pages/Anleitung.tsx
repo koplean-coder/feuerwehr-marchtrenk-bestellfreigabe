@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { useSettings } from '@/hooks/useSettings';
 import {
   Search,
@@ -69,7 +70,11 @@ interface Section {
 }
 
 export default function Anleitung() {
-  const { isBereichsleiter, isKommandant, isAdmin, profile } = useAuth();
+  const { effectiveIsBereichsleiter, effectiveIsKommandant, effectiveIsAdmin, effectiveProfile } = useSimulation();
+  const isBereichsleiter = effectiveIsBereichsleiter;
+  const isKommandant = effectiveIsKommandant;
+  const isAdmin = effectiveIsAdmin;
+  const profile = effectiveProfile;
   const { systemHomepageUrl } = useSettings();
 
   const [activeTab, setActiveTab] = useState<TabType>('grundlagen');

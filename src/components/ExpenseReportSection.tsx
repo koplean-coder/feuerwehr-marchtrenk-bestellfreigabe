@@ -23,6 +23,7 @@ import { useExpenseCategories } from '@/hooks/useExpenseCategories';
 import { usePaymentOrders, type PaymentOrder } from '@/hooks/usePaymentOrders';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { generateExpenseReportPdf, generateExpenseReportPdfPreview } from '@/utils/generateExpenseReportPdf';
 
 interface ExpenseReportSectionProps {
@@ -50,10 +51,11 @@ export function ExpenseReportSection({ onBack }: ExpenseReportSectionProps) {
   const { categories, addCategory } = useExpenseCategories();
   const { paymentOrders, toggleNoExpenseReportRequired } = usePaymentOrders();
   const { pdfBackgroundUrl, pdfBackgroundOpacity } = useSettings();
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveHasKassierFunction } = useSimulation();
+  const profile = effectiveProfile;
 
-  // Check if user can edit (admin or kassier)
-  const canEdit = profile?.role === 'admin' || profile?.functions?.includes('kassier');
+  // Check if user can edit (admin or kassier) - mit Simulation
+  const canEdit = effectiveIsAdmin || effectiveHasKassierFunction;
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [searchTerm, setSearchTerm] = useState('');

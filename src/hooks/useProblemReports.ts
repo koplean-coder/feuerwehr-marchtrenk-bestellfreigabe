@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 export interface ProblemReport {
   id: string;
@@ -34,7 +35,10 @@ export interface CreateProblemReportData {
 }
 
 export function useProblemReports() {
-  const { user, isAdmin, isKommandant } = useAuth();
+  const { user } = useAuth();
+  const { effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
+  const isAdmin = effectiveIsAdmin;
+  const isKommandant = effectiveIsKommandant;
   const [reports, setReports] = useState<ProblemReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

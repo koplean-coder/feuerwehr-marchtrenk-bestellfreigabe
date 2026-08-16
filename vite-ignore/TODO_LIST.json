@@ -1,25 +1,25 @@
 {
-  "summary": "Administrierbare Tagesordnungspunkte für Sitzungen",
+  "summary": "Simulation für alle Seiten aktivieren",
   "todos": [
     {
       "id": 1,
-      "description": "Datenbank: Tabelle agenda_templates mit RLS",
+      "description": "Pages korrigieren: Orders, Index, KassierOverview, etc.",
       "files": [],
       "status": "complete"
     },
     {
       "id": 2,
-      "description": "Admin-UI: Tagesordnung verwalten (CRUD, Reihenfolge, Pflicht)",
+      "description": "Hooks korrigieren: useOrders, useKommandobeschluesse, etc.",
       "files": [],
       "status": "complete"
     },
     {
       "id": 3,
-      "description": "SitzungDetail: Dynamische Punkte aus DB laden",
+      "description": "Components korrigieren: CompactDashboard, Cards, etc.",
       "files": [],
-      "status": "complete"
+      "status": "active"
     }
   ],
-  "createdAt": "2026-08-16T09:00:55.838Z",
-  "updatedAt": "2026-08-16T09:04:28.473Z"
+  "createdAt": "2026-08-16T11:18:47.726Z",
+  "updatedAt": "2026-08-16T11:25:40.297Z"
 }

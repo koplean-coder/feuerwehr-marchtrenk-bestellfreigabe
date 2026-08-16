@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 interface Profile {
   id: string;
@@ -58,7 +59,9 @@ export function usePaymentOrders() {
   const [paymentOrders, setPaymentOrders] = useState<PaymentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveIsKommandant } = useSimulation();
+  const profile = effectiveProfile;
 
   const fetchPaymentOrders = useCallback(async () => {
     if (!supabase || !user) return;
@@ -314,9 +317,10 @@ export function usePaymentOrders() {
     }
   };
 
-  // Berechtigungsprüfung: Nur Kommandant oder Kommandant-Stellvertreter dürfen genehmigen
-  const canApprovePaymentOrders = profile?.role === 'kommandant' || 
-    (profile?.functions?.includes('kommandant_stellvertreter') ?? false);
+  // Berechtigungsprüfung: Nur Kommandant oder Kommandant-Stellvertreter dürfen genehmigen (mit Simulation)
+  const profileFunctionsLower = profile?.functions?.map(f => f.toLowerCase()) || [];
+  const canApprovePaymentOrders = effectiveIsKommandant || 
+    profileFunctionsLower.includes('kommandant_stellvertreter');
 
   const approvePaymentOrder = async (id: string): Promise<void> => {
     if (!supabase || !user) return;

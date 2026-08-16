@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type TaskStatus = 'todo' | 'in_progress' | 'completed' | 'cancelled';
@@ -103,9 +104,13 @@ export interface UpdateTaskData {
 export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, isAdmin, isKommandant, isBereichsleiter } = useAuth();
+  const { user } = useAuth();
+  const { effectiveIsAdmin, effectiveIsKommandant, effectiveIsBereichsleiter } = useSimulation();
+  const isAdmin = effectiveIsAdmin;
+  const isKommandant = effectiveIsKommandant;
+  const isBereichsleiter = effectiveIsBereichsleiter;
 
-  // Bereichsleiter, Admin and Kommandant can create/manage tasks
+  // Bereichsleiter, Admin and Kommandant can create/manage tasks (mit Simulation)
   const canManageTasks = isAdmin || isKommandant || isBereichsleiter;
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMinOrderRequests, MinOrderRequest } from '@/hooks/useMinOrderRequests';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import {
   AlertTriangle,
   CheckCircle,
@@ -15,7 +16,8 @@ import {
 'lucide-react';
 
 export function MinOrderRequestsPanel() {
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
+  const profile = effectiveProfile;
   const { pendingRequests, approveRequest, rejectRequest, loading } = useMinOrderRequests();
 
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -24,8 +26,8 @@ export function MinOrderRequestsPanel() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionLoading, setRejectionLoading] = useState(false);
 
-  // Nur Kommandant/Admin können diese Komponente sehen
-  const canManageRequests = profile?.role === 'kommandant' || profile?.role === 'admin';
+  // Nur Kommandant/Admin können diese Komponente sehen (mit Simulation)
+  const canManageRequests = effectiveIsKommandant || effectiveIsAdmin;
 
   if (!canManageRequests) return null;
   if (loading) return null;

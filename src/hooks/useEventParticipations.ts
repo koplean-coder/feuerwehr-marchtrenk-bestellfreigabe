@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 interface Profile {
   id: string;
@@ -89,7 +90,10 @@ export function useEventParticipations() {
   const [eventParticipations, setEventParticipations] = useState<EventParticipation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, profile, isKommandant } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveIsKommandant } = useSimulation();
+  const profile = effectiveProfile;
+  const isKommandant = effectiveIsKommandant;
 
   const fetchEventParticipations = useCallback(async (): Promise<EventParticipation[]> => {
     if (!supabase || !user) return [];

@@ -4,6 +4,7 @@ import { usePaymentOrders, PaymentOrder, PaymentOrderInsert } from '@/hooks/useP
 import { useEventParticipations, EventParticipation } from '@/hooks/useEventParticipations';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { useSettings } from '@/hooks/useSettings';
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { generatePaymentOrderPdf } from '@/utils/generatePaymentOrderPdf';
@@ -30,7 +31,9 @@ export default function Antragsformulare() {
   const { paymentOrders, loading, createPaymentOrder, updatePaymentOrder, submitPaymentOrder, approvePaymentOrder, canApprovePaymentOrders, markAsPaid, deletePaymentOrder, rejectPaymentOrder, resetReferenceNumber } = usePaymentOrders();
   const { eventParticipations, loading: eventLoading, approveEventParticipation, rejectEventParticipation } = useEventParticipations();
   const { profiles } = useProfiles();
-  const { profile, hasLimitedAccess } = useAuth();
+  const { hasLimitedAccess } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKassierFunction, effectiveUserId } = useSimulation();
+  const profile = effectiveProfile;
   const { pdfBackgroundUrl, pdfBackgroundOpacity, commanderSignatureUrl, commanderStampUrl, antragsformulareViewUsers, loading: settingsLoading } = useSettings();
   const { hasModuleAccess } = useModulePermissions();
 
@@ -64,14 +67,15 @@ export default function Antragsformulare() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
 
-  // Berechtigung für Genehmigung: Nur Kommandant oder Kommandant-Stellvertreter
+  // Berechtigung für Genehmigung: Nur Kommandant oder Kommandant-Stellvertreter (mit Simulation)
   const canApprove = canApprovePaymentOrders;
-  const isKassier = profile?.functions?.includes('kassier') || false;
-  const isKommandomitglied = profile?.functions?.includes('kommandomitglied') || false;
+  const profileFunctionsLower = profile?.functions?.map(f => f.toLowerCase()) || [];
+  const isKassier = effectiveHasKassierFunction || profileFunctionsLower.includes('kassier');
+  const isKommandomitglied = profileFunctionsLower.includes('kommandomitglied');
   // Leserecht: Kassier, Kommandant, Admin, Kommandant-Stellvertreter, Kommandomitglieder (Transparenz)
-  const canViewPaymentOrders = isKassier || profile?.role === 'kommandant' || profile?.role === 'admin' ||
-  profile?.functions?.includes('kommandant_stellvertreter') || isKommandomitglied;
-  const canMarkPaid = isKassier || profile?.role === 'kommandant' || profile?.role === 'admin';
+  const canViewPaymentOrders = isKassier || effectiveIsKommandant || effectiveIsAdmin ||
+  profileFunctionsLower.includes('kommandant_stellvertreter') || isKommandomitglied;
+  const canMarkPaid = isKassier || effectiveIsKommandant || effectiveIsAdmin;
 
   // Sicherheitscheck: Wenn Benutzer versucht auf payment_orders zuzugreifen ohne Berechtigung
   useEffect(() => {

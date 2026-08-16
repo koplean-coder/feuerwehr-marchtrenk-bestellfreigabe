@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import type { Order } from '@/hooks/useOrders';
 
 export type BeschlussStatus = 'laufend' | 'genehmigt' | 'abgelehnt' | 'archiv';
@@ -15,7 +16,8 @@ export interface KommandobeschlussFilter {
  * Zeigt alle Bestellungen mit Kommandoabstimmung.
  */
 export function useKommandobeschluesse() {
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
   const [beschluesse, setBeschluesse] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<KommandobeschlussFilter>({
@@ -23,10 +25,8 @@ export function useKommandobeschluesse() {
     search: ''
   });
 
-  // Nur Kommandomitglieder, Kommandant und Admin haben Zugriff
-  const hasAccess = profile?.role === 'kommandant' || 
-                    profile?.role === 'admin' || 
-                    profile?.functions?.includes('kommandomitglied');
+  // Nur Kommandomitglieder, Kommandant und Admin haben Zugriff (mit Simulation)
+  const hasAccess = effectiveIsKommandant || effectiveIsAdmin || effectiveHasKommandomitgliedFunction;
 
   const fetchBeschluesse = useCallback(async () => {
     if (!supabase || !hasAccess) {

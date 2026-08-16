@@ -3,6 +3,7 @@ import { useEventParticipations, EventParticipation, EventParticipationInsert, P
 import { usePaymentOrders } from '@/hooks/usePaymentOrders';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { useSettings } from '@/hooks/useSettings';
 import { generateEventParticipationPdf } from '@/utils/generateEventParticipationPdf';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +37,8 @@ export function EventParticipationsSection({ onBack }: EventParticipationsSectio
   } = useEventParticipations();
   const { createPaymentOrder, submitPaymentOrder, paymentOrders, refetch: refetchPaymentOrders } = usePaymentOrders();
   const { profiles } = useProfiles();
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKassierFunction } = useSimulation();
+  const profile = effectiveProfile;
   const { pdfBackgroundUrl, pdfBackgroundOpacity, commanderSignatureUrl, commanderStampUrl } = useSettings();
 
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -81,15 +83,16 @@ export function EventParticipationsSection({ onBack }: EventParticipationsSectio
   const [amountChangeReason, setAmountChangeReason] = useState('');
   const [confirmingAmount, setConfirmingAmount] = useState(false);
 
-  // Check if current user is Kassier
-  const isKassier = profile?.functions?.includes('kassier') || false;
-  const isSchriftfuehrer = profile?.functions?.includes('schriftfuehrer') || false;
+  // Check if current user is Kassier (mit Simulation)
+  const profileFunctionsLower = profile?.functions?.map(f => f.toLowerCase()) || [];
+  const isKassier = effectiveHasKassierFunction || profileFunctionsLower.includes('kassier');
+  const isSchriftfuehrer = profileFunctionsLower.includes('schriftfuehrer');
 
-  const canApprove = profile?.role === 'kommandant' || profile?.role === 'admin';
-  const canDelete = profile?.role === 'admin';
+  const canApprove = effectiveIsKommandant || effectiveIsAdmin;
+  const canDelete = effectiveIsAdmin;
 
   // Nur Kassier, Admin, Kommandant und Schriftführer dürfen PDFs generieren
-  const canGeneratePdf = isKassier || isSchriftfuehrer || profile?.role === 'admin' || profile?.role === 'kommandant';
+  const canGeneratePdf = isKassier || isSchriftfuehrer || effectiveIsAdmin || effectiveIsKommandant;
 
   const commanderProfile = profiles.find((p) => p.role === 'kommandant');
   const commanderName = commanderProfile?.full_name || 'Kommandant';

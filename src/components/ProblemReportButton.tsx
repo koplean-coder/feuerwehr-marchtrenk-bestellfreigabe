@@ -3,6 +3,7 @@ import { AlertTriangle, X, Upload, Camera, Trash2, Send, ChevronDown } from 'luc
 import { useProblemReports, type CreateProblemReportData } from '@/hooks/useProblemReports';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { consoleCapture } from '@/utils/consoleCapture';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,7 +15,10 @@ const PRIORITY_OPTIONS = [
 const;
 
 export function ProblemReportButton() {
-  const { user, isAdmin, isKommandant } = useAuth();
+  const { user } = useAuth();
+  const { effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
+  const isAdmin = effectiveIsAdmin;
+  const isKommandant = effectiveIsKommandant;
   const { createReport } = useProblemReports();
   const { problemReportEnabled } = useSettings();
 

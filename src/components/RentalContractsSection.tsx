@@ -5,6 +5,7 @@ import { useRentalItems } from '@/hooks/useRentalItems';
 import { useSettings } from '@/hooks/useSettings';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { generateRentalContractPdf, RentalContractClause } from '@/utils/generateRentalContractPdf';
 import ffLogo from '@/assets/uploads/ff-marchtrenk-logo.png';
 
@@ -13,7 +14,8 @@ interface RentalContractsSectionProps {
 }
 
 export function RentalContractsSection({ onBack }: RentalContractsSectionProps) {
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
+  const profile = effectiveProfile;
   const { contracts, loading, calculateItemPrice, createContract, updateContract, deleteContract, markAsReturned, rentedItemIds, rentedItemsInfo, sendPendingNotifications } = useRentalContracts();
   const { updateConditionNotes, createItem: createRentalItem } = useRentalItems();
   const { items: rentalItems, activeArticles, activeServices, loading: itemsLoading, refetch: refetchRentalItems } = useRentalItems();
@@ -101,8 +103,8 @@ export function RentalContractsSection({ onBack }: RentalContractsSectionProps) 
   const activeContracts = contracts.filter((c) => c.status !== 'returned' && !c.returned_at);
   const archivedContracts = contracts.filter((c) => c.status === 'returned' || c.returned_at);
 
-  // Admin check for delete functionality
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'kommandant';
+  // Admin check for delete functionality (mit Simulation)
+  const isAdmin = effectiveIsAdmin || effectiveIsKommandant;
 
   const resetForm = () => {
     setCustomerName('');
