@@ -225,14 +225,10 @@ export async function generateRentalContractPdf(
     y += 12;
   }
   
-  // Items as comma-separated list
-  const itemsList = data.items.map(i => `${i.quantity}x ${i.item_name}`).join(', ');
+  // Items as comma-separated list (itemsList bereits oben definiert)
   drawFormField('Leihgegenstand', itemsList);
   
-  // Leihfrist in einer Zeile mit Wochentag
-  const weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-  const startDate = new Date(data.rentalStart);
-  const endDate = new Date(data.rentalEnd);
+  // Leihfrist in einer Zeile mit Wochentag (weekdays, startDate, endDate bereits oben definiert)
   const startStr = `${weekdays[startDate.getDay()]}. ${startDate.toLocaleDateString('de-DE')}`;
   const endStr = `${weekdays[endDate.getDay()]}. ${endDate.toLocaleDateString('de-DE')}`;
   drawFormField('Leihfrist', `${startStr} bis ${endStr}`);
