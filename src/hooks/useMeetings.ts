@@ -793,7 +793,10 @@ export function useMeetingDetail(meetingId: string | undefined) {
 
   // Agenda item management - with optimistic update to prevent scroll reset
   const addAgendaItem = async (data: Omit<MeetingAgendaItem, 'id' | 'meeting_id' | 'created_at' | 'updated_at' | 'submitted_by'>) => {
+    console.log('[addAgendaItem] Called with:', { data, meetingId, userId: user?.id, canEditAgendaItems, canManage, realIsAdmin, realIsKommandant });
+    
     if (!supabase || !meetingId || !user || !canEditAgendaItems) {
+      console.error('[addAgendaItem] Permission denied:', { supabase: !!supabase, meetingId, user: !!user, canEditAgendaItems });
       return { error: new Error('Keine Berechtigung oder Deadline überschritten') };
     }
 
@@ -835,8 +838,13 @@ export function useMeetingDetail(meetingId: string | undefined) {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[addAgendaItem] Insert error:', insertError);
+        throw insertError;
+      }
 
+      console.log('[addAgendaItem] Successfully inserted:', insertedData);
+      
       // Replace temp item with real item
       setAgendaItems(prev => 
         prev.map(item => item.id === tempId ? (insertedData as MeetingAgendaItem) : item)
@@ -845,6 +853,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
       return { error: null };
     } catch (err) {
       // Revert on error
+      console.error('[addAgendaItem] Catch error:', err);
       setAgendaItems(previousItems);
       return { error: err as Error };
     }
