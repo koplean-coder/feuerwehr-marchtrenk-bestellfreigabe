@@ -77,6 +77,29 @@ export async function generateRentalContractPdf(
   const marginRight = 15;
   const contentWidth = pageWidth - marginLeft - marginRight;
   
+  // Platzhalter-Ersetzung
+  const weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+  const startDate = new Date(data.rentalStart);
+  const endDate = new Date(data.rentalEnd);
+  const today = new Date();
+  const itemsList = data.items.map(i => `${i.quantity}x ${i.item_name}`).join(', ');
+  
+  const replacePlaceholders = (text: string): string => {
+    return text
+      .replace(/\{\{kunde_name\}\}/g, data.customerName || '')
+      .replace(/\{\{kunde_adresse\}\}/g, data.customerAddress || '')
+      .replace(/\{\{kunde_email\}\}/g, data.customerEmail || '')
+      .replace(/\{\{kunde_telefon\}\}/g, data.customerPhone || '')
+      .replace(/\{\{vertragsnummer\}\}/g, data.contractNumber || '')
+      .replace(/\{\{leihfrist_start\}\}/g, `${weekdays[startDate.getDay()]}. ${startDate.toLocaleDateString('de-DE')}`)
+      .replace(/\{\{leihfrist_ende\}\}/g, `${weekdays[endDate.getDay()]}. ${endDate.toLocaleDateString('de-DE')}`)
+      .replace(/\{\{leihgegenstand\}\}/g, itemsList)
+      .replace(/\{\{gesamtbetrag\}\}/g, `${data.totalAmount.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`)
+      .replace(/\{\{lieferkosten\}\}/g, `${data.deliveryCost.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`)
+      .replace(/\{\{datum_heute\}\}/g, today.toLocaleDateString('de-DE'))
+      .replace(/\{\{verzugsgebuehr\}\}/g, `${options.overduePerDay.toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`);
+  };
+  
   // Colors
   const RED = { r: 180, g: 40, b: 40 };
   const BLACK = { r: 0, g: 0, b: 0 };
@@ -114,7 +137,7 @@ export async function generateRentalContractPdf(
   setFont(doc, 'normal');
   doc.setFontSize(7);
   doc.setTextColor(GRAY.r, GRAY.g, GRAY.b);
-  doc.text(options.header, marginLeft, y);
+  doc.text(replacePlaceholders(options.header), marginLeft, y);
   y += 10;
 
   // --- TITLE (left aligned, in RED, underlined) with contract number ---
@@ -222,8 +245,11 @@ export async function generateRentalContractPdf(
     const clause = options.clauses.find(c => c.id === id);
     if (!clause || !clause.text) return;
     
+    // Platzhalter im Text ersetzen
+    const processedText = replacePlaceholders(clause.text);
+    
     // Check if text starts with a number pattern like "1.1 " or "2.1 "
-    const numberMatch = clause.text.match(/^(\d+\.\d+)\s+(.*)$/s);
+    const numberMatch = processedText.match(/^(\d+\.\d+)\s+(.*)$/s);
     
     if (numberMatch) {
       const [, clauseNumber, restText] = numberMatch;
@@ -247,16 +273,19 @@ export async function generateRentalContractPdf(
       setFont(doc, 'normal');
       doc.setFontSize(9);
       doc.setTextColor(DARK_GRAY.r, DARK_GRAY.g, DARK_GRAY.b);
-      const lines = doc.splitTextToSize(clause.text, contentWidth);
+      const lines = doc.splitTextToSize(processedText, contentWidth);
       doc.text(lines, marginLeft, y);
       y += lines.length * 4 + 3;
     }
   };
 
   // --- SECTION 1: ZUSTAND ---
-  drawSectionHeading('1 Zustand');
+  // Finde alle Klauseln für Sektion 1
+  const section1Clauses = options.clauses.filter(c => c.id.startsWith('1_')).sort((a, b) => a.id.localeCompare(b.id));
+  const section1Title = section1Clauses.find(c => c.title)?.title || '1 Zustand';
+  drawSectionHeading(section1Title);
 
-  drawClause('1_1');
+  section1Clauses.forEach(c => drawClause(c.id));
 
   // Zustand bei Übergabe - IMMER anzeigen
   setFont(doc, 'bold');
@@ -293,25 +322,53 @@ export async function generateRentalContractPdf(
   y += 6;
 
   // --- SECTION 2: HAFTUNG ---
-  drawSectionHeading('2 Haftung');
-
-  ['2_1', '2_2', '2_3'].forEach(id => drawClause(id));
+  const section2Clauses = options.clauses.filter(c => c.id.startsWith('2_')).sort((a, b) => a.id.localeCompare(b.id));
+  if (section2Clauses.length > 0) {
+    const section2Title = section2Clauses.find(c => c.title)?.title || '2 Haftung';
+    drawSectionHeading(section2Title);
+    section2Clauses.forEach(c => drawClause(c.id));
+  }
 
   y += 6;
 
   // --- SECTION 3: RÜCKGABE (noch auf Seite 1) ---
-  drawSectionHeading('3 Rückgabe');
-
-  ['3_1', '3_2', '3_3', '3_4'].forEach(id => drawClause(id));
+  const section3Clauses = options.clauses.filter(c => c.id.startsWith('3_')).sort((a, b) => a.id.localeCompare(b.id));
+  if (section3Clauses.length > 0) {
+    const section3Title = section3Clauses.find(c => c.title)?.title || '3 Rückgabe';
+    drawSectionHeading(section3Title);
+    section3Clauses.forEach(c => drawClause(c.id));
+  }
 
   // ============ PAGE 2 ============
   doc.addPage();
   y = 20;
 
   // --- SECTION 4: LEIHKOSTEN ---
-  drawSectionHeading('4 Leihkosten');
-
-  drawClause('4_1');
+  const section4Clauses = options.clauses.filter(c => c.id.startsWith('4_')).sort((a, b) => a.id.localeCompare(b.id));
+  if (section4Clauses.length > 0) {
+    const section4Title = section4Clauses.find(c => c.title)?.title || '4 Leihkosten';
+    drawSectionHeading(section4Title);
+    section4Clauses.forEach(c => drawClause(c.id));
+  }
+  
+  // --- WEITERE SEKTIONEN (5+) dynamisch ---
+  const additionalSections = new Set<string>();
+  options.clauses.forEach(c => {
+    const sectionNum = c.id.split('_')[0];
+    if (parseInt(sectionNum) > 4) {
+      additionalSections.add(sectionNum);
+    }
+  });
+  
+  Array.from(additionalSections).sort((a, b) => parseInt(a) - parseInt(b)).forEach(sectionNum => {
+    const sectionClauses = options.clauses.filter(c => c.id.startsWith(`${sectionNum}_`)).sort((a, b) => a.id.localeCompare(b.id));
+    if (sectionClauses.length > 0) {
+      y += 6;
+      const sectionTitle = sectionClauses.find(c => c.title)?.title || `${sectionNum} Abschnitt`;
+      drawSectionHeading(sectionTitle);
+      sectionClauses.forEach(c => drawClause(c.id));
+    }
+  });
   y += 4;
 
   // --- PREISLISTE (Transparenz für den Kunden) ---

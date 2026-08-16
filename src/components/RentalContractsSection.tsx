@@ -623,19 +623,40 @@ export function RentalContractsSection({ onBack }: RentalContractsSectionProps) 
   };
 
   const buildClausesForPdf = (): RentalContractClause[] => {
-    const clauseIds = ['1_1', '2_1', '2_2', '2_3', '3_1', '3_2', '3_3', '3_4', '4_1'];
-    const titles: Record<string, string> = {
-      '1_1': '1 Zustand',
-      '2_1': '2 Haftung',
-      '3_1': '3 Rückgabe',
-      '4_1': '4 Leihkosten'
+    // Dynamisch alle Klauseln aus den Settings holen
+    const clauseIds = Object.keys(rentalContractClauses).sort((a, b) => {
+      const [aMain, aSub] = a.split('_').map(Number);
+      const [bMain, bSub] = b.split('_').map(Number);
+      if (aMain !== bMain) return aMain - bMain;
+      return aSub - bSub;
+    });
+    
+    // Titel für erste Klausel jeder Sektion
+    const sectionTitles: Record<string, string> = {
+      '1': '1 Zustand',
+      '2': '2 Haftung',
+      '3': '3 Rückgabe',
+      '4': '4 Leihkosten'
     };
+    
+    const seenSections = new Set<string>();
 
-    return clauseIds.map((id) => ({
-      id,
-      title: titles[id] || '',
-      text: rentalContractClauses[id] || ''
-    }));
+    return clauseIds.map((id) => {
+      const sectionNum = id.split('_')[0];
+      let title = '';
+      
+      // Nur die erste Klausel einer Sektion bekommt den Titel
+      if (!seenSections.has(sectionNum)) {
+        seenSections.add(sectionNum);
+        title = sectionTitles[sectionNum] || `${sectionNum} Abschnitt`;
+      }
+      
+      return {
+        id,
+        title,
+        text: rentalContractClauses[id] || ''
+      };
+    });
   };
 
   const handleGeneratePdf = async (contract: typeof contracts[0]) => {
