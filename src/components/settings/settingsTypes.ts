@@ -1,0 +1,17 @@
+export type SettingsSection =
+  | 'freigaben'
+  | 'eskalation'
+  | 'erinnerungen'
+  | 'pdf'
+  | 'email-empfaenger'
+  | 'system'
+  | 'zugriffsrechte'
+  | 'mitglieder'
+  | 'funktionen'
+  | 'email-vorlagen'
+  | 'email-design'
+  | 'leihgeraete'
+  | 'probleme'
+  | 'aufgaben'
+  | 'modul-berechtigungen'
+  | 'tagesordnung';

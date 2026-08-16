@@ -1,0 +1,9 @@
+-- Add default supplier email template settings
+INSERT INTO public.settings (key, value) VALUES 
+  ('email_template_new_supplier_pending_subject', 'Neuer Lieferant wartet auf Genehmigung: {{supplierName}}'),
+  ('email_template_new_supplier_pending_body', '<h2 style="color: #f59e0b;">Neuer Lieferant zur Genehmigung</h2><p>Hallo,</p><p>Ein neuer Lieferant wurde angelegt und wartet auf Ihre Genehmigung.</p><div style="background: #fffbeb; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #f59e0b;"><p><strong>Lieferant:</strong> {{supplierName}}</p><p><strong>Angelegt von:</strong> {{creatorName}}</p></div><p>Bitte melden Sie sich im BANF System an, um den Lieferanten zu prüfen.</p>'),
+  ('email_template_supplier_approved_subject', 'Lieferant genehmigt: {{supplierName}}'),
+  ('email_template_supplier_approved_body', '<h2 style="color: #16a34a;">Lieferant genehmigt</h2><p>Hallo {{creatorName}},</p><p>Ihr angelegter Lieferant wurde genehmigt und ist jetzt sichtbar.</p><div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #16a34a;"><p><strong>Lieferant:</strong> {{supplierName}}</p><p><strong>Genehmigt von:</strong> {{approverName}}</p></div>'),
+  ('email_template_supplier_rejected_subject', 'Lieferant abgelehnt: {{supplierName}}'),
+  ('email_template_supplier_rejected_body', '<h2 style="color: #dc2626;">Lieferant abgelehnt</h2><p>Hallo {{creatorName}},</p><p>Ihr angelegter Lieferant wurde leider abgelehnt.</p><div style="background: #fef2f2; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #dc2626;"><p><strong>Lieferant:</strong> {{supplierName}}</p><p><strong>Abgelehnt von:</strong> {{approverName}}</p><p><strong>Grund:</strong> {{rejectionReason}}</p></div>')
+ON CONFLICT (key) DO NOTHING;

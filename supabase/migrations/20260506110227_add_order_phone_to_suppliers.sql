@@ -1,0 +1,1 @@
+ALTER TABLE public.suppliers ADD COLUMN IF NOT EXISTS order_phone TEXT;

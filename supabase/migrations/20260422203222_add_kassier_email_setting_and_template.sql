@@ -1,0 +1,5 @@
+INSERT INTO settings (key, value) VALUES 
+  ('kassier_email', ''),
+  ('email_template_kommando_decision_kassier_subject', 'Kommando-Entscheidung: {{orderTitle}} - {{decision}}'),
+  ('email_template_kommando_decision_kassier_body', '<h2 style="color: #7c3aed;">Kommando-Entscheidung</h2><p>Folgende Bestellung wurde durch die Kommando-Abstimmung {{decision}}.</p><div style="background: #f5f3ff; padding: 16px; border-radius: 8px; margin: 16px 0; border-left: 4px solid #7c3aed;"><p><strong>Bestellung:</strong> {{orderTitle}}</p><p><strong>Betrag:</strong> {{orderAmount}}</p><p><strong>Erstellt von:</strong> {{creatorName}}</p><p><strong>Entscheidungsart:</strong> {{decisionType}}</p><p><strong>Entscheidung durch:</strong> {{approverName}}</p></div><div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;"><h3 style="margin-top: 0;">Abstimmungsergebnis</h3>{{votingResults}}</div>')
+ON CONFLICT (key) DO NOTHING;

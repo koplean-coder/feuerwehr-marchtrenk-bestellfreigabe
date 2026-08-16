@@ -1,0 +1,25 @@
+{
+  "summary": "Administrierbare Tagesordnungspunkte für Sitzungen",
+  "todos": [
+    {
+      "id": 1,
+      "description": "Datenbank: Tabelle agenda_templates mit RLS",
+      "files": [],
+      "status": "complete"
+    },
+    {
+      "id": 2,
+      "description": "Admin-UI: Tagesordnung verwalten (CRUD, Reihenfolge, Pflicht)",
+      "files": [],
+      "status": "complete"
+    },
+    {
+      "id": 3,
+      "description": "SitzungDetail: Dynamische Punkte aus DB laden",
+      "files": [],
+      "status": "complete"
+    }
+  ],
+  "createdAt": "2026-08-16T09:00:55.838Z",
+  "updatedAt": "2026-08-16T09:04:28.473Z"
+}

@@ -1,0 +1,52 @@
+/**
+ * ⚠️ THEME CONFIGURATION — Tailwind v4
+ * Österreichische Feuerwehr Farbschema
+ */
+@theme {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+
+  /* Feuerwehr Rot als Primärfarbe */
+  --color-primary: #C8102E;
+  --color-primary-foreground: #ffffff;
+  
+  /* Silber/Grau als Sekundärfarbe */
+  --color-secondary: #6B7280;
+  --color-secondary-foreground: #ffffff;
+  
+  /* Heller Hintergrund mit leichtem Warmton */
+  --color-background: #fafafa;
+  --color-foreground: #1f2937;
+  
+  /* Karten mit dezenter Wärme */
+  --color-card: #ffffff;
+  --color-card-foreground: #1f2937;
+  
+  /* Gedämpfte Töne für Muted-Elemente */
+  --color-muted: #f3f4f6;
+  --color-muted-foreground: #6b7280;
+  
+  /* Rahmen und Eingabefelder */
+  --color-border: #e5e7eb;
+  --color-input: #e5e7eb;
+  
+  /* Ring-Fokus in Feuerwehr-Rot */
+  --color-ring: #C8102E;
+  
+  /* Destruktiv bleibt rot, aber dunkler für Kontrast */
+  --color-destructive: #991b1b;
+  --color-destructive-foreground: #ffffff;
+
+  /* Status Farben - angepasst ans Feuerwehr-Schema */
+  --color-status-eingereicht: #ea580c;
+  --color-status-ausstehend-bl: #7c3aed;
+  --color-status-ausstehend-kdt: #2563eb;
+  --color-status-freigegeben-bl: #86efac;
+  --color-status-genehmigt: #16a34a;
+  --color-status-abgelehnt: #dc2626;
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
