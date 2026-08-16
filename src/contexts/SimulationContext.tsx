@@ -20,6 +20,10 @@ interface SimulationContextType {
   setSimulatedUserId: (userId: string | null) => void;
   resetSimulation: () => void;
   
+  // Real (non-simulated) values - use for write operations
+  realIsAdmin: boolean;
+  realIsKommandant: boolean;
+  
   // Effective values (use these everywhere instead of real values)
   effectiveUserId: string | undefined;
   effectiveProfile: SimulatedProfile | null;
@@ -128,6 +132,8 @@ export function SimulationProvider({ children }: { children: ReactNode }) {
     isSimulationActive,
     setSimulatedUserId,
     resetSimulation,
+    realIsAdmin: isAdmin,
+    realIsKommandant: isKommandant,
     effectiveUserId,
     effectiveProfile,
     effectiveIsAdmin,

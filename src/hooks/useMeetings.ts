@@ -391,7 +391,7 @@ export function useMeetings() {
 
 export function useMeetingDetail(meetingId: string | undefined) {
   const { user } = useAuth();
-  const { effectiveProfile, effectiveUserId, effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
+  const { effectiveProfile, effectiveUserId, effectiveIsAdmin, effectiveIsKommandant, realIsAdmin, realIsKommandant } = useSimulation();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [attendance, setAttendance] = useState<MeetingAttendance[]>([]);
   const [agendaItems, setAgendaItems] = useState<MeetingAgendaItem[]>([]);
@@ -404,9 +404,12 @@ export function useMeetingDetail(meetingId: string | undefined) {
   const [error, setError] = useState<string | null>(null);
 
   // Use effective (simulated) profile for permission checks
+  // BUT also allow real admins to manage during simulation
   const effectiveFunctionsLower = effectiveProfile?.functions?.map(f => f.toLowerCase()) || [];
   
-  const canManage = effectiveIsAdmin || 
+  const canManage = realIsAdmin || // Real admin can always manage (even during simulation)
+                   realIsKommandant || // Real Kommandant can always manage
+                   effectiveIsAdmin || 
                    effectiveIsKommandant || 
                    effectiveFunctionsLower.some(f => {
                      return f === 'kdt_stellvertreter' || 
