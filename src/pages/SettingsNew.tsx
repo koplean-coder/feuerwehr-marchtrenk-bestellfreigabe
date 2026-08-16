@@ -89,6 +89,39 @@ export default function SettingsNew() {
 
   // Render the active section content
   const renderContent = () => {
+    // Wenn Benutzer nur Leihgeräte-Admin ist, nur diese Section erlauben
+    if (!canAccessSettings && canAdminRentalItems) {
+      if (activeSection !== 'leihgeraete') {
+        // Automatisch zur Leihgeräte-Section wechseln
+        setActiveSection('leihgeraete');
+        return null;
+      }
+      return (
+        <LeihgeraeteSection
+          rentalItems={rentalItems}
+          rentalItemsLoading={rentalItemsLoading}
+          createRentalItem={createRentalItem}
+          updateRentalItem={updateRentalItem}
+          deleteRentalItem={deleteRentalItem}
+          toggleRentalItemActive={toggleRentalItemActive}
+          rentalDeliveryCost={settings.rentalDeliveryCost}
+          updateRentalDeliveryCost={settings.updateRentalDeliveryCost}
+          rentalContractClauses={settings.rentalContractClauses}
+          updateRentalContractClauses={settings.updateRentalContractClauses}
+          rentalContractNotes={settings.rentalContractNotes}
+          updateRentalContractNotes={settings.updateRentalContractNotes}
+          rentalContractBankDetails={settings.rentalContractBankDetails}
+          updateRentalContractBankDetails={settings.updateRentalContractBankDetails}
+          rentalContractDueDays={settings.rentalContractDueDays}
+          updateRentalContractDueDays={settings.updateRentalContractDueDays}
+          rentalNotificationEmail={settings.rentalNotificationEmail}
+          updateRentalNotificationEmail={settings.updateRentalNotificationEmail}
+          rentalNotificationDays={settings.rentalNotificationDays}
+          updateRentalNotificationDays={settings.updateRentalNotificationDays}
+          alternativePricesLabel={settings.alternativePricesLabel}
+          updateAlternativePricesLabel={settings.updateAlternativePricesLabel} />);
+    }
+
     switch (activeSection) {
       case 'freigaben':
         return (
