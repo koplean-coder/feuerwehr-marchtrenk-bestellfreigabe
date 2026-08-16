@@ -1347,6 +1347,7 @@ export type Database = {
           deferred_to_meeting_id: string | null
           description: string | null
           discussion_notes: string | null
+          for_profile_id: string | null
           id: string
           is_fixed_item: boolean
           is_mandatory: boolean
@@ -1370,6 +1371,7 @@ export type Database = {
           deferred_to_meeting_id?: string | null
           description?: string | null
           discussion_notes?: string | null
+          for_profile_id?: string | null
           id?: string
           is_fixed_item?: boolean
           is_mandatory?: boolean
@@ -1393,6 +1395,7 @@ export type Database = {
           deferred_to_meeting_id?: string | null
           description?: string | null
           discussion_notes?: string | null
+          for_profile_id?: string | null
           id?: string
           is_fixed_item?: boolean
           is_mandatory?: boolean
@@ -1420,6 +1423,13 @@ export type Database = {
             columns: ["deferred_to_meeting_id"]
             isOneToOne: false
             referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_agenda_items_for_profile_id_fkey"
+            columns: ["for_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {

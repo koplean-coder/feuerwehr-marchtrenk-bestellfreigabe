@@ -60,6 +60,7 @@ export interface MeetingAgendaItem {
   category: string | null;
   submitted_by: string;
   submitted_by_name: string | null;
+  for_profile_id: string | null; // The profile this item belongs to (for display grouping)
   status: AgendaItemStatus;
   priority: string | null;
   is_mandatory: boolean;
@@ -792,13 +793,16 @@ export function useMeetingDetail(meetingId: string | undefined) {
   };
 
   // Agenda item management - with optimistic update to prevent scroll reset
-  const addAgendaItem = async (data: Omit<MeetingAgendaItem, 'id' | 'meeting_id' | 'created_at' | 'updated_at' | 'submitted_by'>) => {
+  const addAgendaItem = async (data: Omit<MeetingAgendaItem, 'id' | 'meeting_id' | 'created_at' | 'updated_at' | 'submitted_by'> & { for_profile_id?: string }) => {
     console.log('[addAgendaItem] Called with:', { data, meetingId, userId: user?.id, canEditAgendaItems, canManage, realIsAdmin, realIsKommandant });
     
     if (!supabase || !meetingId || !user || !canEditAgendaItems) {
       console.error('[addAgendaItem] Permission denied:', { supabase: !!supabase, meetingId, user: !!user, canEditAgendaItems });
       return { error: new Error('Keine Berechtigung oder Deadline überschritten') };
     }
+
+    // Determine for_profile_id: use provided value, or fall back to current user
+    const targetProfileId = data.for_profile_id || user.id;
 
     // Create optimistic item
     const tempId = `temp-${Date.now()}`;
@@ -808,6 +812,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
       title: data.title,
       description: data.description || null,
       category: data.category || null,
+      for_profile_id: targetProfileId,
       status: 'offen' as AgendaItemStatus,
       traffic_light: data.traffic_light || 'gelb',
       sort_order: data.sort_order || agendaItems.length + 100,
@@ -834,6 +839,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
           meeting_id: meetingId,
           submitted_by: user.id,
           submitted_by_name: effectiveProfile?.full_name,
+          for_profile_id: targetProfileId,
         })
         .select()
         .single();
