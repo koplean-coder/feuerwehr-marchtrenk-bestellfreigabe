@@ -147,11 +147,11 @@ export function LeihgeraeteSection({
                 </div>
               </div> :
 
-            <div data-ev-id="ev_e7be4e289f" className="grid grid-cols-4 gap-2">
+            <div data-ev-id="ev_e7be4e289f" className="grid grid-cols-4 gap-4">
                 {([{ key: 'price_day' as const, label: '1 Tag' }, { key: 'price_2days' as const, label: '2 Tage' }, { key: 'price_3days' as const, label: '3 Tage' }, { key: 'price_week' as const, label: 'Woche' }]).map(({ key, label }) =>
-              <div data-ev-id="ev_e7b86eab07" key={key} className="flex flex-col gap-1">
+              <div data-ev-id="ev_e7b86eab07" key={key} className="flex flex-col gap-1 items-center">
                     <span data-ev-id="ev_0d8eb24ff5" className="text-xs font-medium text-muted-foreground">{label}</span>
-                    <div data-ev-id="ev_001172495f" className="relative">
+                    <div data-ev-id="ev_001172495f" className="relative w-full">
                       <input data-ev-id="ev_c89c50478d"
                   type="text"
                   inputMode="decimal"
@@ -161,9 +161,9 @@ export function LeihgeraeteSection({
                     setEditData((prev) => ({ ...prev, [key]: parseFloat(val) || 0 }));
                   }}
                   placeholder="0,00"
-                  className="w-full min-w-[80px] px-2 py-2 border border-input rounded-lg pr-7 text-right font-medium bg-background text-sm" />
+                  className="w-full px-2 py-2 border border-input rounded-lg pr-6 text-center font-medium bg-background text-sm" />
 
-                      <span data-ev-id="ev_c8c1494749" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                      <span data-ev-id="ev_c8c1494749" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                     </div>
                   </div>
               )}
@@ -380,16 +380,16 @@ export function LeihgeraeteSection({
                 </div>
               </div> :
 
-          <div data-ev-id="ev_9eec8bee81" className="grid grid-cols-4 gap-2">
+          <div data-ev-id="ev_9eec8bee81" className="grid grid-cols-4 gap-4">
                 {([
             { key: 'price_day' as const, label: '1 Tag' },
             { key: 'price_2days' as const, label: '2 Tage' },
             { key: 'price_3days' as const, label: '3 Tage' },
             { key: 'price_week' as const, label: 'Woche' }]).
             map(({ key, label }) =>
-            <div data-ev-id="ev_9ee0e3e1bd" key={key} className="flex flex-col gap-1.5">
+            <div data-ev-id="ev_9ee0e3e1bd" key={key} className="flex flex-col gap-1.5 items-center">
                     <label data-ev-id="ev_d902e6d090" className="text-sm font-medium text-muted-foreground">{label}</label>
-                    <div data-ev-id="ev_de3b874ab4" className="relative">
+                    <div data-ev-id="ev_de3b874ab4" className="relative w-full">
                       <input data-ev-id="ev_8c1bc01315"
                 type="text"
                 inputMode="decimal"
@@ -399,9 +399,9 @@ export function LeihgeraeteSection({
                   setNewItem((prev) => ({ ...prev, [key]: parseFloat(val) || 0 }));
                 }}
                 placeholder="0,00"
-                className="w-full min-w-[80px] px-2 py-2 border border-input rounded-lg pr-7 text-right font-medium text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
+                className="w-full px-2 py-2 border border-input rounded-lg pr-6 text-center font-medium text-sm focus:border-primary focus:ring-1 focus:ring-primary" />
 
-                      <span data-ev-id="ev_e72135218b" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                      <span data-ev-id="ev_e72135218b" className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">€</span>
                     </div>
                   </div>
             )}
