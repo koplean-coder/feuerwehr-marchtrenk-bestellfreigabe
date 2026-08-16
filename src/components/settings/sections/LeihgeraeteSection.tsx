@@ -130,34 +130,40 @@ export function LeihgeraeteSection({
             
             {isService ?
             <div data-ev-id="ev_d4692e3027" className="flex items-center gap-2">
-                <span data-ev-id="ev_45aba13acf" className="text-sm text-muted-foreground w-16">Preis:</span>
-                <div data-ev-id="ev_687e4ed342" className="relative flex-1">
+                <span data-ev-id="ev_45aba13acf" className="text-sm font-medium text-muted-foreground w-16">Preis:</span>
+                <div data-ev-id="ev_687e4ed342" className="relative flex-1 max-w-xs">
                   <input data-ev-id="ev_8bc1f684e7"
-                type="number"
-                min="0"
-                step="0.01"
-                value={editData.price_day || ''}
-                onChange={(e) => setEditData((prev) => ({ ...prev, price_day: parseFloat(e.target.value) || 0 }))}
-                className="w-full px-3 py-2 border border-input rounded-lg pr-8" />
+                type="text"
+                inputMode="decimal"
+                value={editData.price_day ? editData.price_day.toFixed(2) : ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(',', '.');
+                  setEditData((prev) => ({ ...prev, price_day: parseFloat(val) || 0 }));
+                }}
+                placeholder="0,00"
+                className="w-full px-3 py-2.5 border border-input rounded-lg pr-8 text-right font-medium bg-background" />
 
                   <span data-ev-id="ev_a663f1f741" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                 </div>
               </div> :
 
-            <div data-ev-id="ev_e7be4e289f" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div data-ev-id="ev_e7be4e289f" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {([{ key: 'price_day' as const, label: '1 Tag' }, { key: 'price_2days' as const, label: '2 Tage' }, { key: 'price_3days' as const, label: '3 Tage' }, { key: 'price_week' as const, label: 'Woche' }]).map(({ key, label }) =>
               <div data-ev-id="ev_e7b86eab07" key={key} className="flex flex-col gap-1">
-                    <span data-ev-id="ev_0d8eb24ff5" className="text-xs text-muted-foreground">{label}</span>
+                    <span data-ev-id="ev_0d8eb24ff5" className="text-xs font-medium text-muted-foreground">{label}</span>
                     <div data-ev-id="ev_001172495f" className="relative">
                       <input data-ev-id="ev_c89c50478d"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editData[key] || ''}
-                  onChange={(e) => setEditData((prev) => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
-                  className="w-full px-3 py-2 border border-input rounded-lg pr-8 text-right" />
+                  type="text"
+                  inputMode="decimal"
+                  value={editData[key] ? editData[key].toFixed(2) : ''}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(',', '.');
+                    setEditData((prev) => ({ ...prev, [key]: parseFloat(val) || 0 }));
+                  }}
+                  placeholder="0,00"
+                  className="w-full px-3 py-2.5 border border-input rounded-lg pr-8 text-right font-medium bg-background" />
 
-                      <span data-ev-id="ev_c8c1494749" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
+                      <span data-ev-id="ev_c8c1494749" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">€</span>
                     </div>
                   </div>
               )}
@@ -360,13 +366,15 @@ export function LeihgeraeteSection({
                 <span data-ev-id="ev_3b7beb44c8" className="text-sm font-medium text-muted-foreground">Preis:</span>
                 <div data-ev-id="ev_aa2a37567e" className="relative flex-1 max-w-xs">
                   <input data-ev-id="ev_e2e2474662"
-              type="number"
-              min="0"
-              step="0.01"
-              value={newItem.price_day || ''}
-              onChange={(e) => setNewItem((prev) => ({ ...prev, price_day: parseFloat(e.target.value) || 0 }))}
+              type="text"
+              inputMode="decimal"
+              value={newItem.price_day ? newItem.price_day.toFixed(2) : ''}
+              onChange={(e) => {
+                const val = e.target.value.replace(',', '.');
+                setNewItem((prev) => ({ ...prev, price_day: parseFloat(val) || 0 }));
+              }}
               placeholder="0,00"
-              className="w-full px-4 py-2.5 border border-input rounded-lg pr-10 text-right focus:border-primary focus:ring-1 focus:ring-primary" />
+              className="w-full px-4 py-2.5 border border-input rounded-lg pr-10 text-right font-medium focus:border-primary focus:ring-1 focus:ring-primary" />
 
                   <span data-ev-id="ev_e744a1360d" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">€</span>
                 </div>
@@ -383,13 +391,15 @@ export function LeihgeraeteSection({
                     <label data-ev-id="ev_d902e6d090" className="text-sm font-medium text-muted-foreground">{label}</label>
                     <div data-ev-id="ev_de3b874ab4" className="relative">
                       <input data-ev-id="ev_8c1bc01315"
-                type="number"
-                min="0"
-                step="0.01"
-                value={newItem[key] || ''}
-                onChange={(e) => setNewItem((prev) => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+                type="text"
+                inputMode="decimal"
+                value={newItem[key] ? newItem[key].toFixed(2) : ''}
+                onChange={(e) => {
+                  const val = e.target.value.replace(',', '.');
+                  setNewItem((prev) => ({ ...prev, [key]: parseFloat(val) || 0 }));
+                }}
                 placeholder="0,00"
-                className="w-full px-3 py-2 border border-input rounded-lg pr-8 text-right focus:border-primary focus:ring-1 focus:ring-primary" />
+                className="w-full px-3 py-2.5 border border-input rounded-lg pr-8 text-right font-medium focus:border-primary focus:ring-1 focus:ring-primary" />
 
                       <span data-ev-id="ev_e72135218b" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">€</span>
                     </div>
