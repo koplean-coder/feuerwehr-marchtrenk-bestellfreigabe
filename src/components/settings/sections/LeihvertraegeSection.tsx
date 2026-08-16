@@ -235,16 +235,16 @@ export function LeihvertraegeSection({
   };
 
   const copyPlaceholder = (key: string) => {
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(key);
-    } else {
-      const ta = document.createElement('textarea');
-      ta.value = key;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
+    // Fallback für blockierte Clipboard API
+    const ta = document.createElement('textarea');
+    ta.value = key;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    
     setCopiedPlaceholder(key);
     setTimeout(() => setCopiedPlaceholder(null), 1500);
   };
