@@ -393,6 +393,30 @@ export function LeihvertraegeSection({
             Diese Texte erscheinen im Leihvertrag als rechtliche Bedingungen. Platzhalter werden automatisch ersetzt.
           </p>
 
+          {/* Kompakte Platzhalter-Übersicht */}
+          <div data-ev-id="ev_c01e61d62f" className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div data-ev-id="ev_d36fe77f1d" className="flex items-center gap-2 mb-2">
+              <Info className="w-4 h-4 text-blue-600" />
+              <span data-ev-id="ev_6306b7b096" className="text-sm font-medium text-blue-800">Platzhalter (zum Kopieren klicken):</span>
+            </div>
+            <div data-ev-id="ev_3f3d4b3bb6" className="flex flex-wrap gap-1.5">
+              {PLACEHOLDERS.map((p) =>
+              <button data-ev-id="ev_d2a39a4f1b"
+              key={p.key}
+              onClick={() => copyPlaceholder(p.key)}
+              title={`${p.label} – z.B. "${p.example}"`}
+              className={`px-2 py-1 text-xs font-mono rounded transition-colors ${
+              copiedPlaceholder === p.key ?
+              'bg-green-200 text-green-800' :
+              'bg-blue-100 text-blue-700 hover:bg-blue-200'}`
+              }>
+
+                  {p.key}
+                </button>
+              )}
+            </div>
+          </div>
+
           <div data-ev-id="ev_c9ee4286ff" className="flex flex-col gap-3">
             {sections.map((section) =>
             <div data-ev-id="ev_72d3933749" key={section.id} className="border border-border rounded-lg overflow-hidden">
