@@ -130,10 +130,10 @@ export function TagesordnungSection() {
   const handleToggleMandatory = async (item: FixedAgendaItem) => {
     if (!supabase) return;
 
-    const { error } = await supabase.
-    from('meeting_fixed_agenda_items').
-    update({ is_mandatory: !item.is_mandatory }).
-    eq('id', item.id);
+    const { error } = await supabase
+      .from('meeting_fixed_agenda_items')
+      .update({ is_mandatory: !item.is_mandatory })
+      .eq('id', item.id);
 
     if (error) {
       setFeedback({ type: 'error', message: 'Fehler beim Aktualisieren' });
@@ -147,16 +147,31 @@ export function TagesordnungSection() {
     if (!supabase || index === 0) return;
 
     const prevItem = items[index - 1];
-    const updates = [
-    { id: item.id, sort_order: prevItem.sort_order },
-    { id: prevItem.id, sort_order: item.sort_order }];
+    const currentSortOrder = item.sort_order;
+    const prevSortOrder = prevItem.sort_order;
 
+    // Update current item to previous position
+    const { error: error1 } = await supabase
+      .from('meeting_fixed_agenda_items')
+      .update({ sort_order: prevSortOrder })
+      .eq('id', item.id);
 
-    for (const update of updates) {
-      await supabase.
-      from('meeting_fixed_agenda_items').
-      update({ sort_order: update.sort_order }).
-      eq('id', update.id);
+    if (error1) {
+      console.error('Error moving item up:', error1);
+      setFeedback({ type: 'error', message: 'Fehler beim Verschieben' });
+      return;
+    }
+
+    // Update previous item to current position
+    const { error: error2 } = await supabase
+      .from('meeting_fixed_agenda_items')
+      .update({ sort_order: currentSortOrder })
+      .eq('id', prevItem.id);
+
+    if (error2) {
+      console.error('Error moving prev item:', error2);
+      setFeedback({ type: 'error', message: 'Fehler beim Verschieben' });
+      return;
     }
 
     fetchItems();
@@ -166,16 +181,31 @@ export function TagesordnungSection() {
     if (!supabase || index === items.length - 1) return;
 
     const nextItem = items[index + 1];
-    const updates = [
-    { id: item.id, sort_order: nextItem.sort_order },
-    { id: nextItem.id, sort_order: item.sort_order }];
+    const currentSortOrder = item.sort_order;
+    const nextSortOrder = nextItem.sort_order;
 
+    // Update current item to next position
+    const { error: error1 } = await supabase
+      .from('meeting_fixed_agenda_items')
+      .update({ sort_order: nextSortOrder })
+      .eq('id', item.id);
 
-    for (const update of updates) {
-      await supabase.
-      from('meeting_fixed_agenda_items').
-      update({ sort_order: update.sort_order }).
-      eq('id', update.id);
+    if (error1) {
+      console.error('Error moving item down:', error1);
+      setFeedback({ type: 'error', message: 'Fehler beim Verschieben' });
+      return;
+    }
+
+    // Update next item to current position
+    const { error: error2 } = await supabase
+      .from('meeting_fixed_agenda_items')
+      .update({ sort_order: currentSortOrder })
+      .eq('id', nextItem.id);
+
+    if (error2) {
+      console.error('Error moving next item:', error2);
+      setFeedback({ type: 'error', message: 'Fehler beim Verschieben' });
+      return;
     }
 
     fetchItems();
