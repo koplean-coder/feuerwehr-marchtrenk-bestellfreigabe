@@ -457,7 +457,7 @@ export default function IdeasPool() {
 
       // Find commander name from profiles
       const commander = profiles.find((p) => p.role === 'kommandant');
-      const commanderName = commander?.full_name || profile.full_name || 'Kommandant';
+      const commanderName = commander?.full_name || authProfile?.full_name || 'Kommandant';
 
       await generateIdeaApprovalPdf({
         idea: {
