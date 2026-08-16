@@ -876,14 +876,18 @@ export default function SitzungDetail() {
       const categoryKey = getProfileCategoryKey(person.functions);
       const displayFunction = getProfileDisplayFunction(person.functions);
 
-      // Get items for this person - filtered by category matching person's function
+      // Get items for this person - filtered by category AND submitted_by
+      // This ensures items appear only for the person who created them,
+      // while also matching their function category
       // EXCLUDE items in Allfälliges - those are shown separately
       const items = agendaItems.filter((item) => {
         if (item.is_fixed_item) return false;
-        // Item's category must match person's categoryKey AND not be Allfälliges
         const itemCategoryKey = normalizeToCategoryKey(item.category || '');
-        // Items are grouped by category (person's function), not by who submitted them
-        return itemCategoryKey === categoryKey && itemCategoryKey !== 'allfaelliges';
+        // Item must match person's category AND be created by this person
+        // This prevents duplicate display when multiple people share the same function
+        return itemCategoryKey === categoryKey && 
+               item.submitted_by === person.id && 
+               itemCategoryKey !== 'allfaelliges';
       });
 
       return {
