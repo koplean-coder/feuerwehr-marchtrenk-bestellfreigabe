@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOrderVotes, type VoteType, type OrderVoteHistory } from '@/hooks/useOrderVotes';
 import { useOrders, type InvoiceTo } from '@/hooks/useOrders';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { formatCurrency, formatDate, formatTime } from '@/utils/formatters';
 import type { Order } from '@/hooks/useOrders';
 import {
@@ -28,7 +29,8 @@ interface BeschlussVotingModalProps {
 }
 
 export function BeschlussVotingModal({ order, onClose }: BeschlussVotingModalProps) {
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
   const {
     votes,
     voteHistory,
@@ -62,8 +64,9 @@ export function BeschlussVotingModal({ order, onClose }: BeschlussVotingModalPro
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const isKommandant = profile?.role === 'kommandant' || profile?.role === 'admin';
-  const isKommandomitglied = profile?.functions?.includes('kommandomitglied') || isKommandant;
+  // Mit Simulation
+  const isKommandant = effectiveIsKommandant || effectiveIsAdmin;
+  const isKommandomitglied = effectiveHasKommandomitgliedFunction || isKommandant;
 
   const wasOverridden = !!order.kommandomitglied_override_by;
   const isOpen = order.voting_status === 'open' ||

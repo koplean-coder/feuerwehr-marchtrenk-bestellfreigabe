@@ -1118,8 +1118,8 @@ export function useOrders() {
       order = fetchedOrder as Order;
     }
     
-    // Kommandant oder Admin darf überstimmen
-    const canOverride = profile?.role === 'kommandant' || profile?.role === 'admin';
+    // Kommandant oder Admin darf überstimmen (mit Simulation)
+    const canOverride = isKommandant || isAdmin;
     if (!canOverride) {
       return { error: new Error('Nur der Kommandant oder Admin kann die Abstimmung überstimmen') };
     }
@@ -2305,10 +2305,9 @@ export function useOrders() {
   async function requestKommandoVoting(orderId: string, enable: boolean) {
     if (!supabase || !user) return { error: new Error('Not authenticated') };
     
-    // Nur Kommandomitglieder, Kommandant oder Admin dürfen dies
-    const canRequest = profile?.functions?.includes('kommandomitglied') || 
-                       profile?.role === 'kommandant' || 
-                       profile?.role === 'admin';
+    // Nur Kommandomitglieder, Kommandant oder Admin dürfen dies (mit Simulation)
+    const hasKommandomitgliedFunction = profile?.functions?.map(f => f.toLowerCase()).includes('kommandomitglied') ?? false;
+    const canRequest = hasKommandomitgliedFunction || isKommandant || isAdmin;
     
     if (!canRequest) {
       return { error: new Error('Keine Berechtigung für diese Aktion') };
@@ -2442,11 +2441,11 @@ export function useOrders() {
   async function changeOrderStatus(orderId: string, newStatus: OrderStatus, reason?: string) {
     if (!supabase || !user) return { error: new Error('Not authenticated') };
     
-    // Nur Kassier oder Admin dürfen den Status ändern
-    const isKassier = profile?.functions?.includes('kassier');
-    const isAdmin = profile?.role === 'admin';
+    // Nur Kassier oder Admin dürfen den Status ändern (mit Simulation)
+    const hasKassierFunc = profile?.functions?.map(f => f.toLowerCase()).includes('kassier') ?? false;
+    const isAdminForStatus = isAdmin;
     
-    if (!isKassier && !isAdmin) {
+    if (!hasKassierFunc && !isAdminForStatus) {
       return { error: new Error('Keine Berechtigung für diese Aktion') };
     }
     
@@ -2691,7 +2690,7 @@ export function useOrders() {
   async function openVoting(orderId: string): Promise<{ error: Error | null }> {
     if (!supabase || !user) return { error: new Error('Not authenticated') };
     
-    const canOpen = profile?.role === 'kommandant' || profile?.role === 'admin';
+    const canOpen = isKommandant || isAdmin;
     if (!canOpen) {
       return { error: new Error('Nur Kommandant oder Admin kann die Abstimmung eröffnen') };
     }
@@ -2721,7 +2720,7 @@ export function useOrders() {
   async function closeVotingManually(orderId: string, reason?: string): Promise<{ error: Error | null }> {
     if (!supabase || !user) return { error: new Error('Not authenticated') };
     
-    const canClose = profile?.role === 'kommandant' || profile?.role === 'admin';
+    const canClose = isKommandant || isAdmin;
     if (!canClose) {
       return { error: new Error('Nur Kommandant oder Admin kann die Abstimmung schließen') };
     }
@@ -2765,7 +2764,7 @@ export function useOrders() {
   async function reopenVoting(orderId: string): Promise<{ error: Error | null }> {
     if (!supabase || !user) return { error: new Error('Not authenticated') };
     
-    const canReopen = profile?.role === 'kommandant' || profile?.role === 'admin';
+    const canReopen = isKommandant || isAdmin;
     if (!canReopen) {
       return { error: new Error('Nur Kommandant oder Admin kann die Abstimmung wieder eröffnen') };
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import type { Tables, TablesInsert } from '@/integrations/supabase/helpers';
 
 export type CommandDecisionItem = Tables<'command_decision_items'>;
@@ -48,15 +49,17 @@ export interface Kommandomitglied {
 }
 
 export function useCommandDecisionItems(decisionId: string | undefined) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
   const [items, setItems] = useState<ItemWithVotes[]>([]);
   const [kommandomitglieder, setKommandomitglieder] = useState<Kommandomitglied[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Permission checks
-  const hasKommandomitgliedFunction = profile?.functions?.includes('kommandomitglied') ?? false;
-  const isAdmin = profile?.role === 'admin';
-  const isKommandant = profile?.role === 'kommandant';
+  // Permission checks (mit Simulation)
+  const hasKommandomitgliedFunction = effectiveHasKommandomitgliedFunction;
+  const isAdmin = effectiveIsAdmin;
+  const isKommandant = effectiveIsKommandant;
   const isKdtStellvertreter = profile?.functions?.some(f => {
     const lower = typeof f === 'string' ? f.toLowerCase() : '';
     return lower === 'kdt_stellvertreter' || 

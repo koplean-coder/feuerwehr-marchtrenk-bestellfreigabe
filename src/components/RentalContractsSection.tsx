@@ -750,8 +750,8 @@ export function RentalContractsSection({ onBack }: RentalContractsSectionProps) 
         </button>
       </div>
 
-      {/* Admin-Funktion: Benachrichtigungen nachträglich senden */}
-      {activeTab === 'overview' && (profile?.role === 'admin' || profile?.role === 'kommandant') && activeContracts.filter((c) => c.total_amount > 0 && !c.is_sponsor).length > 0 &&
+      {/* Admin-Funktion: Benachrichtigungen nachträglich senden (mit Simulation) */}
+      {activeTab === 'overview' && isAdmin && activeContracts.filter((c) => c.total_amount > 0 && !c.is_sponsor).length > 0 &&
       <div data-ev-id="ev_cf78affd43" className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
           <div data-ev-id="ev_32f942f1ab" className="flex items-center justify-between gap-4 flex-wrap">
             <div data-ev-id="ev_d7b5e9a078" className="flex items-center gap-3">

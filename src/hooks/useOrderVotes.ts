@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 export type VoteType = 'approve' | 'reject' | 'abstain';
 
@@ -64,18 +65,20 @@ export interface VoteSummary {
 }
 
 export function useOrderVotes(orderId: string | undefined) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
   const [votes, setVotes] = useState<OrderVote[]>([]);
   const [voteHistory, setVoteHistory] = useState<OrderVoteHistory[]>([]);
   const [missingVotes, setMissingVotes] = useState<MissingVote[]>([]);
   const [kommandomitglieder, setKommandomitglieder] = useState<Kommandomitglied[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Check if current user has the Kommandomitglied function
-  const hasKommandomitgliedFunction = profile?.functions?.includes('kommandomitglied') || false;
+  // Check if current user has the Kommandomitglied function (mit Simulation)
+  const hasKommandomitgliedFunction = effectiveHasKommandomitgliedFunction;
   
-  // Check if current user is Kommandant or Admin
-  const isKommandant = profile?.role === 'kommandant' || profile?.role === 'admin';
+  // Check if current user is Kommandant or Admin (mit Simulation)
+  const isKommandant = effectiveIsKommandant || effectiveIsAdmin;
   
   // Kommandant/Admin can also vote like a Kommandomitglied
   const canVoteAsKommandomitglied = hasKommandomitgliedFunction || isKommandant;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { useSettings } from '@/hooks/useSettings';
 
 export interface Supplier {
@@ -39,11 +40,12 @@ export function useSuppliers() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [pendingSuppliers, setPendingSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveIsAdmin, effectiveIsKommandant, effectiveUserId } = useSimulation();
   const { supplierApprovalUsers } = useSettings();
 
-  // Admin und Kommandant können immer freigeben, plus explizit berechtigte Benutzer
-  const canApproveSuppliers = profile?.role === 'admin' || profile?.role === 'kommandant' || (user?.id && supplierApprovalUsers.includes(user.id));
+  // Admin und Kommandant können immer freigeben, plus explizit berechtigte Benutzer (mit Simulation)
+  const canApproveSuppliers = effectiveIsAdmin || effectiveIsKommandant || (effectiveUserId && supplierApprovalUsers.includes(effectiveUserId));
 
   useEffect(() => {
     fetchSuppliers();

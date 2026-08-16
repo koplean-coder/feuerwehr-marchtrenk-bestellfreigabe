@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { useOrderVotes } from '@/hooks/useOrderVotes';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import type { Order } from '@/hooks/useOrders';
 import {
@@ -24,12 +25,12 @@ interface BeschlussCardProps {
 }
 
 export function BeschlussCard({ order, showVotingStatus = true, onVoteClick }: BeschlussCardProps) {
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
   const { voteSummary, loading, kommandomitgliederCount } = useOrderVotes(order.id);
 
-  const isKommandomitglied = profile?.functions?.includes('kommandomitglied') ||
-  profile?.role === 'kommandant' ||
-  profile?.role === 'admin';
+  // Mit Simulation
+  const isKommandomitglied = effectiveHasKommandomitgliedFunction || effectiveIsKommandant || effectiveIsAdmin;
 
   const wasOverridden = !!order.kommandomitglied_override_by;
   const isKommandantApproved = order.status === 'freigegeben_kommandant' || !!order.kommandant_approved_at;

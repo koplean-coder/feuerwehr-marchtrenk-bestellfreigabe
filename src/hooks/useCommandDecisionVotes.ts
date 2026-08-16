@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 export type VoteType = 'approve' | 'reject' | 'abstain';
 
@@ -65,16 +66,18 @@ export interface VoteSummary {
 }
 
 export function useCommandDecisionVotes(decisionId: string | undefined) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
   const [votes, setVotes] = useState<CommandDecisionVote[]>([]);
   const [voteHistory, setVoteHistory] = useState<VoteHistory[]>([]);
   const [missingVotes, setMissingVotes] = useState<MissingVote[]>([]);
   const [kommandomitglieder, setKommandomitglieder] = useState<Kommandomitglied[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Permission checks
-  const hasKommandomitgliedFunction = profile?.functions?.includes('kommandomitglied') ?? false;
-  const isKommandant = profile?.role === 'kommandant' || profile?.role === 'admin';
+  // Permission checks (mit Simulation)
+  const hasKommandomitgliedFunction = effectiveHasKommandomitgliedFunction;
+  const isKommandant = effectiveIsKommandant || effectiveIsAdmin;
   const canVoteAsKommandomitglied = hasKommandomitgliedFunction || isKommandant;
 
   const fetchVotes = useCallback(async () => {

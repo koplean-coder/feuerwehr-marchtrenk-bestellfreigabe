@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/helpers';
 
 export type CommandDecision = Tables<'command_decisions'>;
@@ -25,21 +26,23 @@ export interface CommandDecisionWithCreator extends CommandDecision {
 }
 
 export function useCommandDecisions() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKommandomitgliedFunction } = useSimulation();
+  const profile = effectiveProfile;
   const [decisions, setDecisions] = useState<CommandDecisionWithCreator[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Permission checks
-  const isKommandomitglied = profile?.functions?.includes('kommandomitglied') ?? false;
-  const isKommandant = profile?.role === 'kommandant';
+  // Permission checks (mit Simulation)
+  const isKommandomitglied = effectiveHasKommandomitgliedFunction;
+  const isKommandant = effectiveIsKommandant;
   const isKdtStellvertreter = profile?.functions?.some(f => {
     const lower = typeof f === 'string' ? f.toLowerCase() : '';
     return lower === 'kdt_stellvertreter' || 
            lower === 'kdt-stellvertreter' || 
            (lower.includes('kdt') && (lower.includes('stv') || lower.includes('stellvertreter')));
   }) ?? false;
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = effectiveIsAdmin;
   const canCreate = isKommandomitglied || isKommandant || isKdtStellvertreter || isAdmin;
   const canEndVoting = isKommandant || isKdtStellvertreter || isAdmin;
 

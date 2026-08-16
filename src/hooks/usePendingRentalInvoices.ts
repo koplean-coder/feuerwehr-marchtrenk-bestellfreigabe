@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSimulation } from '@/contexts/SimulationContext';
 
 export interface PendingRentalInvoice {
   id: string;
@@ -13,13 +14,15 @@ export interface PendingRentalInvoice {
 }
 
 export function usePendingRentalInvoices() {
-  const { profile } = useAuth();
+  const { effectiveProfile, effectiveIsAdmin, effectiveIsKommandant, effectiveHasKassierFunction } = useSimulation();
+  const profile = effectiveProfile;
   const [pendingInvoices, setPendingInvoices] = useState<PendingRentalInvoice[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isKassier = profile?.functions?.includes('kassier') ?? false;
-  const isAdmin = profile?.role === 'admin';
-  const isKommandant = profile?.role === 'kommandant';
+  // Mit Simulation
+  const isKassier = effectiveHasKassierFunction;
+  const isAdmin = effectiveIsAdmin;
+  const isKommandant = effectiveIsKommandant;
   const canView = isKassier || isAdmin || isKommandant;
 
   const fetchPendingInvoices = useCallback(async () => {

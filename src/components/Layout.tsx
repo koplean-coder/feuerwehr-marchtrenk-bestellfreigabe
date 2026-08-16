@@ -159,8 +159,8 @@ export function Layout({ children }: LayoutProps) {
   // Module permissions for 'nutzer' role
   const { permissions: modulePermissions, hasModuleAccess } = useModulePermissions();
 
-  // Check if user has 'nutzer' role - module permissions apply to them
-  const isNutzerRole = profile?.role === 'nutzer';
+  // Check if user has 'nutzer' role - module permissions apply to them (mit Simulation)
+  const isNutzerRole = effectiveProfile?.role === 'nutzer';
 
   // For nutzer role users, show only modules they have permission for
   // navItems now include category for MegaMenu grouping
@@ -272,8 +272,8 @@ export function Layout({ children }: LayoutProps) {
     // Anleitung für alle Benutzer
     navItems.push({ path: '/anleitung', label: 'Anleitung', icon: BookOpen, category: 'system' });
 
-    // Dokumentation (PDF-Export) für Admin, Kommandant und Kassier
-    if (profile?.role === 'admin' || profile?.role === 'kommandant' || profile?.role === 'kassier') {
+    // Dokumentation (PDF-Export) für Admin, Kommandant und Kassier (mit Simulation)
+    if (effectiveIsAdmin || effectiveIsKommandant || effectiveProfile?.role === 'kassier') {
       navItems.push({ path: '/dokumentation', label: 'Dokumentation', icon: FileText, category: 'system' });
     }
   }

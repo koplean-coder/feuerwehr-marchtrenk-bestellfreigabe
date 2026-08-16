@@ -435,9 +435,9 @@ export default function SitzungDetail() {
     return 'allfaelliges';
   }, [profile?.functions]);
 
-  // Check if user is Admin
-  const isAdmin = profile?.role === 'admin';
-  const isKommandant = profile?.role === 'kommandant';
+  // Check if user is Admin (mit Simulation)
+  const isAdmin = effectiveIsAdmin;
+  const isKommandant = effectiveIsKommandant;
   const canEditMeetingDetails = isAdmin || isKommandant;
   const canDeleteMeeting = isAdmin; // Nur Admin kann löschen
 

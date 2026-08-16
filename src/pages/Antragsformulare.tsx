@@ -111,15 +111,16 @@ export default function Antragsformulare() {
     }
   }, [searchParams, loading, paymentOrders, setSearchParams]);
 
-  const canDelete = isKassier || profile?.role === 'admin';
-  const canResetReference = profile?.role === 'admin';
+  // Mit Simulation
+  const canDelete = isKassier || effectiveIsAdmin;
+  const canResetReference = effectiveIsAdmin;
 
-  // Check visibility - if no users are set, allow admin/kommandant/kassier by default
+  // Check visibility - if no users are set, allow admin/kommandant/kassier by default (mit Simulation)
   const hasAccess = profile && (
-  profile.role === 'admin' ||
-  profile.role === 'kommandant' ||
+  effectiveIsAdmin ||
+  effectiveIsKommandant ||
   isKassier ||
-  antragsformulareViewUsers?.length > 0 && antragsformulareViewUsers.includes(profile.id));
+  antragsformulareViewUsers?.length > 0 && effectiveUserId && antragsformulareViewUsers.includes(effectiveUserId));
 
 
   // Get commander name for signature
@@ -641,8 +642,8 @@ export default function Antragsformulare() {
             </button>
             }
 
-            {/* Command Decisions Card - nur für Kommandomitglieder, Kommandant und Admin */}
-            {(isKommandomitglied || profile?.role === 'kommandant' || profile?.role === 'admin') &&
+            {/* Command Decisions Card - nur für Kommandomitglieder, Kommandant und Admin (mit Simulation) */}
+            {(isKommandomitglied || effectiveIsKommandant || effectiveIsAdmin) &&
             <button data-ev-id="ev_ca7bd931da"
             onClick={() => setSelectedModule('command_decisions')}
             className="bg-card border border-border rounded-xl p-6 text-left hover:border-primary hover:shadow-lg transition-all group">
