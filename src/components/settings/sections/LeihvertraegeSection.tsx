@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FileText, Save, RotateCcw, ChevronDown, ChevronUp, Clock, Plus, Trash2, GripVertical, Info, Copy } from 'lucide-react';
+import { FileText, Save, RotateCcw, ChevronDown, ChevronUp, Clock, Plus, Trash2, GripVertical, Info, Copy, Eye } from 'lucide-react';
 import { SectionHeader, SectionCard } from '../SettingsContent';
+import { generateRentalContractPdf, type RentalContractClause } from '@/utils/generateRentalContractPdf';
 
 // Flexible Klausel-Struktur
 export interface ClauseItem {
@@ -113,6 +114,7 @@ export function LeihvertraegeSection({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['1']));
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generatingPreview, setGeneratingPreview] = useState(false);
   const [showPlaceholders, setShowPlaceholders] = useState(false);
   const [copiedPlaceholder, setCopiedPlaceholder] = useState<string | null>(null);
 
@@ -244,9 +246,89 @@ export function LeihvertraegeSection({
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
-    
+
     setCopiedPlaceholder(key);
     setTimeout(() => setCopiedPlaceholder(null), 1500);
+  };
+
+  // PDF-Vorschau mit Musterdaten generieren
+  const generatePreview = async () => {
+    setGeneratingPreview(true);
+    try {
+      // Klauseln für PDF aufbereiten
+      const clauseRecord = convertToRecord(sections);
+      const clauseIds = Object.keys(clauseRecord).sort((a, b) => {
+        const [aMain, aSub] = a.split('_').map(Number);
+        const [bMain, bSub] = b.split('_').map(Number);
+        if (aMain !== bMain) return aMain - bMain;
+        return aSub - bSub;
+      });
+
+      const sectionTitles: Record<string, string> = {
+        '1': '1 Zustand',
+        '2': '2 Haftung',
+        '3': '3 Rückgabe',
+        '4': '4 Leihkosten'
+      };
+
+      const seenSections = new Set<string>();
+      const clauses: RentalContractClause[] = clauseIds.map((id) => {
+        const sectionNum = id.split('_')[0];
+        let title = '';
+        if (!seenSections.has(sectionNum)) {
+          seenSections.add(sectionNum);
+          title = sectionTitles[sectionNum] || `${sectionNum} Abschnitt`;
+        }
+        return { id, title, text: clauseRecord[id] || '' };
+      });
+
+      // Musterdaten für Vorschau
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() + 7);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 2);
+
+      await generateRentalContractPdf(
+        {
+          contractNumber: 'LV-VORSCHAU-001',
+          customerName: 'Max Mustermann',
+          customerEmail: 'max.mustermann@example.com',
+          customerPhone: '+43 664 1234567',
+          customerAddress: 'Musterstraße 1, 4614 Marchtrenk',
+          isSponsor: false,
+          hasCustomPrice: false,
+          customPrice: null,
+          items: [
+          { item_name: 'Hüpfburg "Camelot"', quantity: 1, price_per_unit: 130, total_price: 260 },
+          { item_name: 'Fußballfeld', quantity: 1, price_per_unit: 80, total_price: 160 }],
+
+          rentalStart: startDate.toISOString(),
+          rentalEnd: endDate.toISOString(),
+          totalAmount: 420,
+          deliveryCost: 55,
+          includeDelivery: true,
+          notes: 'Leichte Gebrauchsspuren an der Seitenwand',
+          createdAt: today.toISOString(),
+          returnedAt: null,
+          damageNotes: null,
+          conditionReturn: null,
+          additionalCosts: null,
+          additionalCostsReason: null
+        },
+        {
+          header: localHeader,
+          clauses,
+          deliveryCost: 55,
+          overduePerDay: localOverdue
+        }
+      );
+    } catch (err) {
+      console.error('Vorschau-Generierung fehlgeschlagen:', err);
+      alert('Fehler beim Erstellen der Vorschau');
+    } finally {
+      setGeneratingPreview(false);
+    }
   };
 
   return (
@@ -256,6 +338,17 @@ export function LeihvertraegeSection({
         title="Leihverträge"
         description="Texte und Klauseln für das Leihvertrags-PDF bearbeiten" />
 
+      {/* Vorschau-Button */}
+      <div data-ev-id="ev_d9030c6bfc" className="flex justify-end">
+        <button data-ev-id="ev_18cccdf67e"
+        onClick={generatePreview}
+        disabled={generatingPreview}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 transition-colors">
+
+          <Eye className="w-4 h-4" />
+          {generatingPreview ? 'Wird erstellt...' : 'PDF-Vorschau mit Musterdaten'}
+        </button>
+      </div>
 
       {/* Save/Reset Bar */}
       {hasChanges &&
