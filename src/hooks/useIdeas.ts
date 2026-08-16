@@ -346,7 +346,7 @@ export function useIdeas() {
           const { data: kommandantenData } = await supabase
             .from('profiles')
             .select('id, full_name')
-            .or('is_kommandant.eq.true,is_admin.eq.true');
+            .or('role.eq.kommandant,role.eq.admin');
           
           if (kommandantenData && kommandantenData.length > 0) {
             for (const idea of expiredIdeas) {

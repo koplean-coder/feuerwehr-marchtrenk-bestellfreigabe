@@ -215,21 +215,27 @@ export function useMeetings() {
   const fetchMeetings = useCallback(async () => {
     if (!supabase || !user) return;
 
+    // Use effective user ID for simulation support
+    const targetUserId = effectiveUserId || user.id;
+
     try {
       setLoading(true);
       
       // First fetch attendance records to know which meetings user is invited to
-      // This query is allowed by the "Users can view their own attendance" policy
+      // For simulation: fetch all attendances (admin has access), then filter client-side
+      // For normal: fetch only own attendances
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('meeting_attendance')
-        .select('meeting_id')
-        .eq('profile_id', user.id);
+        .select('meeting_id, profile_id');
 
       if (attendanceError) {
         // Silently handle - user might just not have any invitations
       }
 
-      const invitedMeetingIds = attendanceData?.map(a => a.meeting_id) ?? [];
+      // Filter attendances for the effective (simulated) user
+      const invitedMeetingIds = (attendanceData ?? [])
+        .filter(a => a.profile_id === targetUserId)
+        .map(a => a.meeting_id);
       
       // Fetch all meetings (RLS will filter based on role + attendance)
       const { data, error: fetchError } = await supabase
@@ -265,7 +271,7 @@ export function useMeetings() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, effectiveUserId]);
 
   const createMeeting = async (data: CreateMeetingData) => {
     if (!supabase || !user || !canManage) {
@@ -800,7 +806,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
       traffic_light: data.traffic_light || 'gelb',
       sort_order: data.sort_order || agendaItems.length + 100,
       submitted_by: user.id,
-      submitted_by_name: profile?.full_name || null,
+      submitted_by_name: effectiveProfile?.full_name || null,
       is_mandatory: false,
       is_fixed_item: false,
       deferred_to_meeting_id: null,
@@ -821,7 +827,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
           ...data,
           meeting_id: meetingId,
           submitted_by: user.id,
-          submitted_by_name: profile?.full_name,
+          submitted_by_name: effectiveProfile?.full_name,
         })
         .select()
         .single();
