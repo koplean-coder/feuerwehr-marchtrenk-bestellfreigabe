@@ -1222,10 +1222,12 @@ export default function SitzungDetail() {
                 // Unlock: Reset deadline to 24 hours before meeting
                 if (!confirm('Sitzung für Einträge wieder öffnen?')) return;
                 await updateMeeting(meeting.id, { entry_deadline_hours: 24 });
+                await fetchMeetingDetail(); // Refresh to update button state
               } else {
                 // Lock: Set deadline to far past (99999 hours = always passed)
                 if (!confirm('Sitzung für weitere Einträge sperren? Nur Kommandant/Admin können dann noch Einträge hinzufügen.')) return;
                 await updateMeeting(meeting.id, { entry_deadline_hours: 99999 });
+                await fetchMeetingDetail(); // Refresh to update button state
               }
             }}
             className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 ${
