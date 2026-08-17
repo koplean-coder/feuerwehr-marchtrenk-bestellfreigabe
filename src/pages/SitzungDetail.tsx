@@ -250,10 +250,59 @@ export default function SitzungDetail() {
   const [downloadingPdfDecisionId, setDownloadingPdfDecisionId] = useState<string | null>(null);
 
   // Pause Timer (90 minutes first, then 60 minutes repeating)
-  const [pauseTimerRunning, setPauseTimerRunning] = useState(false);
-  const [pauseTimerSeconds, setPauseTimerSeconds] = useState(90 * 60); // 90 minutes in seconds
+  // Timer state is persisted in localStorage so it survives page navigation
+  const timerStorageKey = `sitzung_timer_${id}`;
+  
+  const [pauseTimerRunning, setPauseTimerRunning] = useState(() => {
+    if (!id) return false;
+    const stored = localStorage.getItem(timerStorageKey);
+    if (!stored) return false;
+    const data = JSON.parse(stored);
+    const elapsed = Math.floor((Date.now() - data.startedAt) / 1000);
+    return elapsed < data.duration;
+  });
+  
+  const [pauseTimerSeconds, setPauseTimerSeconds] = useState(() => {
+    if (!id) return 90 * 60;
+    const stored = localStorage.getItem(timerStorageKey);
+    if (!stored) return 90 * 60;
+    const data = JSON.parse(stored);
+    const elapsed = Math.floor((Date.now() - data.startedAt) / 1000);
+    const remaining = data.duration - elapsed;
+    return remaining > 0 ? remaining : 0;
+  });
+  
   const [showPausePopup, setShowPausePopup] = useState(false);
-  const [pauseCount, setPauseCount] = useState(0); // 0 = not started, 1 = first pause done, 2+ = subsequent
+  
+  const [pauseCount, setPauseCount] = useState(() => {
+    if (!id) return 0;
+    const stored = localStorage.getItem(timerStorageKey);
+    if (!stored) return 0;
+    return JSON.parse(stored).pauseCount || 0;
+  });
+
+  // Start timer and save to localStorage
+  const startTimer = useCallback((duration: number, newPauseCount: number) => {
+    if (!id) return;
+    const timerData = {
+      startedAt: Date.now(),
+      duration,
+      pauseCount: newPauseCount
+    };
+    localStorage.setItem(timerStorageKey, JSON.stringify(timerData));
+    setPauseTimerSeconds(duration);
+    setPauseTimerRunning(true);
+    setPauseCount(newPauseCount);
+  }, [id, timerStorageKey]);
+
+  // Stop timer and clear from localStorage
+  const stopTimer = useCallback(() => {
+    if (!id) return;
+    localStorage.removeItem(timerStorageKey);
+    setPauseTimerRunning(false);
+    setPauseTimerSeconds(0);
+    setPauseCount(0);
+  }, [id, timerStorageKey]);
 
   // Pause Timer Effect
   useEffect(() => {
@@ -282,10 +331,8 @@ export default function SitzungDetail() {
   // Handle pause popup confirmation - start 60min timer for subsequent pauses
   const handlePauseConfirm = () => {
     setShowPausePopup(false);
-    setPauseCount((prev) => prev + 1);
     // Start 60 minute timer for next pause
-    setPauseTimerSeconds(60 * 60);
-    setPauseTimerRunning(true);
+    startTimer(60 * 60, pauseCount + 1);
   };
 
   // Format seconds to MM:SS
@@ -1130,19 +1177,16 @@ export default function SitzungDetail() {
                 <Clock className="w-4 h-4" />
                 <span data-ev-id="ev_a8d149183a">{formatTimerTime(pauseTimerSeconds)}</span>
                 <button data-ev-id="ev_b93dc569a0"
-            onClick={() => setPauseTimerRunning(false)}
+            onClick={stopTimer}
             className="ml-1 hover:bg-amber-600 rounded p-0.5"
-            title="Timer pausieren">
+            title="Timer beenden">
 
                   <X className="w-3 h-3" />
                 </button>
               </div> :
 
           <button data-ev-id="ev_4ffe6840c7"
-          onClick={() => {
-            setPauseTimerSeconds(90 * 60);
-            setPauseTimerRunning(true);
-          }}
+          onClick={() => startTimer(90 * 60, pauseCount)}
           className="px-3 py-1.5 bg-white/20 rounded-lg text-sm hover:bg-white/30 transition-colors flex items-center gap-1.5"
           title="90-Minuten Pause-Timer starten">
 
@@ -2369,6 +2413,8 @@ export default function SitzungDetail() {
                 if (!confirm('Sitzung wirklich abschließen? Dies erstellt automatisch die nächste Sitzung mit allen verschobenen Punkten.')) {
                   return;
                 }
+                // Stop the pause timer when closing the meeting
+                stopTimer();
                 setIsClosing(true);
                 const { error, newMeetingId } = await closeMeeting(
                   date,
