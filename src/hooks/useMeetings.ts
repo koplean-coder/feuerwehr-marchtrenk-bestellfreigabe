@@ -1754,7 +1754,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
   };
 
   // Update agenda item traffic light
-  const updateAgendaItemTrafficLight = async (itemId: string, trafficLight: 'rot' | 'gelb' | 'gruen') => {
+  const updateAgendaItemTrafficLight = async (itemId: string, trafficLight: 'rot' | 'gelb' | 'gruen' | 'blau') => {
     if (!supabase || !canManage) {
       return { error: new Error('Keine Berechtigung') };
     }
