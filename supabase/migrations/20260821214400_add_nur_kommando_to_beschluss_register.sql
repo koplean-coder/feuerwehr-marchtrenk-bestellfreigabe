@@ -1,0 +1,1 @@
+ALTER TABLE public.beschluss_register ADD COLUMN nur_kommando BOOLEAN NOT NULL DEFAULT false;

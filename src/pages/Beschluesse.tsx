@@ -53,7 +53,7 @@ const TYP_CONFIG: Record<string, {label: string;color: string;}> = {
 };
 
 export default function Beschluesse() {
-  const { beschluesse, loading, stats, fetchHistorie, gueltigeBeschluesse, createHistorischenBeschluss, generateBeschlussNummerForYear, canCreate } = useBeschlussRegister();
+  const { beschluesse, loading, stats, fetchHistorie, gueltigeBeschluesse, createHistorischenBeschluss, generateBeschlussNummerForYear, canCreate, updateNurKommando, isAdmin, isKommandant } = useBeschlussRegister();
   const { beschlussRegisterViewRoles, beschlussRegisterCardsByRole } = useSettings();
   const { profile } = useAuth();
   const [nurGueltige, setNurGueltige] = useState(false);
@@ -607,11 +607,12 @@ export default function Beschluesse() {
                         <table data-ev-id={`ev_table_${year}`} className="w-full">
                           <thead data-ev-id={`ev_thead_${year}`}>
                             <tr data-ev-id={`ev_header_row_${year}`} className="bg-gray-50 text-left text-sm text-muted-foreground">
-                              <th data-ev-id={`ev_th_nr_${year}`} className="px-6 py-3 font-medium">Nr.</th>
+                              <th data-ev-id={`ev_th_nr_${year}`} className="px-6 py-3 font-medium w-28">Nr.</th>
                               <th data-ev-id={`ev_th_titel_${year}`} className="px-6 py-3 font-medium">Titel</th>
-                              <th data-ev-id={`ev_th_ergebnis_${year}`} className="px-6 py-3 font-medium">Ergebnis</th>
-                              <th data-ev-id={`ev_th_datum_${year}`} className="px-6 py-3 font-medium">Datum</th>
-                              <th data-ev-id={`ev_th_aktion_${year}`} className="px-6 py-3 font-medium"></th>
+                              <th data-ev-id={`ev_th_ergebnis_${year}`} className="px-6 py-3 font-medium w-28">Ergebnis</th>
+                              <th data-ev-id={`ev_th_datum_${year}`} className="px-6 py-3 font-medium w-28">Datum</th>
+                              {(isAdmin || isKommandant) && <th data-ev-id={`ev_th_intern_${year}`} className="px-3 py-3 font-medium w-20 text-center" title="Nur für Kommando sichtbar">Intern</th>}
+                              <th data-ev-id={`ev_th_aktion_${year}`} className="px-6 py-3 font-medium w-16"></th>
                             </tr>
                           </thead>
                           <tbody data-ev-id={`ev_tbody_${year}`}>
@@ -637,21 +638,15 @@ export default function Beschluesse() {
                                       {beschluss.beschluss_nummer}
                                     </span>
                                   </td>
-                                  <td data-ev-id={`ev_td_titel_${beschluss.id}`} className="px-6 py-4">
-                                    <div data-ev-id={`ev_titel_wrapper_${beschluss.id}`}>
-                                      <button
-                                data-ev-id={`ev_titel_btn_${beschluss.id}`}
-                                onClick={() => setProtokollBeschluss(beschluss)}
-                                className="font-medium text-foreground hover:text-primary hover:underline text-left">
+                                  <td data-ev-id={`ev_td_titel_${beschluss.id}`} className="px-6 py-4 max-w-xs">
+                                    <button
+                              data-ev-id={`ev_titel_btn_${beschluss.id}`}
+                              onClick={() => setProtokollBeschluss(beschluss)}
+                              className="font-medium text-foreground hover:text-primary hover:underline text-left truncate block w-full"
+                              title={beschluss.titel}>
 
-                                        {beschluss.titel}
-                                      </button>
-                                      {beschluss.meeting_title &&
-                              <p data-ev-id={`ev_meeting_${beschluss.id}`} className="text-xs text-muted-foreground mt-1">
-                                        Sitzung: {beschluss.meeting_title}
-                                      </p>
-                              }
-                                    </div>
+                                      {beschluss.titel}
+                                    </button>
                                   </td>
                                   <td data-ev-id={`ev_td_ergebnis_${beschluss.id}`} className="px-6 py-4">
                                     {isGenehmigt ?
@@ -667,6 +662,17 @@ export default function Beschluesse() {
                                       {formatDate(beschluss.erstellt_am)}
                                     </span>
                                   </td>
+                                  {(isAdmin || isKommandant) &&
+                          <td data-ev-id={`ev_td_intern_${beschluss.id}`} className="px-3 py-4 text-center">
+                                    <input data-ev-id="ev_e4697897cf"
+                            type="checkbox"
+                            checked={beschluss.nur_kommando || false}
+                            onChange={(e) => updateNurKommando(beschluss.id, e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            title={beschluss.nur_kommando ? 'Nur für Kommando sichtbar' : 'Für alle sichtbar'} />
+
+                                  </td>
+                          }
                                   <td data-ev-id={`ev_td_aktion_${beschluss.id}`} className="px-6 py-4">
                                     <div data-ev-id={`ev_actions_${beschluss.id}`} className="flex items-center gap-2">
                                       {isKommandomitglied &&

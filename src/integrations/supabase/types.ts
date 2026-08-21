@@ -84,6 +84,7 @@ export type Database = {
           jahr: number
           meeting_decision_id: string | null
           meeting_id: string | null
+          nur_kommando: boolean
           order_id: string | null
           pdf_generated_at: string | null
           pdf_url: string | null
@@ -117,6 +118,7 @@ export type Database = {
           jahr?: number
           meeting_decision_id?: string | null
           meeting_id?: string | null
+          nur_kommando?: boolean
           order_id?: string | null
           pdf_generated_at?: string | null
           pdf_url?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           jahr?: number
           meeting_decision_id?: string | null
           meeting_id?: string | null
+          nur_kommando?: boolean
           order_id?: string | null
           pdf_generated_at?: string | null
           pdf_url?: string | null

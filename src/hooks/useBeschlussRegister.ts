@@ -35,6 +35,8 @@ export interface BeschlussRegister {
   hebt_auf_id: string | null;
   aufgehoben_am: string | null;
   aufhebung_notiz: string | null;
+  // Sichtbarkeit
+  nur_kommando: boolean;
   // Joined fields
   ersteller_name?: string;
   genehmiger_name?: string;
@@ -86,6 +88,11 @@ export function useBeschlussRegister() {
   const hasKommandomitgliedFunction = effectiveHasKommandomitgliedFunction || profileFunctionsLower.includes('kommandomitglied');
   const canManage = isAdmin || isKommandant || hasSchriftfuehrerFunction;
   const canCreate = canManage || hasKommandomitgliedFunction;
+  
+  // Ist Kommandomitglied (für nur_kommando Filter)
+  const istKommandomitglied = isAdmin || isKommandant || hasSchriftfuehrerFunction || hasKommandomitgliedFunction ||
+    ['kassier', 'bereichsleiter'].includes(profile?.role || '') ||
+    profileFunctionsLower.includes('erweitertes_kommando');
 
   const fetchBeschluesse = useCallback(async () => {
     if (!supabase || !user) return;
@@ -701,6 +708,36 @@ export function useBeschlussRegister() {
     (!b.gueltig_bis || new Date(b.gueltig_bis) >= new Date())
   );
 
+  // Gefilterte Beschlüsse (nur_kommando für Nicht-Kommandomitglieder ausblenden)
+  const sichtbareBeschluesse = istKommandomitglied 
+    ? beschluesse 
+    : beschluesse.filter(b => !b.nur_kommando);
+
+  // Funktion zum Aktualisieren von nur_kommando
+  const updateNurKommando = useCallback(async (beschlussId: string, nurKommando: boolean) => {
+    if (!supabase || !user) return { error: new Error('Nicht authentifiziert') };
+    if (!isAdmin && !isKommandant) return { error: new Error('Keine Berechtigung') };
+
+    try {
+      const { error: updateError } = await supabase
+        .from('beschluss_register')
+        .update({ nur_kommando: nurKommando })
+        .eq('id', beschlussId);
+
+      if (updateError) throw updateError;
+
+      // Lokalen State aktualisieren
+      setBeschluesse(prev => prev.map(b => 
+        b.id === beschlussId ? { ...b, nur_kommando: nurKommando } : b
+      ));
+
+      return { error: null };
+    } catch (err) {
+      console.error('Error updating nur_kommando:', err);
+      return { error: err as Error };
+    }
+  }, [user, isAdmin, isKommandant]);
+
   // Prüfe ob Beschluss gültig ist
   const isBeschlussGueltig = useCallback((beschlussId: string): boolean => {
     const b = beschluesse.find(x => x.id === beschlussId);
@@ -711,19 +748,24 @@ export function useBeschlussRegister() {
   }, [beschluesse]);
 
   return {
-    beschluesse,
+    beschluesse: sichtbareBeschluesse,
+    alleBeschluesse: beschluesse,
     gueltigeBeschluesse,
     loading,
     error,
     stats,
     canManage,
     canCreate,
+    istKommandomitglied,
+    isAdmin,
+    isKommandant,
     fetchBeschluesse,
     generateBeschlussNummer,
     generateBeschlussNummerForYear,
     createBeschluss,
     createHistorischenBeschluss,
     updateBeschluss,
+    updateNurKommando,
     fetchHistorie,
     setPdfUrl,
     aufhebenBeschluss,
