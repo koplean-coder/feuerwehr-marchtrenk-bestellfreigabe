@@ -98,6 +98,7 @@ export default function Tasks() {
         .from('todo_tasks')
         .select('*', { count: 'exact', head: true })
         .eq('is_completed', false)
+        .eq('is_deleted', false)
         .or(myTasksFilter)
         .or(
           `and(is_in_my_day.eq.true,my_day_date.eq.${today}),due_date.eq.${today},due_date.lt.${today},and(assigned_to.eq.${profile.id},due_date.is.null)`
@@ -109,6 +110,7 @@ export default function Tasks() {
         .select('*', { count: 'exact', head: true })
         .eq('is_important', true)
         .eq('is_completed', false)
+        .eq('is_deleted', false)
         .or(myTasksFilter);
 
       // Planned count - only MY tasks
@@ -117,6 +119,7 @@ export default function Tasks() {
         .select('*', { count: 'exact', head: true })
         .not('due_date', 'is', null)
         .eq('is_completed', false)
+        .eq('is_deleted', false)
         .or(myTasksFilter);
 
       // Assigned to me count
@@ -124,7 +127,8 @@ export default function Tasks() {
         .from('todo_tasks')
         .select('*', { count: 'exact', head: true })
         .eq('assigned_to', profile.id)
-        .eq('is_completed', false);
+        .eq('is_completed', false)
+        .eq('is_deleted', false);
 
       // All tasks count - only MY tasks (excluding deleted)
       const { count: allCount } = await supabase
