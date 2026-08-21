@@ -680,68 +680,71 @@ export function useMeetingDetail(meetingId: string | undefined) {
       // Keine canManage-Prüfung hier - die Übernahme soll automatisch passieren
       if (meetingData.status !== 'abgeschlossen') {
         try {
-          // Finde ALLE abgeschlossenen Sitzungen (unabhängig vom Typ)
-          // Vertagte Punkte sind personenbezogen und sollten typ-übergreifend übernommen werden
+          // Finde alle abgeschlossenen Sitzungen des GLEICHEN TYPS
           const { data: closedMeetings } = await supabase
             .from('meetings')
             .select('id, meeting_type, meeting_number')
+            .eq('meeting_type', meetingData.meeting_type)
             .eq('status', 'abgeschlossen')
             .neq('id', meetingId);
 
           console.log('[Auto-Übernahme] Aktuelle Sitzung:', meetingId, 'Typ:', meetingData.meeting_type);
-          console.log('[Auto-Übernahme] Abgeschlossene Sitzungen gefunden:', closedMeetings?.length, closedMeetings);
+          console.log('[Auto-Übernahme] Abgeschlossene Sitzungen gleichen Typs:', closedMeetings?.length, closedMeetings);
 
           if (closedMeetings && closedMeetings.length > 0) {
             const closedMeetingIds = closedMeetings.map(m => m.id);
 
-            // Finde vertagte Punkte (traffic_light = 'rot' ODER status = 'vertagt') aus diesen Sitzungen
-            const { data: deferredItems, error: deferredError } = await supabase
+            // Finde ALLE Agenda-Items aus diesen Sitzungen
+            const { data: allItems, error: itemsError } = await supabase
               .from('meeting_agenda_items')
               .select('*')
               .in('meeting_id', closedMeetingIds);
 
-            console.log('[Auto-Übernahme] Alle Agenda-Items aus abgeschlossenen Sitzungen:', deferredItems?.length);
-            if (deferredError) console.error('[Auto-Übernahme] Fehler:', deferredError);
+            console.log('[Auto-Übernahme] Alle Items aus abgeschlossenen Sitzungen:', allItems?.length);
+            if (itemsError) console.error('[Auto-Übernahme] Fehler beim Laden:', itemsError);
 
             // Filtere auf rot/vertagt
-            const redOrDeferredItems = (deferredItems ?? []).filter(
+            const redOrDeferredItems = (allItems ?? []).filter(
               item => item.traffic_light === 'rot' || item.status === 'vertagt'
             );
-            console.log('[Auto-Übernahme] Rote/vertagte Punkte:', redOrDeferredItems.length, redOrDeferredItems.map(i => ({ title: i.title, traffic_light: i.traffic_light, status: i.status, deferred_to: i.deferred_to_meeting_id })));
+            console.log('[Auto-Übernahme] Rote/vertagte Punkte:', redOrDeferredItems.length, 
+              redOrDeferredItems.map(i => ({ 
+                title: i.title, 
+                traffic_light: i.traffic_light, 
+                status: i.status, 
+                deferred_to: i.deferred_to_meeting_id 
+              })));
 
             if (redOrDeferredItems.length > 0) {
               // Prüfe welche Punkte noch nicht in dieser Sitzung sind
               const existingTitles = new Set(
                 (agendaData ?? []).map(a => a.title.toLowerCase())
               );
-              console.log('[Auto-Übernahme] Bereits existierende Titel in dieser Sitzung:', [...existingTitles]);
+              console.log('[Auto-Übernahme] Bereits existierende Titel:', [...existingTitles]);
 
               // Filtere Punkte die noch nicht übernommen wurden
               const itemsToInsert = redOrDeferredItems.filter(item => {
-                // Zeigt deferred_to_meeting_id bereits auf diese Sitzung? Dann wurde er schon übertragen
+                // Zeigt deferred_to_meeting_id bereits auf diese Sitzung?
                 if (item.deferred_to_meeting_id === meetingId) {
-                  console.log('[Auto-Übernahme] Überspringe (bereits auf diese Sitzung verweisend):', item.title);
+                  console.log('[Auto-Übernahme] Überspringe (verweist auf diese Sitzung):', item.title);
                   return false;
                 }
-                // Titel existiert bereits in dieser Sitzung?
+                // Titel existiert bereits?
                 if (existingTitles.has(item.title.toLowerCase())) {
-                  console.log('[Auto-Übernahme] Überspringe (Titel existiert bereits):', item.title);
+                  console.log('[Auto-Übernahme] Überspringe (Titel existiert):', item.title);
                   return false;
                 }
-                // Wurde dieser Punkt bereits in eine ANDERE offene Sitzung übertragen?
-                // Wir prüfen das über deferred_to_meeting_id - wenn es gesetzt ist und nicht auf eine
-                // abgeschlossene Sitzung zeigt, wurde er bereits woanders hin übertragen
+                // Wurde bereits zu einer ANDEREN nicht-abgeschlossenen Sitzung übertragen?
                 if (item.deferred_to_meeting_id && !closedMeetingIds.includes(item.deferred_to_meeting_id)) {
-                  console.log('[Auto-Übernahme] Überspringe (bereits zu anderer Sitzung übertragen):', item.title, '-> ', item.deferred_to_meeting_id);
+                  console.log('[Auto-Übernahme] Überspringe (zu anderer Sitzung übertragen):', item.title);
                   return false;
                 }
                 return true;
               });
 
-              console.log('[Auto-Übernahme] Zu übernehmende Punkte:', itemsToInsert.length, itemsToInsert.map(i => i.title));
+              console.log('[Auto-Übernahme] Punkte zum Übernehmen:', itemsToInsert.length, itemsToInsert.map(i => i.title));
 
               if (itemsToInsert.length > 0) {
-                // Füge die vertagten Punkte in diese Sitzung ein
                 const newItems = itemsToInsert.map((item, idx) => ({
                   meeting_id: meetingId,
                   title: item.title,
@@ -763,9 +766,8 @@ export function useMeetingDetail(meetingId: string | undefined) {
                 if (insertError) {
                   console.error('[Auto-Übernahme] Insert Fehler:', insertError);
                 } else {
-                  console.log('[Auto-Übernahme] Erfolgreich eingefügt:', newItems.length, 'Punkte');
+                  console.log('[Auto-Übernahme] Erfolgreich übernommen:', newItems.length);
 
-                  // Aktualisiere die Original-Punkte
                   for (const item of itemsToInsert) {
                     await supabase
                       .from('meeting_agenda_items')
@@ -776,7 +778,6 @@ export function useMeetingDetail(meetingId: string | undefined) {
                       .eq('id', item.id);
                   }
 
-                  // Lade die Agenda-Items neu
                   const { data: updatedAgendaData } = await supabase
                     .from('meeting_agenda_items')
                     .select('*')
@@ -1884,20 +1885,24 @@ export function useMeetingDetail(meetingId: string | undefined) {
 
       if (closeError) throw closeError;
 
-      // 2. Generate new meeting number
+      // 2. Generate new meeting number with correct prefix
+      const prefix = meeting.meeting_type === 'kommandositzung' ? 'K' : 'EK';
       const year = new Date(nextMeetingDate).getFullYear();
       const { data: existingMeetings } = await supabase
         .from('meetings')
         .select('meeting_number')
-        .eq('meeting_type', meeting.meeting_type)
-        .ilike('meeting_number', `${year}-%`);
+        .eq('meeting_type', meeting.meeting_type);
 
+      // Parse existing numbers - handle both "K-2026-01" and "2026-01" formats
       const existingNumbers = (existingMeetings ?? []).map(m => {
         const parts = m.meeting_number.split('-');
-        return parseInt(parts[1]) || 0;
+        // If format is "K-2026-01" or "EK-2026-01", take the last part
+        // If format is "2026-01", take the second part
+        const numPart = parts.length === 3 ? parts[2] : parts[1];
+        return parseInt(numPart) || 0;
       });
       const nextNumber = Math.max(0, ...existingNumbers) + 1;
-      const newMeetingNumber = `${year}-${String(nextNumber).padStart(2, '0')}`;
+      const newMeetingNumber = `${prefix}-${year}-${String(nextNumber).padStart(2, '0')}`;
 
       // 3. Create new meeting
       const { data: newMeeting, error: createError } = await supabase

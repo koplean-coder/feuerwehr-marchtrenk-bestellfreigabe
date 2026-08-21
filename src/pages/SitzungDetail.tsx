@@ -576,13 +576,15 @@ export default function SitzungDetail() {
 
   // Check if current user can delete/edit a specific item
   const canUserEditItem = useCallback((item: MeetingAgendaItem): boolean => {
+    // NIEMAND kann bei abgeschlossenen Sitzungen bearbeiten
+    if (meeting?.status === 'abgeschlossen') return false;
     // Kommandant/Admin can edit everything
     if (canManage) return true;
     // If deadline passed (locked), only canManage can edit
     if (isDeadlinePassed()) return false;
     // User can edit their own items
     return item.submitted_by === profile?.id;
-  }, [canManage, profile?.id, isDeadlinePassed]);
+  }, [canManage, profile?.id, isDeadlinePassed, meeting?.status]);
 
   // Load attachments when BANF modal opens
   useEffect(() => {
