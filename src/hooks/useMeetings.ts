@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimulation } from '@/contexts/SimulationContext';
+import { useSettings } from '@/hooks/useSettings';
 import type { Database } from '@/integrations/supabase/types';
 
 export type MeetingType = Database['public']['Enums']['meeting_type'];
@@ -168,6 +169,7 @@ interface InvitedMeetingInfo {
 export function useMeetings() {
   const { user } = useAuth();
   const { effectiveProfile, effectiveUserId, effectiveIsAdmin, effectiveIsKommandant } = useSimulation();
+  const { sitzungenViewRoles } = useSettings();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [invitedMeetings, setInvitedMeetings] = useState<InvitedMeetingInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,6 +177,10 @@ export function useMeetings() {
 
   // Use effective (simulated) profile for permission checks
   const effectiveFunctionsLower = effectiveProfile?.functions?.map(f => f.toLowerCase()) || [];
+  const effectiveRole = effectiveProfile?.role?.toLowerCase() || '';
+  
+  // Case-insensitive comparison for sitzungenViewRoles
+  const sitzungenViewRolesLower = sitzungenViewRoles.map(r => r.toLowerCase());
   
   const canManage = effectiveIsAdmin || 
                    effectiveIsKommandant || 
@@ -185,11 +191,19 @@ export function useMeetings() {
                    });
 
   // Check if user has general role-based access to a meeting type
-  // Case-insensitive function comparison - uses effective (simulated) profile
+  // Uses sitzungenViewRoles from Settings + case-insensitive comparison
   const hasRoleAccess = (meetingType: MeetingType) => {
     if (effectiveIsAdmin || effectiveIsKommandant) return true;
-    if (effectiveFunctionsLower.includes('kommandomitglied')) return true;
+    
+    // Check if user's role is in sitzungenViewRoles
+    if (effectiveRole && sitzungenViewRolesLower.includes(effectiveRole)) return true;
+    
+    // Check if any of user's functions is in sitzungenViewRoles
+    if (effectiveFunctionsLower.some(f => sitzungenViewRolesLower.includes(f))) return true;
+    
+    // Additional check for erweitertes_kommando meeting type
     if (meetingType === 'erweitertes_kommando' && effectiveFunctionsLower.includes('erweitertes_kommando')) return true;
+    
     return false;
   };
 

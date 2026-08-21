@@ -1,25 +1,43 @@
 {
-  "summary": "Simulation für alle Seiten aktivieren",
+  "summary": "Veranstaltungsplaner-Modul unter Formulare",
   "todos": [
     {
       "id": 1,
-      "description": "Pages korrigieren: Orders, Index, KassierOverview, etc.",
-      "files": [],
-      "status": "complete"
+      "description": "Phase 1: DB-Schema + Veranstaltungen + Checkliste + Zuständigkeiten + \"Meine Aufgaben\"",
+      "files": [
+        "supabase/migrations",
+        "src/hooks/useEventPlanner.ts",
+        "src/components/EventPlannerSection.tsx"
+      ],
+      "status": "pending"
     },
     {
       "id": 2,
-      "description": "Hooks korrigieren: useOrders, useKommandobeschluesse, etc.",
-      "files": [],
-      "status": "complete"
+      "description": "Phase 2: Vorlagen-System + Admin-Bereich (Organizer-Rechte) + Gantt-Ansicht",
+      "files": [
+        "src/components/settings/sections/",
+        "src/components/GanttView.tsx"
+      ],
+      "status": "pending"
     },
     {
       "id": 3,
-      "description": "Components korrigieren: CompactDashboard, Cards, etc.",
-      "files": [],
-      "status": "complete"
+      "description": "Phase 3: Kommentare + Datei-Anhänge + Aktivitätsprotokoll",
+      "files": [
+        "src/components/PlannerComments.tsx",
+        "src/hooks/usePlannerAttachments.ts"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "description": "Phase 4: Benachrichtigungen bei Zuweisung + Wiederkehrende Events + PDF-Export",
+      "files": [
+        "src/utils/generatePlannerPdf.ts"
+      ],
+      "status": "pending"
     }
   ],
-  "createdAt": "2026-08-16T11:18:47.726Z",
-  "updatedAt": "2026-08-16T11:29:35.377Z"
+  "createdAt": "2026-08-21T18:05:58.756Z",
+  "updatedAt": "2026-08-21T18:05:58.757Z"
 }
