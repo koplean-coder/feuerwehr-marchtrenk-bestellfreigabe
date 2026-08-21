@@ -691,24 +691,45 @@ export function useMeetingDetail(meetingId: string | undefined) {
           if (closedMeetings && closedMeetings.length > 0) {
             const closedMeetingIds = closedMeetings.map(m => m.id);
 
-            // Finde vertagte Punkte (traffic_light = 'rot') aus diesen Sitzungen
-            // die noch nicht in eine andere Sitzung übertragen wurden
+            // Finde vertagte Punkte (traffic_light = 'rot' ODER status = 'vertagt') aus diesen Sitzungen
+            // Wir prüfen NICHT mehr nur deferred_to_meeting_id = null, sondern ob der Punkt
+            // bereits in der aktuellen Sitzung existiert
             const { data: deferredItems } = await supabase
               .from('meeting_agenda_items')
               .select('*')
               .in('meeting_id', closedMeetingIds)
-              .eq('traffic_light', 'rot')
-              .is('deferred_to_meeting_id', null);
+              .or('traffic_light.eq.rot,status.eq.vertagt');
 
             if (deferredItems && deferredItems.length > 0) {
               // Prüfe welche Punkte noch nicht in dieser Sitzung sind
+              // Wir schauen auf deferred_from_meeting_id UND Titel-Match
+              const existingFromMeetingIds = new Set(
+                (agendaData ?? []).filter(a => a.deferred_from_meeting_id).map(a => a.deferred_from_meeting_id)
+              );
               const existingTitles = new Set(
-                (agendaData ?? []).filter(a => a.deferred_from_meeting_id).map(a => a.title.toLowerCase())
+                (agendaData ?? []).map(a => a.title.toLowerCase())
               );
 
-              const itemsToInsert = deferredItems.filter(
-                item => !existingTitles.has(item.title.toLowerCase())
-              );
+              // Filtere Punkte die:
+              // 1. Noch nicht als "von dieser Sitzung übernommen" markiert sind
+              // 2. Deren deferred_to_meeting_id nicht auf diese Sitzung zeigt
+              // 3. Deren Titel noch nicht in dieser Sitzung existiert
+              const itemsToInsert = deferredItems.filter(item => {
+                // Bereits von diesem Item übernommen?
+                if (existingFromMeetingIds.has(item.meeting_id)) {
+                  // Prüfe ob genau dieser Titel schon übernommen wurde
+                  const alreadyTransferred = (agendaData ?? []).some(
+                    a => a.deferred_from_meeting_id === item.meeting_id && 
+                         a.title.toLowerCase() === item.title.toLowerCase()
+                  );
+                  if (alreadyTransferred) return false;
+                }
+                // Zeigt deferred_to_meeting_id bereits auf diese Sitzung? Dann wurde er schon übertragen
+                if (item.deferred_to_meeting_id === meetingId) return false;
+                // Titel existiert bereits in dieser Sitzung?
+                if (existingTitles.has(item.title.toLowerCase())) return false;
+                return true;
+              });
 
               if (itemsToInsert.length > 0) {
                 // Füge die vertagten Punkte in diese Sitzung ein
