@@ -192,7 +192,8 @@ export default function SitzungDetail() {
     confirmBanfDecision,
     confirmCommandDecisionItem,
     calculateQuorum,
-    closeMeeting
+    closeMeeting,
+    fetchMeetingDetail
   } = useMeetingDetail(id);
 
   const { updateMeeting, deleteMeeting, canAccessMeeting, isInvitedToMeeting } = useMeetings();
