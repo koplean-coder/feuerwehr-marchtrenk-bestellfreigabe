@@ -1720,7 +1720,7 @@ export default function SitzungDetail() {
                   item.traffic_light === 'rot' ? 'bg-red-50 border-l-4 border-l-red-500' : ''}`
                   }>
 
-                          <span data-ev-id="ev_12b611934b" className="text-xs text-muted-foreground w-6">{item.sort_order || idx + 1}.</span>
+                          <span data-ev-id="ev_12b611934b" className="text-xs text-muted-foreground w-6">{idx + 1}.</span>
                           <div data-ev-id="ev_6f6f23293c" className="flex-1">
                             {editingAgendaItem === item.id ?
                       <div data-ev-id="ev_c0ce976929" className="flex flex-col gap-2">
