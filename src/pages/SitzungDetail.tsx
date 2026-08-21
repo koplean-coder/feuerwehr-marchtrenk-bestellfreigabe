@@ -1230,11 +1230,13 @@ export default function SitzungDetail() {
                 await fetchMeetingDetail(); // Refresh to update button state
               }
             }}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 ${
-            isDeadlinePassed() ? 'bg-amber-500 text-white hover:bg-amber-600' : 'bg-white/20 hover:bg-white/30'}`
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 font-medium ${
+            isDeadlinePassed() 
+              ? 'bg-red-500 text-white hover:bg-red-600' 
+              : 'bg-green-500 text-white hover:bg-green-600'}`
             }>
-                {isDeadlinePassed() ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                {isDeadlinePassed() ? 'Entsperren' : 'Sperren'}
+                {isDeadlinePassed() ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                {isDeadlinePassed() ? 'Gesperrt' : 'Offen'}
               </button>
               <button data-ev-id="ev_b454d69442"
             onClick={() => setActiveTab('abschluss')}
