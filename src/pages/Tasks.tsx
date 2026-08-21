@@ -4,6 +4,7 @@ import { useTodoLists, type SmartListType } from '@/hooks/useTodoLists';
 import { useTodoTasks } from '@/hooks/useTodoTasks';
 import { useTodoSettings } from '@/hooks/useTodoSettings';
 import { useProfiles } from '@/hooks/useProfiles';
+import { useTodoTags, type TodoTag } from '@/hooks/useTodoTags';
 import { Layout } from '@/components/Layout';
 import { TodoSidebar, TodoTaskList, TodoTaskDetail, TodoShareModal } from '@/components/todo';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,7 @@ export default function Tasks() {
   const { canViewTodo, loading: settingsLoading } = useTodoSettings();
   const { lists, groups, favorites, loading: listsLoading, createList, updateList, deleteList, createGroup, updateGroup, deleteGroup, shareGroup, unshareGroup, updateGroupSharePermission, shareList, unshareList, updateSharePermission, refresh: refreshLists, isFavorite, toggleFavorite } = useTodoLists();
   const { profiles } = useProfiles();
+  const { tags, createTag, addTagToTask, removeTagFromTask, getTaskTags } = useTodoTags();
 
   // Selection state
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
@@ -22,6 +24,7 @@ export default function Tasks() {
   const [shareModalListId, setShareModalListId] = useState<string | null>(null);
   const [shareModalGroupId, setShareModalGroupId] = useState<string | null>(null);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [selectedTaskTags, setSelectedTaskTags] = useState<TodoTag[]>([]);
 
   // Determine current filter for tasks
   const taskFilters = selectedSmartList ?
@@ -197,6 +200,15 @@ export default function Tasks() {
 
   // Get selected task
   const selectedTask = tasks.find((t) => t.id === selectedTaskId);
+
+  // Load tags for selected task
+  useEffect(() => {
+    if (selectedTaskId) {
+      getTaskTags(selectedTaskId).then(setSelectedTaskTags);
+    } else {
+      setSelectedTaskTags([]);
+    }
+  }, [selectedTaskId, getTaskTags]);
 
   // Get current list info
   const currentList = selectedListId ? lists.find((l) => l.id === selectedListId) : null;
@@ -509,7 +521,21 @@ export default function Tasks() {
               onUpdateTaskSharePermission={(userId, permission) => updateTaskSharePermission(selectedTask.id, userId, permission)}
               onFetchComments={fetchComments}
               onAddComment={addComment}
-              onMarkCommentsAsRead={markCommentsAsRead} />
+              onMarkCommentsAsRead={markCommentsAsRead}
+              // Tags
+              tags={tags}
+              taskTags={selectedTaskTags}
+              onAddTagToTask={async (tagId) => {
+                await addTagToTask(selectedTask.id, tagId);
+                const updated = await getTaskTags(selectedTask.id);
+                setSelectedTaskTags(updated);
+              }}
+              onRemoveTagFromTask={async (tagId) => {
+                await removeTagFromTask(selectedTask.id, tagId);
+                const updated = await getTaskTags(selectedTask.id);
+                setSelectedTaskTags(updated);
+              }}
+              onCreateTag={createTag} />
           );
         })()
 

@@ -20,8 +20,17 @@ import {
   MessageCircle,
   Send,
   Flag,
-  RotateCcw } from
+  RotateCcw,
+  Tag,
+  Upload,
+  FileText,
+  Image,
+  File,
+  Download } from
 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import type { TodoTag } from '@/hooks/useTodoTags';
+import { TAG_COLORS } from '@/hooks/useTodoTags';
 
 // Priority levels
 const PRIORITY_LEVELS = [
@@ -60,6 +69,12 @@ interface TodoTaskDetailProps {
   onFetchComments?: (taskId: string) => Promise<TodoTaskCommentWithUser[]>;
   onAddComment?: (taskId: string, content: string) => Promise<boolean>;
   onMarkCommentsAsRead?: (taskId: string) => Promise<boolean>;
+  // Tag functions
+  tags?: TodoTag[];
+  taskTags?: TodoTag[];
+  onAddTagToTask?: (tagId: string) => void;
+  onRemoveTagFromTask?: (tagId: string) => void;
+  onCreateTag?: (name: string, color: string) => Promise<TodoTag | null>;
 }
 
 export function TodoTaskDetail({
@@ -87,7 +102,13 @@ export function TodoTaskDetail({
   onUpdateTaskSharePermission,
   onFetchComments,
   onAddComment,
-  onMarkCommentsAsRead
+  onMarkCommentsAsRead,
+  // Tags
+  tags = [],
+  taskTags = [],
+  onAddTagToTask,
+  onRemoveTagFromTask,
+  onCreateTag
 }: TodoTaskDetailProps) {
   // Use assignableProfiles for assignment dropdown, fallback to all profiles
   const profilesForAssignment = assignableProfiles ?? profiles;
@@ -113,6 +134,15 @@ export function TodoTaskDetail({
   const [shareSearchQuery, setShareSearchQuery] = useState('');
   const [selectedSharePermission, setSelectedSharePermission] = useState<'view' | 'edit'>('edit');
   const [showPriorityPicker, setShowPriorityPicker] = useState(false);
+
+  // Tags state
+  const [showTagPicker, setShowTagPicker] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
+  const [showNewTagForm, setShowNewTagForm] = useState(false);
+
+  // Attachment state
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
 
   // Comments state
   const [comments, setComments] = useState<TodoTaskCommentWithUser[]>([]);
@@ -752,6 +782,217 @@ export function TodoTaskDetail({
                   <span data-ev-id="ev_61872820fc" className={level.color}>{level.label}</span>
                 </button>
               )}
+            </div>
+            }
+          </div>
+
+          {/* Tags */}
+          <div data-ev-id="ev_tags_section" className="relative">
+            <button data-ev-id="ev_tags_btn"
+            onClick={() => setShowTagPicker(!showTagPicker)}
+            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-600 ${
+            taskTags.length > 0 ? 'text-violet-500' : 'text-slate-600 dark:text-slate-300'}`
+            }>
+              <Tag size={20} />
+              <span data-ev-id="ev_tags_label" className="flex-1 text-left">
+                {taskTags.length > 0 ? `${taskTags.length} Tag${taskTags.length > 1 ? 's' : ''}` : 'Tags hinzufügen'}
+              </span>
+            </button>
+
+            {/* Tags Pills - always show if there are tags */}
+            {taskTags.length > 0 &&
+            <div data-ev-id="ev_tags_pills" className="px-4 pb-2 flex flex-wrap gap-1.5">
+              {taskTags.map((tag) =>
+              <span
+                key={tag.id}
+                data-ev-id={`ev_tag_pill_${tag.id}`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                style={{ backgroundColor: tag.color }}>
+                {tag.name}
+                {canEditTask && onRemoveTagFromTask &&
+                <button data-ev-id="ev_d8ccb3655c"
+                onClick={(e) => {e.stopPropagation();onRemoveTagFromTask(tag.id);}}
+                className="ml-0.5 hover:bg-white/20 rounded-full p-0.5">
+                  <X size={10} />
+                </button>
+                }
+              </span>
+              )}
+            </div>
+            }
+
+            {showTagPicker &&
+            <div data-ev-id="ev_tags_picker" className="absolute left-4 right-4 top-full mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-slate-200 dark:border-slate-600 p-3 z-20 max-h-64 overflow-y-auto">
+              {/* Existing tags */}
+              {tags.length > 0 && !showNewTagForm &&
+              <div data-ev-id="ev_existing_tags" className="space-y-1 mb-2">
+                {tags.map((tag) => {
+                  const isSelected = taskTags.some((t) => t.id === tag.id);
+                  return (
+                    <button
+                      key={tag.id}
+                      data-ev-id={`ev_tag_option_${tag.id}`}
+                      onClick={() => {
+                        if (isSelected) {
+                          onRemoveTagFromTask?.(tag.id);
+                        } else {
+                          onAddTagToTask?.(tag.id);
+                        }
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-slate-100 dark:hover:bg-slate-600 ${
+                      isSelected ? 'bg-slate-100 dark:bg-slate-600' : ''}`}>
+                      <span data-ev-id="ev_05cb51d13f"
+                      className="w-4 h-4 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: tag.color }} />
+                      <span data-ev-id="ev_ba06766296" className="flex-1 text-sm text-slate-700 dark:text-slate-200 truncate">{tag.name}</span>
+                      {isSelected &&
+                      <CheckCircle2 size={16} className="text-green-500" />
+                      }
+                    </button>);
+
+                })}
+              </div>
+              }
+
+              {/* Create new tag */}
+              {showNewTagForm ?
+              <div data-ev-id="ev_new_tag_form" className="space-y-2">
+                <input data-ev-id="ev_1e3de462f6"
+                type="text"
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                placeholder="Tag-Name..."
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-600 text-slate-900 dark:text-white"
+                autoFocus />
+                <div data-ev-id="ev_tag_colors" className="flex flex-wrap gap-1.5">
+                  {TAG_COLORS.map((color) =>
+                  <button data-ev-id="ev_972c5ea591"
+                  key={color}
+                  onClick={() => setNewTagColor(color)}
+                  className={`w-6 h-6 rounded-full ${
+                  newTagColor === color ? 'ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-slate-700' : ''}`}
+                  style={{ backgroundColor: color }} />
+                  )}
+                </div>
+                <div data-ev-id="ev_tag_form_actions" className="flex gap-2">
+                  <button data-ev-id="ev_07849e3915"
+                  onClick={() => {setShowNewTagForm(false);setNewTagName('');}}
+                  className="flex-1 px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600">
+                    Abbrechen
+                  </button>
+                  <button data-ev-id="ev_b2b34825ba"
+                  onClick={async () => {
+                    if (newTagName.trim() && onCreateTag) {
+                      const created = await onCreateTag(newTagName.trim(), newTagColor);
+                      if (created) {
+                        onAddTagToTask?.(created.id);
+                        setNewTagName('');
+                        setShowNewTagForm(false);
+                      }
+                    }
+                  }}
+                  disabled={!newTagName.trim()}
+                  className="flex-1 px-3 py-1.5 text-sm bg-violet-500 text-white rounded-lg hover:bg-violet-600 disabled:opacity-50">
+                    Erstellen
+                  </button>
+                </div>
+              </div> :
+
+              <button
+                data-ev-id="ev_create_tag_btn"
+                onClick={() => setShowNewTagForm(true)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-violet-500 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg">
+                <Plus size={16} />
+                Neuen Tag erstellen
+              </button>
+              }
+            </div>
+            }
+          </div>
+
+          {/* Attachment */}
+          <div data-ev-id="ev_attachment_section" className="relative">
+            <div data-ev-id="ev_attachment_header" className="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-300">
+              <Paperclip size={20} />
+              <span data-ev-id="ev_5353bc65b5" className="flex-1">Anhang</span>
+            </div>
+            
+            {task.attachment_url ?
+            <div data-ev-id="ev_attachment_preview" className="mx-4 mb-3 p-3 bg-slate-50 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600">
+              <div data-ev-id="ev_3f34cf13ff" className="flex items-center gap-3">
+                {task.attachment_name?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ?
+                <Image size={20} className="text-blue-500 flex-shrink-0" /> :
+                task.attachment_name?.match(/\.pdf$/i) ?
+                <FileText size={20} className="text-red-500 flex-shrink-0" /> :
+                <File size={20} className="text-slate-500 flex-shrink-0" />
+                }
+                <span data-ev-id="ev_a0aa8430d7" className="flex-1 text-sm text-slate-700 dark:text-slate-200 truncate">
+                  {task.attachment_name || 'Anhang'}
+                </span>
+                <button data-ev-id="ev_f9e1bb459d"
+                onClick={async () => {
+                  if (!supabase || !task.attachment_url) return;
+                  const { data } = await supabase.storage.
+                  from('task-attachments').
+                  createSignedUrl(task.attachment_url, 3600);
+                  if (data?.signedUrl) {
+                    window.open(data.signedUrl, '_blank');
+                  }
+                }}
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-500 hover:text-blue-500">
+                  <Download size={16} />
+                </button>
+                {canEditTask &&
+                <button data-ev-id="ev_9bf255c092"
+                onClick={() => onUpdateTask({ attachment_url: null, attachment_name: null })}
+                className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-500 hover:text-red-500">
+                  <Trash2 size={16} />
+                </button>
+                }
+              </div>
+            </div> :
+
+            canEditTask &&
+            <div data-ev-id="ev_attachment_upload" className="mx-4 mb-3">
+              <label data-ev-id="ev_1f08f0e2fb" className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                <input data-ev-id="ev_3e0905b22b"
+                type="file"
+                className="hidden"
+                disabled={uploadingAttachment}
+                onChange={async (e) => {
+                  if (!supabase || !e.target.files?.length) return;
+                  const file = e.target.files[0];
+                  const filePath = `${task.id}/${Date.now()}_${file.name}`;
+
+                  setUploadingAttachment(true);
+                  try {
+                    const { error: uploadError } = await supabase.storage.
+                    from('task-attachments').
+                    upload(filePath, file);
+
+                    if (uploadError) throw uploadError;
+
+                    onUpdateTask({
+                      attachment_url: filePath,
+                      attachment_name: file.name
+                    });
+                  } catch (err) {
+                    console.error('Upload error:', err);
+                    alert('Fehler beim Hochladen der Datei.');
+                  } finally {
+                    setUploadingAttachment(false);
+                    e.target.value = '';
+                  }
+                }} />
+                {uploadingAttachment ?
+                <span data-ev-id="ev_3077e07bf9" className="text-sm text-slate-500">Wird hochgeladen...</span> :
+
+                <>
+                  <Upload size={18} className="text-slate-400" />
+                  <span data-ev-id="ev_c1c5191e27" className="text-sm text-slate-500">Datei hochladen</span>
+                </>
+                }
+              </label>
             </div>
             }
           </div>

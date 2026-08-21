@@ -1,37 +1,31 @@
 {
-  "summary": "Todo-Liste Verbesserungen",
+  "summary": "Tags & Anhänge für Todo-Tasks implementieren",
   "todos": [
     {
       "id": 1,
-      "description": "Überfällige Tasks hervorheben + Sortierung reparieren",
-      "files": [],
+      "description": "Hook für Tags erstellen (useTodoTags)",
+      "files": [
+        "src/hooks/useTodoTags.ts"
+      ],
       "status": "complete"
     },
     {
       "id": 2,
-      "description": "Mehrstufige Priorität + Papierkorb/Archiv (DB + UI)",
-      "files": [],
-      "status": "complete"
-    },
-    {
-      "id": 3,
-      "description": "Tags/Labels System (DB + UI)",
-      "files": [],
+      "description": "Tags UI in TodoTaskDetail einbauen",
+      "files": [
+        "src/components/todo/TodoTaskDetail.tsx"
+      ],
       "status": "active"
     },
     {
-      "id": 4,
-      "description": "Datei-Anhänge UI + Heute/Morgen/Überfällig Filter",
-      "files": [],
-      "status": "pending"
-    },
-    {
-      "id": 5,
-      "description": "Smart List Counts aktualisieren + Feinschliff",
-      "files": [],
+      "id": 3,
+      "description": "Datei-Anhänge UI in TodoTaskDetail einbauen",
+      "files": [
+        "src/components/todo/TodoTaskDetail.tsx"
+      ],
       "status": "pending"
     }
   ],
-  "createdAt": "2026-08-21T21:59:56.047Z",
-  "updatedAt": "2026-08-21T22:13:43.622Z"
+  "createdAt": "2026-08-21T23:26:45.350Z",
+  "updatedAt": "2026-08-21T23:27:35.956Z"
 }
