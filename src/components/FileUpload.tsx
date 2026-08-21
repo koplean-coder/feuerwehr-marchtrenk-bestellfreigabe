@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, X, File as FileIcon, FileText, Image, AlertCircle, ClipboardPaste } from 'lucide-react';
+import { Upload, X, File as FileIcon, FileText, Image, AlertCircle, Info } from 'lucide-react';
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 const MAX_FILES = 5;
@@ -63,7 +63,7 @@ export function FileUpload({ files, onChange, disabled = false }: FileUploadProp
 
   const addFiles = useCallback((newFiles: FileList | File[]) => {
     setError(null);
-    
+
     // WICHTIG: Dateien sofort in ein neues Array kopieren
     const fileArray: File[] = [];
     for (let i = 0; i < newFiles.length; i++) {
@@ -78,7 +78,7 @@ export function FileUpload({ files, onChange, disabled = false }: FileUploadProp
 
     const validFiles: UploadedFile[] = [];
     const baseTime = Date.now();
-    
+
     for (let i = 0; i < fileArray.length; i++) {
       const file = fileArray[i];
       const validationError = validateFile(file);
@@ -153,47 +153,8 @@ export function FileUpload({ files, onChange, disabled = false }: FileUploadProp
     }
   }, [disabled]);
 
-  // Screenshot aus Zwischenablage einfügen
-  const handlePasteFromClipboard = useCallback(async () => {
-    if (disabled) return;
-    setError(null);
-
-    try {
-      // Clipboard API verwenden
-      const clipboardItems = await navigator.clipboard.read();
-
-      for (const item of clipboardItems) {
-        // Nach Bild-Typen suchen
-        const imageType = item.types.find((type) => type.startsWith('image/'));
-
-        if (imageType) {
-          const blob = await item.getType(imageType);
-
-          // Dateiname mit Zeitstempel generieren
-          const now = new Date();
-          const timestamp = now.toISOString().
-          replace(/T/, '_').
-          replace(/:/g, '-').
-          replace(/\..+/, '');
-          const extension = imageType.split('/')[1] || 'png';
-          const fileName = `Screenshot_${timestamp}.${extension}`;
-
-          // Blob zu File konvertieren
-          const file = new File([blob], fileName, { type: imageType });
-
-          // Über existierende addFiles Funktion hinzufügen
-          addFiles([file]);
-          return;
-        }
-      }
-
-      setError('Kein Bild in der Zwischenablage gefunden. Machen Sie zuerst einen Screenshot (z.B. mit Windows+Shift+S).');
-    } catch (err) {
-      console.error('Clipboard error:', err);
-      // Fallback: Eventuell keine Berechtigung oder leere Zwischenablage
-      setError('Konnte nicht auf die Zwischenablage zugreifen. Bitte erlauben Sie den Zugriff oder verwenden Sie Strg+V.');
-    }
-  }, [disabled, addFiles]);
+  // Hinweis für Screenshot-Einfügen anzeigen
+  const [showPasteHint, setShowPasteHint] = useState(false);
 
   // Paste Event Handler für Strg+V
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
@@ -264,25 +225,29 @@ export function FileUpload({ files, onChange, disabled = false }: FileUploadProp
         </p>
       </div>
       
-      {/* Screenshot Button */}
-      <button data-ev-id="ev_62bbf14ced"
-      type="button"
-      onClick={(e) => {
-        e.preventDefault();
-        handlePasteFromClipboard();
-      }}
-      disabled={disabled}
-      className={`
-          flex items-center justify-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm font-medium transition-colors
-          ${disabled ?
-      'bg-muted/50 text-muted-foreground cursor-not-allowed' :
-      'bg-card hover:bg-muted text-foreground hover:border-primary/50'}
-        `
+      {/* Screenshot Hinweis */}
+      {!disabled &&
+      <div data-ev-id="ev_62bbf14ced" className="relative">
+          <button data-ev-id="ev_6046489b35"
+        type="button"
+        onClick={() => setShowPasteHint(!showPasteHint)}
+        className="flex items-center justify-center gap-2 px-4 py-2.5 border border-border rounded-lg text-sm font-medium transition-colors bg-card hover:bg-muted text-foreground hover:border-primary/50"
+        title="Tipp: Screenshot mit Strg+V einfügen">
+            <Info className="w-4 h-4" />
+            Screenshot einfügen
+          </button>
+          {showPasteHint &&
+        <div data-ev-id="ev_9245c143a8" className="absolute top-full left-0 right-0 mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 z-10">
+              <p data-ev-id="ev_7d748d90d1" className="font-medium mb-1">💡 So fügen Sie einen Screenshot ein:</p>
+              <ol data-ev-id="ev_1cf42f5353" className="list-decimal ml-4 space-y-1">
+                <li data-ev-id="ev_e8cf9c9e69">Screenshot erstellen (Windows+Shift+S oder Druck-Taste)</li>
+                <li data-ev-id="ev_0f53b30867">In diesen Bereich klicken</li>
+                <li data-ev-id="ev_76e7dee2c9"><kbd data-ev-id="ev_9fdd77ba1a" className="px-1.5 py-0.5 bg-white border rounded text-xs">Strg</kbd> + <kbd data-ev-id="ev_5ffd322291" className="px-1.5 py-0.5 bg-white border rounded text-xs">V</kbd> drücken</li>
+              </ol>
+            </div>
+        }
+        </div>
       }
-      title="Screenshot aus Zwischenablage einfügen (oder Strg+V)">
-        <ClipboardPaste className="w-4 h-4" />
-        Screenshot einfügen
-      </button>
 
       {/* Error Message */}
       {error &&
