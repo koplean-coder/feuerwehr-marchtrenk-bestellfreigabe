@@ -596,21 +596,16 @@ export default function Beschluesse() {
                         <table data-ev-id={`ev_table_${year}`} className="w-full">
                           <thead data-ev-id={`ev_thead_${year}`}>
                             <tr data-ev-id={`ev_header_row_${year}`} className="bg-gray-50 text-left text-sm text-muted-foreground">
-                              <th data-ev-id={`ev_th_nr_${year}`} className="px-6 py-3 font-medium">Nr.</th>
-                              <th data-ev-id={`ev_th_titel_${year}`} className="px-6 py-3 font-medium">Titel</th>
-                              <th data-ev-id={`ev_th_typ_${year}`} className="px-6 py-3 font-medium">Typ</th>
-                              <th data-ev-id={`ev_th_status_${year}`} className="px-6 py-3 font-medium">Status</th>
-                              <th data-ev-id={`ev_th_abstimmung_${year}`} className="px-6 py-3 font-medium text-center">Abstimmung</th>
-                              <th data-ev-id={`ev_th_datum_${year}`} className="px-6 py-3 font-medium">Datum</th>
-                              <th data-ev-id={`ev_th_aktion_${year}`} className="px-6 py-3 font-medium"></th>
+                              <th data-ev-id={`ev_th_nr_${year}`} className="px-6 py-3 font-medium w-32">Nr.</th>
+                              <th data-ev-id={`ev_th_beschluss_${year}`} className="px-6 py-3 font-medium">Beschluss</th>
+                              <th data-ev-id={`ev_th_datum_${year}`} className="px-6 py-3 font-medium w-32">Datum</th>
+                              <th data-ev-id={`ev_th_aktion_${year}`} className="px-6 py-3 font-medium w-20"></th>
                             </tr>
                           </thead>
                           <tbody data-ev-id={`ev_tbody_${year}`}>
                             {groupedByYear[year].map((beschluss) => {
                       const effStatus = getEffektiverStatus(beschluss);
-                      const statusConfig = STATUS_CONFIG[effStatus] || STATUS_CONFIG.offen;
-                      const typConfig = TYP_CONFIG[beschluss.typ] || TYP_CONFIG.sitzung;
-                      const StatusIcon = statusConfig.icon;
+                      const isGenehmigt = beschluss.status === 'genehmigt' || (beschluss.abstimmung_ja || 0) > (beschluss.abstimmung_nein || 0);
                       const baldAblaufend = isBaldAblaufend(beschluss);
 
                       return (
@@ -627,76 +622,24 @@ export default function Beschluesse() {
                                       {beschluss.beschluss_nummer}
                                     </span>
                                   </td>
-                                  <td data-ev-id={`ev_td_titel_${beschluss.id}`} className="px-6 py-4">
-                                    <div data-ev-id={`ev_titel_wrapper_${beschluss.id}`} className="max-w-xs">
-                                      <p data-ev-id={`ev_titel_${beschluss.id}`} className="font-medium text-foreground truncate">
-                                        {beschluss.titel}
+                                  <td data-ev-id={`ev_td_beschluss_${beschluss.id}`} className="px-6 py-4">
+                                    <p data-ev-id={`ev_beschluss_text_${beschluss.id}`} className="text-foreground">
+                                      {isGenehmigt ?
+                              <>Das Kommando beschließt, <span data-ev-id="ev_fe73d13763" className="font-medium">{beschluss.titel}</span> zuzustimmen.</> :
+
+                              <>Das Kommando hat <span data-ev-id="ev_6372a8ea6d" className="font-medium">{beschluss.titel}</span> abgelehnt.</>
+                              }
+                                    </p>
+                                    {beschluss.meeting_title &&
+                            <p data-ev-id={`ev_meeting_${beschluss.id}`} className="text-xs text-muted-foreground mt-1">
+                                        Sitzung: {beschluss.meeting_title}
                                       </p>
-                                      {beschluss.meeting_title &&
-                              <p data-ev-id={`ev_meeting_${beschluss.id}`} className="text-xs text-muted-foreground truncate">
-                                          Sitzung: {beschluss.meeting_title}
-                                        </p>
-                              }
-                                      {/* Verknüpfungs-Hinweise */}
-                                      {beschluss.aufgehoben_durch_nummer &&
-                              <p data-ev-id={`ev_aufg_durch_${beschluss.id}`} className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                          <Link2 className="w-3 h-3" />
-                                          Aufgehoben durch {beschluss.aufgehoben_durch_nummer}
-                                        </p>
-                              }
-                                      {beschluss.hebt_auf_nummer &&
-                              <p data-ev-id={`ev_hebt_auf_${beschluss.id}`} className="text-xs text-blue-600 mt-1 flex items-center gap-1">
-                                          <Link2 className="w-3 h-3" />
-                                          Ersetzt {beschluss.hebt_auf_nummer}
-                                        </p>
-                              }
-                                    </div>
-                                  </td>
-                                  <td data-ev-id={`ev_td_typ_${beschluss.id}`} className="px-6 py-4">
-                                    <div data-ev-id={`ev_typ_badges_${beschluss.id}`} className="flex flex-wrap gap-1">
-                                      <span data-ev-id={`ev_typ_badge_${beschluss.id}`} className={`px-2 py-1 text-xs rounded-full ${typConfig.color}`}>
-                                        {typConfig.label}
-                                      </span>
-                                      {beschluss.ist_historisch &&
-                              <span data-ev-id={`ev_historisch_badge_${beschluss.id}`} className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">
-                                          <BookOpen className="w-3 h-3 inline mr-1" />Historisch
-                                        </span>
-                              }
-                                    </div>
-                                  </td>
-                                  <td data-ev-id={`ev_td_status_${beschluss.id}`} className="px-6 py-4">
-                                    <div data-ev-id="ev_8c4996fd1c" className="flex flex-col gap-1">
-                                      <span data-ev-id={`ev_status_badge_${beschluss.id}`} className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-full ${statusConfig.bgColor} ${statusConfig.color}`}>
-                                        <StatusIcon className="w-3 h-3" />
-                                        {statusConfig.label}
-                                      </span>
-                                      {/* Ablaufdatum */}
-                                      {beschluss.gueltig_bis &&
-                              <span data-ev-id={`ev_ablauf_${beschluss.id}`} className={`text-xs flex items-center gap-1 ${
-                              isAbgelaufen(beschluss) ? 'text-orange-600' :
-                              baldAblaufend ? 'text-yellow-600' : 'text-muted-foreground'}`
-                              }>
-                                          <CalendarOff className="w-3 h-3" />
-                                          {isAbgelaufen(beschluss) ? 'Abgelaufen am' : baldAblaufend ? 'Läuft ab am' : 'Gültig bis'} {formatDate(beschluss.gueltig_bis)}
-                                        </span>
-                              }
-                                    </div>
-                                  </td>
-                                  <td data-ev-id={`ev_td_abstimmung_${beschluss.id}`} className="px-6 py-4 text-center">
-                                    <div data-ev-id={`ev_votes_${beschluss.id}`} className="flex flex-col items-center gap-1">
-                                      <div data-ev-id="ev_4df4261f8e" className="flex items-center gap-2 text-sm">
-                                        <span data-ev-id={`ev_vote_ja_${beschluss.id}`} className="text-emerald-600">{beschluss.abstimmung_ja || 0}</span>
-                                        <span data-ev-id={`ev_vote_sep1_${beschluss.id}`} className="text-muted-foreground">/</span>
-                                        <span data-ev-id={`ev_vote_nein_${beschluss.id}`} className="text-red-600">{beschluss.abstimmung_nein || 0}</span>
-                                        <span data-ev-id={`ev_vote_sep2_${beschluss.id}`} className="text-muted-foreground">/</span>
-                                        <span data-ev-id={`ev_vote_enth_${beschluss.id}`} className="text-gray-500">{beschluss.abstimmung_enthaltung || 0}</span>
-                                      </div>
-                                      {(beschluss.abstimmung_ja || 0) > (beschluss.abstimmung_nein || 0) ?
-                              <span data-ev-id="ev_8c934724b9" className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700">Genehmigt</span> :
-                              (beschluss.abstimmung_nein || 0) > 0 ?
-                              <span data-ev-id="ev_8f436af46d" className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Abgelehnt</span> :
-                              null}
-                                    </div>
+                            }
+                                    {effStatus === 'aufgehoben' && beschluss.aufgehoben_durch_nummer &&
+                            <p data-ev-id={`ev_aufg_${beschluss.id}`} className="text-xs text-orange-600 mt-1">
+                                        Aufgehoben durch {beschluss.aufgehoben_durch_nummer}
+                                      </p>
+                            }
                                   </td>
                                   <td data-ev-id={`ev_td_datum_${beschluss.id}`} className="px-6 py-4">
                                     <span data-ev-id={`ev_datum_${beschluss.id}`} className="text-sm text-muted-foreground">
