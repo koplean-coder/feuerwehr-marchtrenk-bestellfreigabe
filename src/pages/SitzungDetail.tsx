@@ -3342,9 +3342,37 @@ export default function SitzungDetail() {
                 Abbrechen
               </button>
               <button data-ev-id="ev_b7f7edac85"
-            onClick={() => {
-              console.log('[UI] BUTTON CLICKED!');
-              alert('Button wurde geklickt!');
+            onClick={async (e) => {
+              e.stopPropagation();
+              console.log('[UI] Bestätigen Button geklickt');
+              if (!showConfirmCommandItemModal || isConfirmingItem) return;
+              
+              setIsConfirmingItem(true);
+              try {
+                console.log('[UI] Rufe confirmCommandDecisionItem auf...');
+                const result = await confirmCommandDecisionItem(
+                  showConfirmCommandItemModal,
+                  commandItemNotes || undefined,
+                  generatePdfOnConfirm,
+                  sendToSchriftfuehrer,
+                  {
+                    gueltigBis: commandItemGueltigBis || undefined,
+                    hebtAuf: commandItemHebtAuf || undefined
+                  }
+                );
+                console.log('[UI] Ergebnis:', result);
+                
+                if (!result.error) {
+                  setShowConfirmCommandItemModal(null);
+                  setCommandItemNotes('');
+                  setCommandItemGueltigBis('');
+                  setCommandItemHebtAuf('');
+                }
+              } catch (err) {
+                console.error('[UI] Fehler:', err);
+              } finally {
+                setIsConfirmingItem(false);
+              }
             }}
             disabled={isConfirmingItem}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50">
