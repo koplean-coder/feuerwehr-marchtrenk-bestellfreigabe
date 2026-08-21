@@ -3343,6 +3343,11 @@ export default function SitzungDetail() {
               </button>
               <button data-ev-id="ev_b7f7edac85"
             onClick={async () => {
+              console.log('[UI] Bestätigen Button clicked', { item: showConfirmCommandItemModal });
+              if (!showConfirmCommandItemModal) {
+                console.error('[UI] showConfirmCommandItemModal is null!');
+                return;
+              }
               setIsConfirmingItem(true);
               try {
                 await confirmCommandDecisionItem(

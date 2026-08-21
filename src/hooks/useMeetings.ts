@@ -1485,26 +1485,33 @@ export function useMeetingDetail(meetingId: string | undefined) {
       hebtAufId?: string;
     }
   ) => {
+    console.log('[confirmCommandDecisionItem] Start', { itemId: item.id, canManage, user: !!user, meetingId });
+    
     if (!supabase || !meetingId || !canManage || !user) {
+      console.log('[confirmCommandDecisionItem] Permission denied', { supabase: !!supabase, meetingId, canManage, user: !!user });
       return { error: new Error('Keine Berechtigung') };
     }
 
     try {
+      console.log('[confirmCommandDecisionItem] Creating decision...');
       const resultLabel = item.status === 'approved' ? 'Genehmigt' : 'Abgelehnt';
       const decisionText = `${item.decision_reference} Pkt. ${item.item_number}: ${item.description}${notes ? ` - ${notes}` : ''}`;
       const confirmedAt = new Date().toISOString();
       
       // Get vote counts from the item
-      const { data: votesData } = await supabase
+      const { data: votesData, error: votesError } = await supabase
         .from('command_decision_item_votes')
         .select('vote')
         .eq('item_id', item.id);
+      
+      if (votesError) console.log('[confirmCommandDecisionItem] Votes fetch error:', votesError);
       
       const votesFor = (votesData ?? []).filter(v => v.vote === 'approve').length;
       const votesAgainst = (votesData ?? []).filter(v => v.vote === 'reject').length;
       const votesAbstain = (votesData ?? []).filter(v => v.vote === 'abstain').length;
       
       // Create meeting decision entry
+      console.log('[confirmCommandDecisionItem] Inserting meeting_decision...');
       const { data: decisionData, error: insertError } = await supabase
         .from('meeting_decisions')
         .insert({
@@ -1522,7 +1529,11 @@ export function useMeetingDetail(meetingId: string | undefined) {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[confirmCommandDecisionItem] Insert error:', insertError);
+        throw insertError;
+      }
+      console.log('[confirmCommandDecisionItem] Decision created:', decisionData?.id);
 
       // Auto-register in beschluss_register
       const beschlussNummer = await generateBeschlussNummer();
@@ -1776,8 +1787,10 @@ export function useMeetingDetail(meetingId: string | undefined) {
       };
       setDecisions(prev => [...prev, newDecision]);
 
+      console.log('[confirmCommandDecisionItem] Success!');
       return { error: null };
     } catch (err) {
+      console.error('[confirmCommandDecisionItem] Error:', err);
       // On error, refetch to restore correct state
       await fetchMeetingDetail();
       return { error: err as Error };
