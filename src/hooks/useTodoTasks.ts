@@ -76,6 +76,22 @@ export function useTodoTasks(filters: TaskFilters = {}) {
     try {
       setLoading(true);
       
+      // Get current user first
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+
+      // Get task IDs shared with this user
+      const { data: sharedTasks } = await supabase
+        .from('todo_task_shares')
+        .select('task_id')
+        .eq('shared_with_id', user.id);
+      
+      const sharedTaskIds = (sharedTasks || []).map(s => s.task_id);
+      
       let query = supabase
         .from('todo_tasks')
         .select(`
@@ -84,25 +100,24 @@ export function useTodoTasks(filters: TaskFilters = {}) {
         `)
         .order('sort_order', { ascending: true });
 
-      // Apply filters based on smart list or regular list
+      // BASE FILTER: Only show tasks that belong to this user
+      // (created by me OR assigned to me OR shared with me)
+      if (sharedTaskIds.length > 0) {
+        query = query.or(`created_by.eq.${user.id},assigned_to.eq.${user.id},id.in.(${sharedTaskIds.join(',')})`);
+      } else {
+        query = query.or(`created_by.eq.${user.id},assigned_to.eq.${user.id}`);
+      }
+
+      // Apply additional filters based on smart list or regular list
       if (filters.smartList) {
         const today = new Date().toISOString().split('T')[0];
-        const { data: { user } } = await supabase.auth.getUser();
         
         switch (filters.smartList) {
           case 'my_day':
-            // My Day shows ONLY tasks assigned to me or created by me:
-            // - manually added to my day + due today + overdue + assigned without date
-            if (user) {
-              // First filter: only my tasks (assigned to me OR created by me)
-              query = query.or(`assigned_to.eq.${user.id},created_by.eq.${user.id}`);
-              // Second filter: my day criteria
-              query = query.or(
-                `and(is_in_my_day.eq.true,my_day_date.eq.${today}),due_date.eq.${today},due_date.lt.${today},due_date.is.null`
-              );
-            } else {
-              query = query.eq('is_in_my_day', true).eq('my_day_date', today);
-            }
+            // My Day: manually added to my day + due today + overdue + assigned without date
+            query = query.or(
+              `and(is_in_my_day.eq.true,my_day_date.eq.${today}),due_date.eq.${today},due_date.lt.${today},and(assigned_to.eq.${user.id},due_date.is.null)`
+            );
             break;
           case 'important':
             query = query.eq('is_important', true);
@@ -110,14 +125,10 @@ export function useTodoTasks(filters: TaskFilters = {}) {
           case 'planned':
             query = query.not('due_date', 'is', null);
             break;
-          case 'assigned_to_me': {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              query = query.eq('assigned_to', user.id);
-            }
+          case 'assigned_to_me':
+            query = query.eq('assigned_to', user.id);
             break;
-          }
-          // 'all' - no additional filter
+          // 'all' - no additional filter, base filter already applied
         }
       } else if (filters.listId) {
         query = query.eq('list_id', filters.listId);
