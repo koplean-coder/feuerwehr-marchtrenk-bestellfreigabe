@@ -727,21 +727,22 @@ export function useMeetingDetail(meetingId: string | undefined) {
 
               // Filtere Punkte die noch nicht übernommen wurden
               const itemsToInsert = redOrDeferredItems.filter(item => {
-                // Zeigt deferred_to_meeting_id bereits auf diese Sitzung?
-                if (item.deferred_to_meeting_id === meetingId) {
-                  console.log('[Auto-Übernahme] Überspringe (verweist auf diese Sitzung):', item.title);
-                  return false;
-                }
-                // Titel existiert bereits?
+                // Titel existiert bereits in dieser Sitzung? Dann überspringen
                 if (existingTitles.has(item.title.toLowerCase())) {
-                  console.log('[Auto-Übernahme] Überspringe (Titel existiert):', item.title);
+                  console.log('[Auto-Übernahme] Überspringe (Titel existiert bereits):', item.title);
                   return false;
                 }
-                // Wurde bereits zu einer ANDEREN nicht-abgeschlossenen Sitzung übertragen?
-                if (item.deferred_to_meeting_id && !closedMeetingIds.includes(item.deferred_to_meeting_id)) {
-                  console.log('[Auto-Übernahme] Überspringe (zu anderer Sitzung übertragen):', item.title);
+                // Wurde zu einer ANDEREN nicht-abgeschlossenen Sitzung übertragen? 
+                // (nicht diese Sitzung und nicht eine abgeschlossene)
+                if (item.deferred_to_meeting_id && 
+                    item.deferred_to_meeting_id !== meetingId && 
+                    !closedMeetingIds.includes(item.deferred_to_meeting_id)) {
+                  console.log('[Auto-Übernahme] Überspringe (zu anderer offener Sitzung übertragen):', item.title);
                   return false;
                 }
+                // Ansonsten übernehmen (auch wenn deferred_to_meeting_id auf diese Sitzung zeigt,
+                // aber der Punkt hier nicht existiert - dann wurde er gelöscht und muss neu erstellt werden)
+                console.log('[Auto-Übernahme] Wird übernommen:', item.title);
                 return true;
               });
 
