@@ -73,42 +73,58 @@ export default function Tasks() {
     const today = new Date().toISOString().split('T')[0];
 
     try {
+      // Get task IDs shared with this user
+      const { data: sharedTasks } = await supabase
+        .from('todo_task_shares')
+        .select('task_id')
+        .eq('shared_with_id', profile.id);
+      
+      const sharedTaskIds = (sharedTasks || []).map(s => s.task_id);
+      
+      // Base filter for "my tasks": created by me OR assigned to me OR shared with me
+      const myTasksFilter = sharedTaskIds.length > 0
+        ? `created_by.eq.${profile.id},assigned_to.eq.${profile.id},id.in.(${sharedTaskIds.join(',')})`
+        : `created_by.eq.${profile.id},assigned_to.eq.${profile.id}`;
+
       // My Day count - only MY tasks: manually added + due today + overdue + no date
       const { count: myDayCount } = await supabase
         .from('todo_tasks')
         .select('*', { count: 'exact', head: true })
         .eq('is_completed', false)
-        .or(`assigned_to.eq.${profile.id},created_by.eq.${profile.id}`)
+        .or(myTasksFilter)
         .or(
-          `and(is_in_my_day.eq.true,my_day_date.eq.${today}),due_date.eq.${today},due_date.lt.${today},due_date.is.null`
+          `and(is_in_my_day.eq.true,my_day_date.eq.${today}),due_date.eq.${today},due_date.lt.${today},and(assigned_to.eq.${profile.id},due_date.is.null)`
         );
 
-      // Important count
-      const { count: importantCount } = await supabase.
-      from('todo_tasks').
-      select('*', { count: 'exact', head: true }).
-      eq('is_important', true).
-      eq('is_completed', false);
+      // Important count - only MY tasks
+      const { count: importantCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_important', true)
+        .eq('is_completed', false)
+        .or(myTasksFilter);
 
-      // Planned count
-      const { count: plannedCount } = await supabase.
-      from('todo_tasks').
-      select('*', { count: 'exact', head: true }).
-      not('due_date', 'is', null).
-      eq('is_completed', false);
+      // Planned count - only MY tasks
+      const { count: plannedCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .not('due_date', 'is', null)
+        .eq('is_completed', false)
+        .or(myTasksFilter);
 
       // Assigned to me count
-      const { count: assignedCount } = await supabase.
-      from('todo_tasks').
-      select('*', { count: 'exact', head: true }).
-      eq('assigned_to', profile.id).
-      eq('is_completed', false);
+      const { count: assignedCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('assigned_to', profile.id)
+        .eq('is_completed', false);
 
-      // All tasks count
-      const { count: allCount } = await supabase.
-      from('todo_tasks').
-      select('*', { count: 'exact', head: true }).
-      eq('is_completed', false);
+      // All tasks count - only MY tasks
+      const { count: allCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_completed', false)
+        .or(myTasksFilter);
 
       setSmartListCounts({
         myDay: myDayCount ?? 0,
