@@ -32,6 +32,8 @@ export function ModulBerechtigungenSection() {
   const {
     sitzungenViewRoles,
     updateSitzungenViewRoles,
+    sitzungenAbklaerungFarbe,
+    updateSitzungenAbklaerungFarbe,
     beschlussRegisterViewRoles,
     beschlussRegisterCardsByRole,
     beschlussExpiryReminderDays,
@@ -55,8 +57,8 @@ export function ModulBerechtigungenSection() {
   const [editTemplateText, setEditTemplateText] = useState('');
 
   const toggleRoleExpanded = (roleId: string) => {
-    setExpandedRoles(prev => 
-      prev.includes(roleId) ? prev.filter(r => r !== roleId) : [...prev, roleId]
+    setExpandedRoles((prev) =>
+    prev.includes(roleId) ? prev.filter((r) => r !== roleId) : [...prev, roleId]
     );
   };
 
@@ -64,10 +66,10 @@ export function ModulBerechtigungenSection() {
     setSavingBeschluss(true);
     const currentCards = beschlussRegisterCardsByRole[roleId] || [];
     const isSelected = currentCards.includes(cardId);
-    const newCards = isSelected 
-      ? currentCards.filter(c => c !== cardId)
-      : [...currentCards, cardId];
-    
+    const newCards = isSelected ?
+    currentCards.filter((c) => c !== cardId) :
+    [...currentCards, cardId];
+
     await updateBeschlussRegisterCardsByRole({
       ...beschlussRegisterCardsByRole,
       [roleId]: newCards
@@ -259,6 +261,52 @@ export function ModulBerechtigungenSection() {
               })}
               </div>
             </div>
+
+            {/* Abklärungs-Farbe (Textmarker) */}
+            <div data-ev-id="ev_41834f3a0c" className="bg-card border border-border rounded-lg overflow-hidden">
+              <div data-ev-id="ev_874c6d92f4" className="p-4 bg-muted/30 border-b border-border flex items-center gap-2">
+                <div data-ev-id="ev_bf8b5ed91f" className="w-4 h-4 rounded-full bg-gradient-to-r from-sky-300 to-sky-500" />
+                <div data-ev-id="ev_26fd254d18">
+                  <h4 data-ev-id="ev_cdb5b9eb0a" className="font-semibold text-foreground">Abklärungs-Farbe (Ampel)</h4>
+                  <p data-ev-id="ev_a274be12a4" className="text-xs text-muted-foreground">Textmarker-Farbe für Punkte die noch abgeklärt werden müssen</p>
+                </div>
+              </div>
+              <div data-ev-id="ev_70f9184174" className="p-4 flex flex-wrap gap-3">
+                {[
+              { id: 'sky', label: 'Hellblau', gradient: 'from-sky-300 to-sky-500', bg: 'bg-sky-100' },
+              { id: 'blue', label: 'Blau', gradient: 'from-blue-300 to-blue-500', bg: 'bg-blue-100' },
+              { id: 'violet', label: 'Violett', gradient: 'from-violet-300 to-violet-500', bg: 'bg-violet-100' },
+              { id: 'purple', label: 'Lila', gradient: 'from-purple-300 to-purple-500', bg: 'bg-purple-100' },
+              { id: 'pink', label: 'Pink', gradient: 'from-pink-300 to-pink-500', bg: 'bg-pink-100' }].
+              map((farbe) =>
+              <button data-ev-id="ev_a8d1c1a444"
+              key={farbe.id}
+              onClick={async () => {
+                await updateSitzungenAbklaerungFarbe(farbe.id);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
+              sitzungenAbklaerungFarbe === farbe.id ?
+              'border-primary bg-primary/5' :
+              'border-transparent bg-muted hover:bg-muted/80'}`
+              }>
+
+                    <div data-ev-id="ev_6e6c909ed4" className={`w-5 h-5 rounded-full bg-gradient-to-br ${farbe.gradient}`} />
+                    <span data-ev-id="ev_d63432c262" className="text-sm font-medium">{farbe.label}</span>
+                    {sitzungenAbklaerungFarbe === farbe.id && <Check className="w-4 h-4 text-primary" />}
+                  </button>
+              )}
+              </div>
+              <div data-ev-id="ev_4cf50eede3" className="px-4 pb-4">
+                <p data-ev-id="ev_8564260101" className="text-xs text-muted-foreground">Vorschau:</p>
+                <p data-ev-id="ev_c8b2391fca" className={`mt-1 text-sm ${sitzungenAbklaerungFarbe === 'sky' ? 'bg-gradient-to-r from-sky-100 to-sky-200' :
+              sitzungenAbklaerungFarbe === 'blue' ? 'bg-gradient-to-r from-blue-100 to-blue-200' :
+              sitzungenAbklaerungFarbe === 'violet' ? 'bg-gradient-to-r from-violet-100 to-violet-200' :
+              sitzungenAbklaerungFarbe === 'purple' ? 'bg-gradient-to-r from-purple-100 to-purple-200' :
+              'bg-gradient-to-r from-pink-100 to-pink-200'} px-2 py-1 rounded inline-block`}>
+                  Beispieltext mit Textmarker-Effekt
+                </p>
+              </div>
+            </div>
           </div>
         }
       </div>
@@ -330,16 +378,16 @@ export function ModulBerechtigungenSection() {
               </div>
               <div data-ev-id="ev_roles_list" className="divide-y divide-border">
                 {AVAILABLE_ROLES.map((role) => {
-                  const roleCards = beschlussRegisterCardsByRole[role.id] || [];
-                  const isExpanded = expandedRoles.includes(role.id);
-                  const cardCount = roleCards.length;
-                  
-                  return (
-                    <div key={role.id} data-ev-id={`ev_role_cards_${role.id}`}>
+                const roleCards = beschlussRegisterCardsByRole[role.id] || [];
+                const isExpanded = expandedRoles.includes(role.id);
+                const cardCount = roleCards.length;
+
+                return (
+                  <div key={role.id} data-ev-id={`ev_role_cards_${role.id}`}>
                       <button
-                        data-ev-id={`ev_role_toggle_${role.id}`}
-                        onClick={() => toggleRoleExpanded(role.id)}
-                        className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
+                      data-ev-id={`ev_role_toggle_${role.id}`}
+                      onClick={() => toggleRoleExpanded(role.id)}
+                      className="w-full flex items-center justify-between p-3 hover:bg-muted/30 transition-colors">
                         <div data-ev-id={`ev_role_info_${role.id}`} className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-muted-foreground" />
                           <span data-ev-id={`ev_role_label_${role.id}`} className="font-medium text-foreground">{role.label}</span>
@@ -352,33 +400,33 @@ export function ModulBerechtigungenSection() {
                         </div>
                       </button>
                       
-                      {isExpanded && (
-                        <div data-ev-id={`ev_role_cards_grid_${role.id}`} className="p-3 pt-0 bg-muted/10">
+                      {isExpanded &&
+                    <div data-ev-id={`ev_role_cards_grid_${role.id}`} className="p-3 pt-0 bg-muted/10">
                           <div data-ev-id={`ev_cards_grid_${role.id}`} className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {AVAILABLE_CARDS.map((card) => {
-                              const isSelected = roleCards.includes(card.id);
-                              return (
-                                <button
-                                  key={card.id}
-                                  data-ev-id={`ev_card_${role.id}_${card.id}`}
-                                  onClick={() => handleCardToggle(role.id, card.id)}
-                                  disabled={savingBeschluss}
-                                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                    isSelected 
-                                      ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-300' 
-                                      : 'bg-card text-muted-foreground border-2 border-transparent hover:bg-muted/50'
-                                  }`}>
+                          const isSelected = roleCards.includes(card.id);
+                          return (
+                            <button
+                              key={card.id}
+                              data-ev-id={`ev_card_${role.id}_${card.id}`}
+                              onClick={() => handleCardToggle(role.id, card.id)}
+                              disabled={savingBeschluss}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              isSelected ?
+                              'bg-emerald-100 text-emerald-700 border-2 border-emerald-300' :
+                              'bg-card text-muted-foreground border-2 border-transparent hover:bg-muted/50'}`
+                              }>
                                   {isSelected && <Check className="w-3 h-3 inline mr-1" />}
                                   {card.label}
-                                </button>
-                              );
-                            })}
+                                </button>);
+
+                        })}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    }
+                    </div>);
+
+              })}
               </div>
             </div>
 
@@ -505,21 +553,21 @@ export function ModulBerechtigungenSection() {
               <div data-ev-id="ev_expiry_content" className="p-4">
                 <div data-ev-id="ev_expiry_input_wrap" className="flex items-center gap-3">
                   <input
-                    data-ev-id="ev_expiry_days_input"
-                    type="number"
-                    min="1"
-                    max="365"
-                    value={beschlussExpiryReminderDays}
-                    onChange={async (e) => {
-                      const days = parseInt(e.target.value) || 30;
-                      if (days >= 1 && days <= 365) {
-                        setSavingBeschluss(true);
-                        await updateBeschlussExpiryReminderDays(days);
-                        setSavingBeschluss(false);
-                      }
-                    }}
-                    className="w-24 px-3 py-2 border border-border rounded-lg text-center"
-                  />
+                  data-ev-id="ev_expiry_days_input"
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={beschlussExpiryReminderDays}
+                  onChange={async (e) => {
+                    const days = parseInt(e.target.value) || 30;
+                    if (days >= 1 && days <= 365) {
+                      setSavingBeschluss(true);
+                      await updateBeschlussExpiryReminderDays(days);
+                      setSavingBeschluss(false);
+                    }
+                  }}
+                  className="w-24 px-3 py-2 border border-border rounded-lg text-center" />
+
                   <span data-ev-id="ev_expiry_label" className="text-sm text-muted-foreground">Tage vor Ablauf</span>
                 </div>
                 <p data-ev-id="ev_expiry_info" className="text-xs text-muted-foreground mt-2">

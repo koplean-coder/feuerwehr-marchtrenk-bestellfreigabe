@@ -178,6 +178,7 @@ export function useSettings() {
   ]);
   // Sitzungen Einstellungen
   const [sitzungenViewRoles, setSitzungenViewRoles] = useState<string[]>(['admin', 'kommandant', 'kommandomitglied', 'erweitertes_kommando']);
+  const [sitzungenAbklaerungFarbe, setSitzungenAbklaerungFarbe] = useState<string>('sky'); // sky, blue, violet, purple, pink
   
   // Beschlussregister Einstellungen
   const [beschlussRegisterViewRoles, setBeschlussRegisterViewRoles] = useState<string[]>(['admin', 'kommandant', 'schriftfuehrer', 'kassier', 'kommandomitglied', 'erweitertes_kommando']);
@@ -359,6 +360,11 @@ Grüße, FF Marchtrenk`);
         } catch {
           setSitzungenViewRoles(['admin', 'kommandant', 'kommandomitglied', 'erweitertes_kommando']);
         }
+      }
+      
+      const sitzungenAbklaerungFarbeSetting = data.find(s => s.key === 'sitzungen_abklaerung_farbe');
+      if (sitzungenAbklaerungFarbeSetting) {
+        setSitzungenAbklaerungFarbe(sitzungenAbklaerungFarbeSetting.value || 'sky');
       }
       
       // Load Beschlussregister settings
@@ -1039,6 +1045,19 @@ Grüße, FF Marchtrenk`);
     return { error };
   }
 
+  async function updateSitzungenAbklaerungFarbe(farbe: string) {
+    if (!supabase) return { error: new Error('Database not connected') };
+    
+    const { error } = await supabase
+      .from('settings')
+      .upsert({ key: 'sitzungen_abklaerung_farbe', value: farbe }, { onConflict: 'key' });
+    
+    if (!error) {
+      setSitzungenAbklaerungFarbe(farbe);
+    }
+    return { error };
+  }
+
   async function updateBeschlussRegisterViewRoles(roles: string[]) {
     if (!supabase) return { error: new Error('Database not connected') };
     
@@ -1164,6 +1183,8 @@ Grüße, FF Marchtrenk`);
     triggerApprovalReminder,
     sitzungenViewRoles,
     updateSitzungenViewRoles,
+    sitzungenAbklaerungFarbe,
+    updateSitzungenAbklaerungFarbe,
     beschlussRegisterViewRoles,
     beschlussRegisterVisibleCards,
     beschlussRegisterCardsByRole,

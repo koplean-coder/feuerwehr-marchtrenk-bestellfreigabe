@@ -344,7 +344,17 @@ export default function SitzungDetail() {
   };
 
   // Load PDF settings and decision templates
-  const { pdfBackgroundUrl, pdfBackgroundOpacity, commanderSignatureUrl, commanderStampUrl, decisionTextTemplates } = useSettings();
+  const { pdfBackgroundUrl, pdfBackgroundOpacity, commanderSignatureUrl, commanderStampUrl, decisionTextTemplates, sitzungenAbklaerungFarbe } = useSettings();
+
+  // Helper für Abklärungs-Farben (Textmarker-Effekt)
+  const abklaerungFarben: Record<string, {bg: string;text: string;gradient: string;light: string;}> = {
+    sky: { bg: 'bg-sky-100', text: 'text-sky-700', gradient: 'bg-gradient-to-r from-sky-100 to-sky-200', light: 'bg-sky-50' },
+    blue: { bg: 'bg-blue-100', text: 'text-blue-700', gradient: 'bg-gradient-to-r from-blue-100 to-blue-200', light: 'bg-blue-50' },
+    violet: { bg: 'bg-violet-100', text: 'text-violet-700', gradient: 'bg-gradient-to-r from-violet-100 to-violet-200', light: 'bg-violet-50' },
+    purple: { bg: 'bg-purple-100', text: 'text-purple-700', gradient: 'bg-gradient-to-r from-purple-100 to-purple-200', light: 'bg-purple-50' },
+    pink: { bg: 'bg-pink-100', text: 'text-pink-700', gradient: 'bg-gradient-to-r from-pink-100 to-pink-200', light: 'bg-pink-50' }
+  };
+  const abklaerung = abklaerungFarben[sitzungenAbklaerungFarbe] || abklaerungFarben.sky;
 
   // Get commander name for PDF
   const commanderProfile = profiles.find((p) => p.role === 'kommandant');
@@ -1747,7 +1757,8 @@ export default function SitzungDetail() {
                       <>
                                 <div data-ev-id="ev_title_badges" className="flex items-center gap-2 flex-wrap">
                                   <p data-ev-id="ev_e5e4a8b15a" className={`text-sm whitespace-pre-wrap ${
-                          item.traffic_light === 'gruen' ? 'line-through text-muted-foreground' : ''}`
+                          item.traffic_light === 'gruen' ? 'line-through text-muted-foreground' :
+                          item.traffic_light === 'blau' ? `${abklaerung.gradient} px-1 rounded` : ''}`
                           }>
                                     {item.title}
                                   </p>
@@ -1779,6 +1790,9 @@ export default function SitzungDetail() {
                           </div>
                           <div data-ev-id="ev_7bcbbc5c0b" className="flex items-center gap-2">
                             {/* Status Badge */}
+                            {item.traffic_light === 'blau' &&
+                      <span data-ev-id="ev_007e7e9000" className={`text-xs px-2 py-0.5 rounded font-medium ${abklaerung.bg} ${abklaerung.text}`}>abklären</span>
+                      }
                             {item.traffic_light === 'rot' &&
                       <span data-ev-id="ev_9ff6ca2c8b" className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium">vertagt</span>
                       }
@@ -1791,35 +1805,40 @@ export default function SitzungDetail() {
                             {/* Ampel: Kommandant, Admin ODER Kdt-Stellvertreter */}
                             {canManageTrafficLights &&
                       <>
-                                {/* Traffic lights */}
-                                <div data-ev-id="ev_74e12542f6" className="flex gap-1">
-                                  <button data-ev-id="ev_f592a64f76"
+                                {/* Traffic lights - horizontale Ampel */}
+                                <div data-ev-id="ev_74e12542f6" className="flex items-center bg-slate-800 rounded-full px-1.5 py-1 gap-1">
+                                  <button data-ev-id="ev_3222c28f20"
+                          onClick={() => updateAgendaItemTrafficLight(item.id, 'blau')}
+                          title="Abklärung nötig"
+                          className={`w-4 h-4 rounded-full transition-all ${
+                          item.traffic_light === 'blau' ?
+                          'bg-gradient-to-br from-sky-300 to-sky-500 shadow-lg shadow-sky-500/50' :
+                          'bg-slate-600 hover:bg-slate-500'}`
+                          } />
+                                  <button data-ev-id="ev_e892c58e9e"
                           onClick={() => updateAgendaItemTrafficLight(item.id, 'rot')}
                           title="Vertagen (nächste Sitzung)"
-                          className={`w-4 h-4 rounded-full border-2 ${
+                          className={`w-4 h-4 rounded-full transition-all ${
                           item.traffic_light === 'rot' ?
-                          'bg-red-500 border-red-600' :
-                          'border-red-500 hover:border-red-600 hover:bg-red-100'}`
+                          'bg-gradient-to-br from-red-400 to-red-600 shadow-lg shadow-red-500/50' :
+                          'bg-slate-600 hover:bg-slate-500'}`
                           } />
-
-                                  <button data-ev-id="ev_d5be6c3412"
+                                  <button data-ev-id="ev_df351f9483"
                           onClick={() => updateAgendaItemTrafficLight(item.id, 'gelb')}
                           title="Unbehandelt"
-                          className={`w-4 h-4 rounded-full border-2 ${
+                          className={`w-4 h-4 rounded-full transition-all ${
                           item.traffic_light === 'gelb' ?
-                          'bg-amber-500 border-amber-600' :
-                          'border-amber-500 hover:border-amber-600 hover:bg-amber-100'}`
+                          'bg-gradient-to-br from-amber-300 to-amber-500 shadow-lg shadow-amber-500/50' :
+                          'bg-slate-600 hover:bg-slate-500'}`
                           } />
-
-                                  <button data-ev-id="ev_b8157bc8ee"
+                                  <button data-ev-id="ev_1781069048"
                           onClick={() => updateAgendaItemTrafficLight(item.id, 'gruen')}
                           title="Behandelt/Erledigt"
-                          className={`w-4 h-4 rounded-full border-2 ${
+                          className={`w-4 h-4 rounded-full transition-all ${
                           item.traffic_light === 'gruen' ?
-                          'bg-emerald-500 border-emerald-600' :
-                          'border-emerald-500 hover:border-emerald-600 hover:bg-emerald-100'}`
+                          'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/50' :
+                          'bg-slate-600 hover:bg-slate-500'}`
                           } />
-
                                 </div>
                                 {/* Beschluss erforderlich Button */}
                                 <button data-ev-id="ev_10c4d8a602"

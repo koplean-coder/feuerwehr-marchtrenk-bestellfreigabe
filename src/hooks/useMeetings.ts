@@ -72,7 +72,7 @@ export interface MeetingAgendaItem {
   deferred_from_meeting_id: string | null;
   discussion_notes: string | null;
   decision_required: boolean | null;
-  traffic_light: 'rot' | 'gelb' | 'gruen' | null;
+  traffic_light: 'rot' | 'gelb' | 'gruen' | 'blau' | null;
   requires_decision: boolean | null;
   created_at: string;
   updated_at: string;
@@ -677,7 +677,8 @@ export function useMeetingDetail(meetingId: string | undefined) {
       // === AUTO-ÜBERNAHME VERTAGTER PUNKTE ===
       // Wenn diese Sitzung noch nicht abgeschlossen ist, prüfe ob es vertagte Punkte
       // aus vorherigen abgeschlossenen Sitzungen gibt, die übernommen werden müssen
-      if (meetingData.status !== 'abgeschlossen' && canManage) {
+      // Keine canManage-Prüfung hier - die Übernahme soll automatisch passieren
+      if (meetingData.status !== 'abgeschlossen') {
         try {
           // Finde alle abgeschlossenen Sitzungen des gleichen Typs
           const { data: closedMeetings } = await supabase
@@ -762,7 +763,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
     } finally {
       setLoading(false);
     }
-  }, [meetingId, canManage]);
+  }, [meetingId]);
 
   // Attendance management - with optimistic update to prevent page reload
   const updateAttendance = async (profileId: string, status: AttendanceStatus, profileData?: { functions?: string[]; role?: string; forceVotingMember?: boolean }) => {
