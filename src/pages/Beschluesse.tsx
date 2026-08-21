@@ -596,17 +596,22 @@ export default function Beschluesse() {
                         <table data-ev-id={`ev_table_${year}`} className="w-full">
                           <thead data-ev-id={`ev_thead_${year}`}>
                             <tr data-ev-id={`ev_header_row_${year}`} className="bg-gray-50 text-left text-sm text-muted-foreground">
-                              <th data-ev-id={`ev_th_nr_${year}`} className="px-6 py-3 font-medium w-32">Nr.</th>
-                              <th data-ev-id={`ev_th_beschluss_${year}`} className="px-6 py-3 font-medium">Beschluss</th>
-                              <th data-ev-id={`ev_th_datum_${year}`} className="px-6 py-3 font-medium w-32">Datum</th>
-                              <th data-ev-id={`ev_th_aktion_${year}`} className="px-6 py-3 font-medium w-20"></th>
+                              <th data-ev-id={`ev_th_nr_${year}`} className="px-6 py-3 font-medium">Nr.</th>
+                              <th data-ev-id={`ev_th_titel_${year}`} className="px-6 py-3 font-medium">Titel</th>
+                              <th data-ev-id={`ev_th_ergebnis_${year}`} className="px-6 py-3 font-medium">Ergebnis</th>
+                              <th data-ev-id={`ev_th_datum_${year}`} className="px-6 py-3 font-medium">Datum</th>
+                              <th data-ev-id={`ev_th_aktion_${year}`} className="px-6 py-3 font-medium"></th>
                             </tr>
                           </thead>
                           <tbody data-ev-id={`ev_tbody_${year}`}>
                             {groupedByYear[year].map((beschluss) => {
                       const effStatus = getEffektiverStatus(beschluss);
-                      const isGenehmigt = beschluss.status === 'genehmigt' || (beschluss.abstimmung_ja || 0) > (beschluss.abstimmung_nein || 0);
                       const baldAblaufend = isBaldAblaufend(beschluss);
+                      // Ergebnis NUR auf Basis der tatsächlichen Stimmen
+                      const jaStimmen = beschluss.abstimmung_ja || 0;
+                      const neinStimmen = beschluss.abstimmung_nein || 0;
+                      const isGenehmigt = jaStimmen > neinStimmen;
+                      const isAbgelehnt = neinStimmen > jaStimmen;
 
                       return (
                         <tr
@@ -622,23 +627,25 @@ export default function Beschluesse() {
                                       {beschluss.beschluss_nummer}
                                     </span>
                                   </td>
-                                  <td data-ev-id={`ev_td_beschluss_${beschluss.id}`} className="px-6 py-4">
-                                    <p data-ev-id={`ev_beschluss_text_${beschluss.id}`} className="text-foreground">
-                                      {isGenehmigt ?
-                              <>Das Kommando beschließt, <span data-ev-id="ev_fe73d13763" className="font-medium">{beschluss.titel}</span> zuzustimmen.</> :
-
-                              <>Das Kommando hat <span data-ev-id="ev_6372a8ea6d" className="font-medium">{beschluss.titel}</span> abgelehnt.</>
-                              }
-                                    </p>
-                                    {beschluss.meeting_title &&
-                            <p data-ev-id={`ev_meeting_${beschluss.id}`} className="text-xs text-muted-foreground mt-1">
+                                  <td data-ev-id={`ev_td_titel_${beschluss.id}`} className="px-6 py-4">
+                                    <div data-ev-id={`ev_titel_wrapper_${beschluss.id}`}>
+                                      <p data-ev-id={`ev_titel_${beschluss.id}`} className="font-medium text-foreground">
+                                        {beschluss.titel}
+                                      </p>
+                                      {beschluss.meeting_title &&
+                              <p data-ev-id={`ev_meeting_${beschluss.id}`} className="text-xs text-muted-foreground mt-1">
                                         Sitzung: {beschluss.meeting_title}
                                       </p>
-                            }
-                                    {effStatus === 'aufgehoben' && beschluss.aufgehoben_durch_nummer &&
-                            <p data-ev-id={`ev_aufg_${beschluss.id}`} className="text-xs text-orange-600 mt-1">
-                                        Aufgehoben durch {beschluss.aufgehoben_durch_nummer}
-                                      </p>
+                              }
+                                    </div>
+                                  </td>
+                                  <td data-ev-id={`ev_td_ergebnis_${beschluss.id}`} className="px-6 py-4">
+                                    {isGenehmigt ?
+                            <span data-ev-id="ev_7a8bbf0830" className="px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-700">Genehmigt</span> :
+                            isAbgelehnt ?
+                            <span data-ev-id="ev_1e668b9463" className="px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">Abgelehnt</span> :
+
+                            <span data-ev-id="ev_6877257c24" className="px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">Offen</span>
                             }
                                   </td>
                                   <td data-ev-id={`ev_td_datum_${beschluss.id}`} className="px-6 py-4">
