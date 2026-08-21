@@ -1330,11 +1330,13 @@ export function useMeetingDetail(meetingId: string | undefined) {
     hebtAufId?: string
   ) => {
     if (!supabase || !meetingId || !canManage || !user) {
+      console.log('[confirmBanfDecision] Keine Berechtigung');
       return { error: new Error('Keine Berechtigung') };
     }
 
     try {
-      const decisionText = `${order.title} - ${notes || 'Bestätigung aus digitalem Umlaufbeschluss'}`;
+      console.log('[confirmBanfDecision] Start für Order:', order.id);
+      const decisionText = order.title;
       const confirmedAt = new Date().toISOString();
       
       // Insert meeting decision
@@ -1355,7 +1357,11 @@ export function useMeetingDetail(meetingId: string | undefined) {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[confirmBanfDecision] Insert error:', insertError);
+        throw insertError;
+      }
+      console.log('[confirmBanfDecision] Decision erstellt:', decisionData?.id);
 
       // Auto-register in beschluss_register
       const beschlussNummer = await generateBeschlussNummer();
@@ -1442,7 +1448,12 @@ export function useMeetingDetail(meetingId: string | undefined) {
       }
 
       // Optimistic update: remove order from pending list (no fetchMeetingDetail to avoid white flash)
-      setPendingBanfDecisions(prev => prev.filter(o => o.id !== order.id));
+      console.log('[confirmBanfDecision] Entferne aus pendingBanfDecisions:', order.id);
+      setPendingBanfDecisions(prev => {
+        const newList = prev.filter(o => o.id !== order.id);
+        console.log('[confirmBanfDecision] Neue Liste:', newList.length, 'Einträge');
+        return newList;
+      });
 
       // Add to decisions list optimistically
       const newDecision: MeetingDecision = {
@@ -1460,6 +1471,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
         created_at: confirmedAt,
       };
       setDecisions(prev => [...prev, newDecision]);
+      console.log('[confirmBanfDecision] Erfolgreich abgeschlossen!');
 
       return { error: null };
     } catch (err) {

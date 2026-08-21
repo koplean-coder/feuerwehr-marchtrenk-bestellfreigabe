@@ -2235,18 +2235,26 @@ export default function SitzungDetail() {
                   disabled={isConfirmingItem}
                   onClick={async (e) => {
                     e.stopPropagation();
-                    if (isConfirmingItem) return;
+                    console.log('[UI] BANF Bestätigen geklickt für:', order.id, order.title);
+                    if (isConfirmingItem) {
+                      console.log('[UI] Bereits in Bearbeitung');
+                      return;
+                    }
 
                     setIsConfirmingItem(true);
                     try {
                       const decisionText = order.title + (order.description ? ` - ${order.description}` : '');
-                      await confirmBanfDecision(
+                      console.log('[UI] Rufe confirmBanfDecision auf...');
+                      const result = await confirmBanfDecision(
                         { ...order, title: decisionText },
                         'bestätigt',
                         quorum.votingMembersPresent,
                         0,
                         0
                       );
+                      console.log('[UI] confirmBanfDecision Ergebnis:', result);
+                    } catch (err) {
+                      console.error('[UI] Fehler bei confirmBanfDecision:', err);
                     } finally {
                       setIsConfirmingItem(false);
                     }
