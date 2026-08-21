@@ -1759,6 +1759,14 @@ export function useMeetingDetail(meetingId: string | undefined) {
       return { error: new Error('Keine Berechtigung') };
     }
 
+    // Optimistic update
+    const previousItems = [...agendaItems];
+    setAgendaItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { ...item, traffic_light: trafficLight } : item
+      )
+    );
+
     try {
       const { error: updateError } = await supabase
         .from('meeting_agenda_items')
@@ -1767,9 +1775,10 @@ export function useMeetingDetail(meetingId: string | undefined) {
 
       if (updateError) throw updateError;
 
-      await fetchMeetingDetail();
       return { error: null };
     } catch (err) {
+      // Revert optimistic update on error
+      setAgendaItems(previousItems);
       return { error: err as Error };
     }
   };
