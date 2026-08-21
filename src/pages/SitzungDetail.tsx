@@ -1799,7 +1799,7 @@ export default function SitzungDetail() {
                           className={`w-4 h-4 rounded-full border-2 ${
                           item.traffic_light === 'rot' ?
                           'bg-red-500 border-red-600' :
-                          'border-red-300 hover:border-red-500'}`
+                          'border-red-500 hover:border-red-600 hover:bg-red-100'}`
                           } />
 
                                   <button data-ev-id="ev_d5be6c3412"
@@ -1808,7 +1808,7 @@ export default function SitzungDetail() {
                           className={`w-4 h-4 rounded-full border-2 ${
                           item.traffic_light === 'gelb' ?
                           'bg-amber-500 border-amber-600' :
-                          'border-amber-300 hover:border-amber-500'}`
+                          'border-amber-500 hover:border-amber-600 hover:bg-amber-100'}`
                           } />
 
                                   <button data-ev-id="ev_b8157bc8ee"
@@ -1817,7 +1817,7 @@ export default function SitzungDetail() {
                           className={`w-4 h-4 rounded-full border-2 ${
                           item.traffic_light === 'gruen' ?
                           'bg-emerald-500 border-emerald-600' :
-                          'border-emerald-300 hover:border-emerald-500'}`
+                          'border-emerald-500 hover:border-emerald-600 hover:bg-emerald-100'}`
                           } />
 
                                 </div>

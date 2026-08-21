@@ -674,13 +674,95 @@ export function useMeetingDetail(meetingId: string | undefined) {
 
       setPendingCommandDecisionItems(formattedCommandItems);
 
+      // === AUTO-ÜBERNAHME VERTAGTER PUNKTE ===
+      // Wenn diese Sitzung noch nicht abgeschlossen ist, prüfe ob es vertagte Punkte
+      // aus vorherigen abgeschlossenen Sitzungen gibt, die übernommen werden müssen
+      if (meetingData.status !== 'abgeschlossen' && canManage) {
+        try {
+          // Finde alle abgeschlossenen Sitzungen des gleichen Typs
+          const { data: closedMeetings } = await supabase
+            .from('meetings')
+            .select('id')
+            .eq('meeting_type', meetingData.meeting_type)
+            .eq('status', 'abgeschlossen')
+            .neq('id', meetingId);
+
+          if (closedMeetings && closedMeetings.length > 0) {
+            const closedMeetingIds = closedMeetings.map(m => m.id);
+
+            // Finde vertagte Punkte (traffic_light = 'rot') aus diesen Sitzungen
+            // die noch nicht in eine andere Sitzung übertragen wurden
+            const { data: deferredItems } = await supabase
+              .from('meeting_agenda_items')
+              .select('*')
+              .in('meeting_id', closedMeetingIds)
+              .eq('traffic_light', 'rot')
+              .is('deferred_to_meeting_id', null);
+
+            if (deferredItems && deferredItems.length > 0) {
+              // Prüfe welche Punkte noch nicht in dieser Sitzung sind
+              const existingTitles = new Set(
+                (agendaData ?? []).filter(a => a.deferred_from_meeting_id).map(a => a.title.toLowerCase())
+              );
+
+              const itemsToInsert = deferredItems.filter(
+                item => !existingTitles.has(item.title.toLowerCase())
+              );
+
+              if (itemsToInsert.length > 0) {
+                // Füge die vertagten Punkte in diese Sitzung ein
+                const newItems = itemsToInsert.map((item, idx) => ({
+                  meeting_id: meetingId,
+                  title: item.title,
+                  description: item.description,
+                  category: item.category,
+                  submitted_by: item.submitted_by,
+                  submitted_by_name: item.submitted_by_name,
+                  for_profile_id: item.for_profile_id,
+                  is_mandatory: true,
+                  deferred_from_meeting_id: item.meeting_id,
+                  sort_order: (agendaData?.length ?? 0) + idx + 1,
+                  traffic_light: 'gelb' as const,
+                }));
+
+                await supabase
+                  .from('meeting_agenda_items')
+                  .insert(newItems);
+
+                // Aktualisiere die Original-Punkte
+                for (const item of itemsToInsert) {
+                  await supabase
+                    .from('meeting_agenda_items')
+                    .update({ 
+                      deferred_to_meeting_id: meetingId,
+                      status: 'vertagt' as AgendaItemStatus
+                    })
+                    .eq('id', item.id);
+                }
+
+                // Lade die Agenda-Items neu
+                const { data: updatedAgendaData } = await supabase
+                  .from('meeting_agenda_items')
+                  .select('*')
+                  .eq('meeting_id', meetingId)
+                  .order('sort_order');
+
+                setAgendaItems((updatedAgendaData as MeetingAgendaItem[]) ?? []);
+              }
+            }
+          }
+        } catch (deferErr) {
+          console.error('Fehler beim Übernehmen vertagter Punkte:', deferErr);
+        }
+      }
+
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Laden');
     } finally {
       setLoading(false);
     }
-  }, [meetingId]);
+  }, [meetingId, canManage]);
 
   // Attendance management - with optimistic update to prevent page reload
   const updateAttendance = async (profileId: string, status: AttendanceStatus, profileData?: { functions?: string[]; role?: string; forceVotingMember?: boolean }) => {
