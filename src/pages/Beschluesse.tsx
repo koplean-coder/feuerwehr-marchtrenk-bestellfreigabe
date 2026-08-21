@@ -153,7 +153,7 @@ export default function Beschluesse() {
   // Status-Filter zurücksetzen wenn aktuelle Auswahl nicht mehr verfügbar
   useEffect(() => {
     if (availableStatusOptions.length > 0) {
-      const currentValueAvailable = availableStatusOptions.some(opt => opt.value === statusFilter);
+      const currentValueAvailable = availableStatusOptions.some((opt) => opt.value === statusFilter);
       if (!currentValueAvailable) {
         // Auf ersten verfügbaren Wert setzen
         setStatusFilter(availableStatusOptions[0].value);
@@ -684,12 +684,19 @@ export default function Beschluesse() {
                                     </div>
                                   </td>
                                   <td data-ev-id={`ev_td_abstimmung_${beschluss.id}`} className="px-6 py-4 text-center">
-                                    <div data-ev-id={`ev_votes_${beschluss.id}`} className="flex items-center justify-center gap-2 text-sm">
-                                      <span data-ev-id={`ev_vote_ja_${beschluss.id}`} className="text-emerald-600">{beschluss.abstimmung_ja || 0}</span>
-                                      <span data-ev-id={`ev_vote_sep1_${beschluss.id}`} className="text-muted-foreground">/</span>
-                                      <span data-ev-id={`ev_vote_nein_${beschluss.id}`} className="text-red-600">{beschluss.abstimmung_nein || 0}</span>
-                                      <span data-ev-id={`ev_vote_sep2_${beschluss.id}`} className="text-muted-foreground">/</span>
-                                      <span data-ev-id={`ev_vote_enth_${beschluss.id}`} className="text-gray-500">{beschluss.abstimmung_enthaltung || 0}</span>
+                                    <div data-ev-id={`ev_votes_${beschluss.id}`} className="flex flex-col items-center gap-1">
+                                      <div data-ev-id="ev_4df4261f8e" className="flex items-center gap-2 text-sm">
+                                        <span data-ev-id={`ev_vote_ja_${beschluss.id}`} className="text-emerald-600">{beschluss.abstimmung_ja || 0}</span>
+                                        <span data-ev-id={`ev_vote_sep1_${beschluss.id}`} className="text-muted-foreground">/</span>
+                                        <span data-ev-id={`ev_vote_nein_${beschluss.id}`} className="text-red-600">{beschluss.abstimmung_nein || 0}</span>
+                                        <span data-ev-id={`ev_vote_sep2_${beschluss.id}`} className="text-muted-foreground">/</span>
+                                        <span data-ev-id={`ev_vote_enth_${beschluss.id}`} className="text-gray-500">{beschluss.abstimmung_enthaltung || 0}</span>
+                                      </div>
+                                      {(beschluss.abstimmung_ja || 0) > (beschluss.abstimmung_nein || 0) ?
+                              <span data-ev-id="ev_8c934724b9" className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700">Genehmigt</span> :
+                              (beschluss.abstimmung_nein || 0) > 0 ?
+                              <span data-ev-id="ev_8f436af46d" className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Abgelehnt</span> :
+                              null}
                                     </div>
                                   </td>
                                   <td data-ev-id={`ev_td_betrag_${beschluss.id}`} className="px-6 py-4 text-right">
