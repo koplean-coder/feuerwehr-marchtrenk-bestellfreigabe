@@ -1798,216 +1798,216 @@ export default function SitzungDetail() {
                 <div data-ev-id="ev_41d578b040" className="divide-y divide-border">
                       {/* Existing Items with Drag & Drop */}
                       <DndContext
-                        sensors={sensors}
-                        collisionDetection={closestCenter}
-                        onDragEnd={(event) => handleDragEnd(event, person.id)}
-                      >
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(event) => handleDragEnd(event, person.id)}>
+
                         <SortableContext
-                          items={person.items.map(i => i.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
+                      items={person.items.map((i) => i.id)}
+                      strategy={verticalListSortingStrategy}>
+
                       {person.items.map((item, idx) =>
-                  <SortableAgendaItem
-                  key={item.id}
-                  id={item.id}
-                  canReorder={canManage && !meeting?.status?.includes('abgeschlossen')}
-                  className={`px-4 py-3 flex items-start gap-3 ${
-                  item.traffic_light === 'rot' ? 'bg-red-50 border-l-4 border-l-red-500' : ''}`
-                  }>
+                      <SortableAgendaItem
+                        key={item.id}
+                        id={item.id}
+                        canReorder={canManage && !meeting?.status?.includes('abgeschlossen')}
+                        className={`px-4 py-3 flex items-start gap-3 ${
+                        item.traffic_light === 'rot' ? 'bg-red-50 border-l-4 border-l-red-500' : ''}`
+                        }>
 
                           <span data-ev-id="ev_12b611934b" className="text-xs text-muted-foreground w-6">{idx + 1}.</span>
                           <div data-ev-id="ev_6f6f23293c" className="flex-1">
                             {editingAgendaItem === item.id ?
-                      <div data-ev-id="ev_c0ce976929" className="flex flex-col gap-2">
+                          <div data-ev-id="ev_c0ce976929" className="flex flex-col gap-2">
                                 <textarea data-ev-id="ev_449611beeb"
-                        value={editingAgendaItemText}
-                        onChange={(e) => setEditingAgendaItemText(e.target.value)}
-                        rows={3}
-                        className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm resize-none"
-                        autoFocus />
+                            value={editingAgendaItemText}
+                            onChange={(e) => setEditingAgendaItemText(e.target.value)}
+                            rows={3}
+                            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm resize-none"
+                            autoFocus />
 
                                 <div data-ev-id="ev_2720e1d7ab" className="flex gap-2">
                                   <button data-ev-id="ev_b7dcebba99"
-                          onClick={async () => {
-                            if (editingAgendaItemText.trim()) {
-                              await updateAgendaItem(item.id, { title: editingAgendaItemText.trim() });
-                            }
-                            setEditingAgendaItem(null);
-                            setEditingAgendaItemText('');
-                          }}
-                          className="px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:bg-primary/90 flex items-center gap-1">
+                              onClick={async () => {
+                                if (editingAgendaItemText.trim()) {
+                                  await updateAgendaItem(item.id, { title: editingAgendaItemText.trim() });
+                                }
+                                setEditingAgendaItem(null);
+                                setEditingAgendaItemText('');
+                              }}
+                              className="px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:bg-primary/90 flex items-center gap-1">
 
                                     <Save className="w-3 h-3" /> Speichern
                                   </button>
                                   <button data-ev-id="ev_92fa47e1be"
-                          onClick={() => {
-                            setEditingAgendaItem(null);
-                            setEditingAgendaItemText('');
-                          }}
-                          className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded hover:bg-muted/80 flex items-center gap-1">
+                              onClick={() => {
+                                setEditingAgendaItem(null);
+                                setEditingAgendaItemText('');
+                              }}
+                              className="px-3 py-1 bg-muted text-muted-foreground text-xs rounded hover:bg-muted/80 flex items-center gap-1">
 
                                     <X className="w-3 h-3" /> Abbrechen
                                   </button>
                                 </div>
                               </div> :
 
-                      <>
+                          <>
                                 <div data-ev-id="ev_title_badges" className="flex items-center gap-2 flex-wrap">
                                   <p data-ev-id="ev_e5e4a8b15a" className={`text-sm whitespace-pre-wrap ${
-                          item.traffic_light === 'gruen' ? 'line-through text-muted-foreground' :
-                          item.traffic_light === 'blau' ? `${abklaerung.gradient} px-1 rounded` : ''}`
-                          }>
+                              item.traffic_light === 'gruen' ? 'line-through text-muted-foreground' :
+                              item.traffic_light === 'blau' ? `${abklaerung.gradient} px-1 rounded` : ''}`
+                              }>
                                     {item.title}
                                   </p>
                                   {item.is_mandatory &&
-                          <span data-ev-id="ev_6a7bef11c1" className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Pflicht</span>
-                          }
+                              <span data-ev-id="ev_6a7bef11c1" className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Pflicht</span>
+                              }
                                   {item.deferred_from_meeting_id &&
-                          <span data-ev-id="ev_ee02af5ce7" className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">übernommen</span>
-                          }
+                              <span data-ev-id="ev_ee02af5ce7" className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">übernommen</span>
+                              }
                                 </div>
                                 {item.description &&
-                        <p data-ev-id="ev_49e3d4d65f" className={`text-xs text-muted-foreground mt-1 whitespace-pre-wrap ${
-                        item.traffic_light === 'gruen' ? 'line-through' : ''}`
-                        }>
+                            <p data-ev-id="ev_49e3d4d65f" className={`text-xs text-muted-foreground mt-1 whitespace-pre-wrap ${
+                            item.traffic_light === 'gruen' ? 'line-through' : ''}`
+                            }>
                                     {item.description}
                                   </p>
-                        }
+                            }
                                 {/* Zeige Ersteller-Namen bei Allfälliges */}
                                 {isAllfaelliges && item.submitted_by && (() => {
-                          const creator = profiles.find((p) => p.id === item.submitted_by);
-                          return creator ?
-                          <p data-ev-id="ev_creator_name" className="text-xs text-muted-foreground mt-1 italic">
+                              const creator = profiles.find((p) => p.id === item.submitted_by);
+                              return creator ?
+                              <p data-ev-id="ev_creator_name" className="text-xs text-muted-foreground mt-1 italic">
                                       Eingereicht von: {creator.full_name}
                                     </p> :
-                          null;
-                        })()}
+                              null;
+                            })()}
                                 {/* Anhänge */}
                                 <AgendaItemAttachments
-                                  agendaItemId={item.id}
-                                  canUpload={canEditAgendaItems && !meeting?.status?.includes('abgeschlossen')}
-                                  canDelete={canManage || item.submitted_by === effectiveUserId}
-                                  maxAttachments={5}
-                                />
+                              agendaItemId={item.id}
+                              canUpload={canEditAgendaItems && !meeting?.status?.includes('abgeschlossen')}
+                              canDelete={canManage || item.submitted_by === effectiveUserId}
+                              maxAttachments={5} />
+
                               </>
-                      }
+                          }
                           </div>
                           <div data-ev-id="ev_7bcbbc5c0b" className="flex items-center gap-2">
                             {/* Status Badge */}
                             {item.traffic_light === 'blau' &&
-                      <span data-ev-id="ev_007e7e9000" className={`text-xs px-2 py-0.5 rounded font-medium ${abklaerung.bg} ${abklaerung.text}`}>abklären</span>
-                      }
+                          <span data-ev-id="ev_007e7e9000" className={`text-xs px-2 py-0.5 rounded font-medium ${abklaerung.bg} ${abklaerung.text}`}>abklären</span>
+                          }
                             {item.traffic_light === 'rot' &&
-                      <span data-ev-id="ev_9ff6ca2c8b" className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium">vertagt</span>
-                      }
+                          <span data-ev-id="ev_9ff6ca2c8b" className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-medium">vertagt</span>
+                          }
                             {item.traffic_light === 'gelb' &&
-                      <span data-ev-id="ev_95163d8a0c" className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">unbehandelt</span>
-                      }
+                          <span data-ev-id="ev_95163d8a0c" className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">unbehandelt</span>
+                          }
                             {item.traffic_light === 'gruen' &&
-                      <span data-ev-id="ev_bfe65c4212" className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">behandelt</span>
-                      }
+                          <span data-ev-id="ev_bfe65c4212" className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">behandelt</span>
+                          }
                             {/* Ampel: Kommandant, Admin ODER Kdt-Stellvertreter */}
                             {canManageTrafficLights &&
-                      <>
+                          <>
                                 {/* Traffic lights - horizontale Ampel */}
                                 {/* Bei Pflicht-/übernommenen Punkten: kein Rot (keine erneute Vertagung) */}
                                 <div data-ev-id="ev_74e12542f6" className="flex items-center bg-slate-800 rounded-full px-1.5 py-1 gap-1">
                                   <button data-ev-id="ev_3222c28f20"
-                          onClick={() => updateAgendaItemTrafficLight(item.id, 'blau')}
-                          title="Abklärung nötig"
-                          className={`w-4 h-4 rounded-full transition-all ${
-                          item.traffic_light === 'blau' ?
-                          'bg-gradient-to-br from-sky-300 to-sky-500 shadow-lg shadow-sky-500/50' :
-                          'bg-slate-600 hover:bg-slate-500'}`
-                          } />
+                              onClick={() => updateAgendaItemTrafficLight(item.id, 'blau')}
+                              title="Abklärung nötig"
+                              className={`w-4 h-4 rounded-full transition-all ${
+                              item.traffic_light === 'blau' ?
+                              'bg-gradient-to-br from-sky-300 to-sky-500 shadow-lg shadow-sky-500/50' :
+                              'bg-slate-600 hover:bg-slate-500'}`
+                              } />
                                   {/* Rot (Vertagen) nur bei normalen Punkten - nicht bei übernommenen Pflichtpunkten */}
                                   {!(item.is_mandatory && item.deferred_from_meeting_id) &&
-                          <button data-ev-id="ev_e892c58e9e"
-                          onClick={() => updateAgendaItemTrafficLight(item.id, 'rot')}
-                          title="Vertagen (nächste Sitzung)"
-                          className={`w-4 h-4 rounded-full transition-all ${
-                          item.traffic_light === 'rot' ?
-                          'bg-gradient-to-br from-red-400 to-red-600 shadow-lg shadow-red-500/50' :
-                          'bg-slate-600 hover:bg-slate-500'}`
-                          } />
-                          }
+                              <button data-ev-id="ev_e892c58e9e"
+                              onClick={() => updateAgendaItemTrafficLight(item.id, 'rot')}
+                              title="Vertagen (nächste Sitzung)"
+                              className={`w-4 h-4 rounded-full transition-all ${
+                              item.traffic_light === 'rot' ?
+                              'bg-gradient-to-br from-red-400 to-red-600 shadow-lg shadow-red-500/50' :
+                              'bg-slate-600 hover:bg-slate-500'}`
+                              } />
+                              }
                                   <button data-ev-id="ev_df351f9483"
-                          onClick={() => updateAgendaItemTrafficLight(item.id, 'gelb')}
-                          title="Unbehandelt"
-                          className={`w-4 h-4 rounded-full transition-all ${
-                          item.traffic_light === 'gelb' ?
-                          'bg-gradient-to-br from-amber-300 to-amber-500 shadow-lg shadow-amber-500/50' :
-                          'bg-slate-600 hover:bg-slate-500'}`
-                          } />
+                              onClick={() => updateAgendaItemTrafficLight(item.id, 'gelb')}
+                              title="Unbehandelt"
+                              className={`w-4 h-4 rounded-full transition-all ${
+                              item.traffic_light === 'gelb' ?
+                              'bg-gradient-to-br from-amber-300 to-amber-500 shadow-lg shadow-amber-500/50' :
+                              'bg-slate-600 hover:bg-slate-500'}`
+                              } />
                                   <button data-ev-id="ev_1781069048"
-                          onClick={() => updateAgendaItemTrafficLight(item.id, 'gruen')}
-                          title="Behandelt/Erledigt"
-                          className={`w-4 h-4 rounded-full transition-all ${
-                          item.traffic_light === 'gruen' ?
-                          'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/50' :
-                          'bg-slate-600 hover:bg-slate-500'}`
-                          } />
+                              onClick={() => updateAgendaItemTrafficLight(item.id, 'gruen')}
+                              title="Behandelt/Erledigt"
+                              className={`w-4 h-4 rounded-full transition-all ${
+                              item.traffic_light === 'gruen' ?
+                              'bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-lg shadow-emerald-500/50' :
+                              'bg-slate-600 hover:bg-slate-500'}`
+                              } />
                                 </div>
                                 {/* Beschluss erforderlich Button */}
                                 <button data-ev-id="ev_10c4d8a602"
-                        onClick={() => updateAgendaItem(item.id, { requires_decision: !item.requires_decision })}
-                        title={item.requires_decision ? 'Beschluss aufheben' : 'Beschluss erforderlich'}
-                        className={`p-1 rounded ${
-                        item.requires_decision ?
-                        'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-                        'hover:bg-blue-50 text-muted-foreground hover:text-blue-600'}`
-                        }>
+                            onClick={() => updateAgendaItem(item.id, { requires_decision: !item.requires_decision })}
+                            title={item.requires_decision ? 'Beschluss aufheben' : 'Beschluss erforderlich'}
+                            className={`p-1 rounded ${
+                            item.requires_decision ?
+                            'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                            'hover:bg-blue-50 text-muted-foreground hover:text-blue-600'}`
+                            }>
 
                                   <Vote className="w-4 h-4" />
                                 </button>
                                 {/* Aufgabe erstellen Button */}
                                 <button data-ev-id="ev_create_task_btn"
-                        onClick={() => {
-                          setShowCreateTaskModal({
-                            agendaItemId: item.id,
-                            title: item.title,
-                            description: item.description
-                          });
-                          setTaskForm({ assignedTo: '', dueDate: '', notes: '' });
-                        }}
-                        title="Aufgabe erstellen"
-                        className="p-1 hover:bg-emerald-100 rounded text-emerald-600 hover:text-emerald-700">
+                            onClick={() => {
+                              setShowCreateTaskModal({
+                                agendaItemId: item.id,
+                                title: item.title,
+                                description: item.description
+                              });
+                              setTaskForm({ assignedTo: '', dueDate: '', notes: '' });
+                            }}
+                            title="Aufgabe erstellen"
+                            className="p-1 hover:bg-emerald-100 rounded text-emerald-600 hover:text-emerald-700">
                                   <ClipboardList className="w-4 h-4" />
                                 </button>
                               </>
-                      }
+                          }
                             {/* Edit & Delete Buttons - für Kommandant/Admin ODER Ersteller des Eintrags */}
                             {canUserEditItem(item) && editingAgendaItem !== item.id &&
-                      <>
+                          <>
                         <button data-ev-id="ev_edit_agenda_item"
-                        onClick={() => {
-                          setEditingAgendaItem(item.id);
-                          setEditingAgendaItemText(item.title);
-                        }}
-                        title="Eintrag bearbeiten"
-                        className="p-1 hover:bg-blue-100 rounded text-blue-500 hover:text-blue-700">
+                            onClick={() => {
+                              setEditingAgendaItem(item.id);
+                              setEditingAgendaItemText(item.title);
+                            }}
+                            title="Eintrag bearbeiten"
+                            className="p-1 hover:bg-blue-100 rounded text-blue-500 hover:text-blue-700">
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button data-ev-id="ev_4901b38a4e"
-                        onClick={() => {
-                          if (confirm('Diesen Eintrag wirklich löschen?')) {
-                            deleteAgendaItem(item.id);
-                          }
-                        }}
-                        title="Eintrag löschen"
-                        className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-700">
+                            onClick={() => {
+                              if (confirm('Diesen Eintrag wirklich löschen?')) {
+                                deleteAgendaItem(item.id);
+                              }
+                            }}
+                            title="Eintrag löschen"
+                            className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-700">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </>
-                      }
+                          }
                             {item.requires_decision &&
-                      <span data-ev-id="ev_c7755dac20" className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded flex items-center gap-1">
+                          <span data-ev-id="ev_c7755dac20" className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded flex items-center gap-1">
                                 <Vote className="w-3 h-3" /> Beschluss nötig
                               </span>
-                      }
+                          }
                           </div>
                         </SortableAgendaItem>
-                  )}
+                      )}
                         </SortableContext>
                       </DndContext>
 
@@ -2148,12 +2148,33 @@ export default function SitzungDetail() {
                       {canManage &&
                 <div data-ev-id="ev_17bde87f8e" className="flex gap-2 ml-3">
                           <button data-ev-id="ev_9e27855dd2"
-                  onClick={() => {
-                    setShowConfirmCommandItemModal(item);
-                    setCommandItemNotes('');
+                  disabled={isConfirmingItem}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (isConfirmingItem) return;
+
+                    setIsConfirmingItem(true);
+                    try {
+                      const result = await confirmCommandDecisionItem(
+                        item,
+                        undefined,
+                        true,
+                        true,
+                        {}
+                      );
+                      if (result.error) {
+                        console.error('Bestätigung fehlgeschlagen:', result.error);
+                      }
+                    } finally {
+                      setIsConfirmingItem(false);
+                    }
                   }}
-                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">
-                            Bestätigen
+                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
+                            {isConfirmingItem ?
+                    <><div data-ev-id="ev_160b0eab58" className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird bestätigt...</> :
+
+                    <><CheckCircle2 className="w-3 h-3" /> Bestätigen</>
+                    }
                           </button>
                         </div>
                 }
@@ -3346,7 +3367,7 @@ export default function SitzungDetail() {
               e.stopPropagation();
               console.log('[UI] Bestätigen Button geklickt');
               if (!showConfirmCommandItemModal || isConfirmingItem) return;
-              
+
               setIsConfirmingItem(true);
               try {
                 console.log('[UI] Rufe confirmCommandDecisionItem auf...');
@@ -3361,7 +3382,7 @@ export default function SitzungDetail() {
                   }
                 );
                 console.log('[UI] Ergebnis:', result);
-                
+
                 if (!result.error) {
                   setShowConfirmCommandItemModal(null);
                   setCommandItemNotes('');
