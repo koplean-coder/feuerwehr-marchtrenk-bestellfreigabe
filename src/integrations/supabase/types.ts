@@ -3403,7 +3403,7 @@ export type Database = {
           is_completed: boolean
           is_important: boolean
           is_in_my_day: boolean
-          list_id: string
+          list_id: string | null
           meeting_id: string | null
           my_day_date: string | null
           notes: string | null
@@ -3437,7 +3437,7 @@ export type Database = {
           is_completed?: boolean
           is_important?: boolean
           is_in_my_day?: boolean
-          list_id: string
+          list_id?: string | null
           meeting_id?: string | null
           my_day_date?: string | null
           notes?: string | null
@@ -3471,7 +3471,7 @@ export type Database = {
           is_completed?: boolean
           is_important?: boolean
           is_in_my_day?: boolean
-          list_id?: string
+          list_id?: string | null
           meeting_id?: string | null
           my_day_date?: string | null
           notes?: string | null

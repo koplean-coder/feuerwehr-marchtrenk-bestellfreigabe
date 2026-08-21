@@ -2,6 +2,9 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { Layout } from '@/components/Layout';
 import { useMeetingDetail, useMeetings, type AttendanceStatus, type AgendaItemStatus, type MeetingAgendaItem, type DecisionVote } from '@/hooks/useMeetings';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useSettings } from '@/hooks/useSettings';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useBeschlussRegister } from '@/hooks/useBeschlussRegister';
@@ -49,7 +52,8 @@ import {
   ChevronUp,
   UserPlus,
   Link2,
-  CalendarX } from
+  CalendarX,
+  GripVertical } from
 'lucide-react';
 
 type Tab = 'uebersicht' | 'eintraege' | 'beschluesse' | 'register' | 'abschluss';
@@ -157,6 +161,47 @@ const normalizeToCategoryKey = (input: string): string => {
   return 'allfaelliges';
 };
 
+// Sortable wrapper for agenda items
+interface SortableAgendaItemProps {
+  id: string;
+  children: React.ReactNode;
+  className?: string;
+  canReorder: boolean;
+}
+
+function SortableAgendaItem({ id, children, className, canReorder }: SortableAgendaItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id, disabled: !canReorder });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1
+  };
+
+  return (
+    <div data-ev-id="ev_c519570601" ref={setNodeRef} style={style} className={className}>
+      {canReorder &&
+      <button data-ev-id="ev_d74e27e785"
+      {...attributes}
+      {...listeners}
+      className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground touch-none"
+      title="Verschieben">
+
+          <GripVertical className="w-4 h-4" />
+        </button>
+      }
+      {children}
+    </div>);
+
+}
+
 export default function SitzungDetail() {
   const { id } = useParams<{id: string;}>();
   const navigate = useNavigate();
@@ -182,6 +227,7 @@ export default function SitzungDetail() {
     addAgendaItem,
     updateAgendaItem,
     deleteAgendaItem,
+    reorderAgendaItems,
     updateAgendaItemTrafficLight,
     deferAgendaItem,
     addDecision,
@@ -258,6 +304,12 @@ export default function SitzungDetail() {
   } | null>(null);
   const [taskForm, setTaskForm] = useState({ assignedTo: '', dueDate: '', notes: '' });
   const [creatingTask, setCreatingTask] = useState(false);
+
+  // Drag & Drop Sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   // Pause Timer (90 minutes first, then 60 minutes repeating)
   // Timer state is persisted in localStorage so it survives page navigation
@@ -954,7 +1006,7 @@ export default function SitzungDetail() {
         // Item must be assigned to this person (for_profile_id) and not be Allfälliges
         return item.for_profile_id === person.id &&
         itemCategoryKey !== 'allfaelliges';
-      });
+      }).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
       return {
         id: person.id,
@@ -979,7 +1031,7 @@ export default function SitzungDetail() {
       const items = agendaItems.filter((item) => {
         if (item.is_fixed_item) return false;
         return item.category === categoryKey;
-      });
+      }).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
       people.push({
         id: person.id,
@@ -1000,7 +1052,7 @@ export default function SitzungDetail() {
       if (item.is_fixed_item) return false;
       const itemCategoryKey = normalizeToCategoryKey(item.category || '');
       return itemCategoryKey === 'allfaelliges';
-    });
+    }).sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
     people.push({
       id: 'allfaelliges',
@@ -1025,6 +1077,28 @@ export default function SitzungDetail() {
     });
     setExpandedCategories(peopleWithEntries);
   }, [peopleWithItems]);
+
+  // Handle drag end for reordering items within a person
+  const handleDragEnd = useCallback(async (event: DragEndEvent, personId: string) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const person = peopleWithItems.find((p) => p.id === personId);
+    if (!person) return;
+
+    const oldIndex = person.items.findIndex((item) => item.id === active.id);
+    const newIndex = person.items.findIndex((item) => item.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Calculate new order
+    const newItems = arrayMove(person.items, oldIndex, newIndex);
+    const orderedIds = newItems.map((item) => item.id);
+
+    // Update database
+    await reorderAgendaItems(orderedIds);
+  }, [peopleWithItems, reorderAgendaItems]);
 
   // Legacy: keep for compatibility
   const groupedAgendaItems = useMemo(() => {
@@ -1721,10 +1795,21 @@ export default function SitzungDetail() {
                   {/* Expanded Content */}
                   {isExpanded &&
                 <div data-ev-id="ev_41d578b040" className="divide-y divide-border">
-                      {/* Existing Items */}
+                      {/* Existing Items with Drag & Drop */}
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event) => handleDragEnd(event, person.id)}
+                      >
+                        <SortableContext
+                          items={person.items.map(i => i.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
                       {person.items.map((item, idx) =>
-                  <div data-ev-id="ev_6d6de25a02"
+                  <SortableAgendaItem
                   key={item.id}
+                  id={item.id}
+                  canReorder={canManage && !meeting?.status?.includes('abgeschlossen')}
                   className={`px-4 py-3 flex items-start gap-3 ${
                   item.traffic_light === 'rot' ? 'bg-red-50 border-l-4 border-l-red-500' : ''}`
                   }>
@@ -1913,8 +1998,10 @@ export default function SitzungDetail() {
                               </span>
                       }
                           </div>
-                        </div>
+                        </SortableAgendaItem>
                   )}
+                        </SortableContext>
+                      </DndContext>
 
                       {/* New Entry Input - Textarea + Save Button */}
                       {/* Nur anzeigen wenn: eigene Person ODER Allfälliges ODER Admin/Kdt */}

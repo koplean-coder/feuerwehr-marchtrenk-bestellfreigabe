@@ -1052,6 +1052,30 @@ export function useMeetingDetail(meetingId: string | undefined) {
     }
   };
 
+  // Reorder agenda items (for drag & drop)
+  const reorderAgendaItems = async (orderedItemIds: string[]) => {
+    if (!supabase || !canManage) {
+      return { error: new Error('Keine Berechtigung zum Sortieren') };
+    }
+
+    try {
+      // Update sort_order for each item in order
+      for (let i = 0; i < orderedItemIds.length; i++) {
+        const { error: updateError } = await supabase
+          .from('meeting_agenda_items')
+          .update({ sort_order: i })
+          .eq('id', orderedItemIds[i]);
+
+        if (updateError) throw updateError;
+      }
+
+      await fetchMeetingDetail();
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
   const deferAgendaItem = async (itemId: string, toMeetingId: string, reason?: string) => {
     if (!supabase || !canManage) {
       return { error: new Error('Nur Kommandant kann Punkte vertagen') };
@@ -2002,6 +2026,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
     addAgendaItem,
     updateAgendaItem,
     deleteAgendaItem,
+    reorderAgendaItems,
     updateAgendaItemTrafficLight,
     deferAgendaItem,
     addDecision,
