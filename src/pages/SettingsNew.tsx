@@ -67,8 +67,10 @@ export default function SettingsNew() {
     const validSections: SettingsSection[] = ['freigaben', 'eskalation', 'erinnerungen', 'pdf', 'email-empfaenger', 'system', 'zugriffsrechte', 'mitglieder', 'funktionen', 'email-vorlagen', 'email-design', 'leihgeraete', 'leihvertraege', 'probleme', 'aufgaben', 'modul-berechtigungen', 'tagesordnung'];
     if (sectionParam && validSections.includes(sectionParam as SettingsSection)) {
       setActiveSection(sectionParam as SettingsSection);
-      // Clear the URL param after processing
-      setSearchParams({}, { replace: true });
+      // Clear only the section param, keep other params (e.g., problemId)
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('section');
+      setSearchParams(newParams, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 

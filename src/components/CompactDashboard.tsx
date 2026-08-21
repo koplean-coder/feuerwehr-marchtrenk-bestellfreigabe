@@ -973,7 +973,7 @@ export function CompactDashboard({
                 </span>
               </div>
               <Link
-                to="/einstellungen?tab=problems"
+                to="/einstellungen?section=probleme"
                 className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1">
                 Alle anzeigen <ChevronRight className="w-3 h-3" />
               </Link>
@@ -982,7 +982,7 @@ export function CompactDashboard({
               {openProblems.slice(0, 3).map((problem: ProblemReport) =>
               <Link
                 key={problem.id}
-                to="/einstellungen?tab=problems"
+                to="/einstellungen?section=probleme"
                 className="block p-3 hover:bg-muted/50 transition-colors">
                   <div data-ev-id="ev_problemreport_row" className="flex items-start justify-between gap-2">
                     <div data-ev-id="ev_problemreport_content" className="flex-1 min-w-0">
@@ -1014,7 +1014,7 @@ export function CompactDashboard({
               {openProblems.length > 3 &&
               <div data-ev-id="ev_problemreports_more" className="p-3 text-center">
                 <Link
-                  to="/einstellungen?tab=problems"
+                  to="/einstellungen?section=probleme"
                   className="text-sm text-primary hover:underline">
                   + {openProblems.length - 3} weitere Probleme anzeigen
                 </Link>
