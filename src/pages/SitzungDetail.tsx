@@ -2240,11 +2240,17 @@ export default function SitzungDetail() {
                     setConfirmingItemId(order.id);
                     try {
                       const decisionText = order.title + (order.description ? ` - ${order.description}` : '');
+                      // Echtes Abstimmungsergebnis verwenden
+                      const isApproved = order.voting_result === 'approved' || 
+                        order.kommandomitglied_approved_at !== null ||
+                        order.status === 'freigegeben_kommandant' ||
+                        order.status === 'freigegeben' ||
+                        order.status === 'genehmigt';
                       const result = await confirmBanfDecision(
                         { ...order, title: decisionText },
-                        'bestätigt',
-                        quorum.votingMembersPresent,
-                        0,
+                        isApproved ? 'genehmigt' : 'abgelehnt',
+                        order.votes_for || 0,
+                        order.votes_against || 0,
                         0
                       );
                       if (result.error) {
