@@ -19,6 +19,7 @@ import { usePendingCommandDecisionsForUser } from '@/hooks/usePendingCommandDeci
 import { useModulePermissions } from '@/hooks/useModulePermissions';
 import { useRentalContracts, type RentalContract } from '@/hooks/useRentalContracts';
 import { usePendingRentalInvoices } from '@/hooks/usePendingRentalInvoices';
+import { useProblemReports, type ProblemReport } from '@/hooks/useProblemReports';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/Layout';
 import { OrderCard } from '@/components/OrderCard';
@@ -64,6 +65,7 @@ import {
   PackageCheck,
   Trash2,
   AlertTriangle,
+  Bug,
   Building2,
   TrendingUp,
   Layers,
@@ -125,7 +127,7 @@ export default function Index() {
   // Payment Orders & Event Participations für Dashboard-Anzeige
   const { paymentOrders, approvePaymentOrder, rejectPaymentOrder, markAsPaid, canApprovePaymentOrders } = usePaymentOrders();
   const { eventParticipations, approveEventParticipation, rejectEventParticipation } = useEventParticipations();
-  
+
   // Leihverträge mit Rechnungsbedarf (für Kassier)
   const { pendingInvoices: pendingRentalInvoices, refetch: refetchPendingInvoices } = usePendingRentalInvoices();
 
@@ -134,10 +136,16 @@ export default function Index() {
 
   // Offene Abstimmungen für Kommandomitglieder/Kommandant/Admin (Bestellungen)
   const { pendingVoteOrders, canVote } = usePendingVotesForUser(orders);
-  
+
   // Offene Kommandoabstimmungen (Umlaufbeschlüsse)
   const { decisions } = useCommandDecisions();
   const { pendingDecisions: pendingCommandDecisions, canVote: canVoteOnDecisions } = usePendingCommandDecisionsForUser(decisions);
+
+  // Offene Problemberichte (nur für Admin/Kommandant)
+  const { reports: problemReports } = useProblemReports();
+  const openProblemReports = effectiveIsAdmin || effectiveIsKommandant ?
+  problemReports.filter((r: ProblemReport) => r.status === 'open' || r.status === 'in_progress') :
+  [];
 
   // === SIMULATION CONTEXT (already imported above) ===
 
@@ -153,10 +161,10 @@ export default function Index() {
   effectiveIsBereichsleiter ?
   // Bereichsleiter: Eigene + zugewiesene + Abstimmungs-Bestellungen (falls auch Kommandomitglied)
   orders.filter((order) =>
-  order.created_by === effectiveUserId || 
+  order.created_by === effectiveUserId ||
   order.bereichsleiter_id === effectiveUserId ||
-  (effectiveHasKommandomitgliedFunction && order.requires_kommandomitglied_approval &&
-   !order.kommandomitglied_approved_at && order.status !== 'entwurf' && order.status !== 'abgeschlossen')
+  effectiveHasKommandomitgliedFunction && order.requires_kommandomitglied_approval &&
+  !order.kommandomitglied_approved_at && order.status !== 'entwurf' && order.status !== 'abgeschlossen'
   ) :
   effectiveHasKommandomitgliedFunction ?
   // Kommandomitglieder: Eigene + Bestellungen zur Abstimmung (alle Status außer Entwurf)
@@ -204,12 +212,12 @@ export default function Index() {
 
   // Offene Abstimmungen für Kommandomitglieder/Kommandant/Admin (aus dem Hook)
   const pendingVotesForMe = canVote ? pendingVoteOrders : [];
-  
+
   // Offene Kommandoabstimmungen für den User
   const pendingDecisionsForMe = canVoteOnDecisions ? pendingCommandDecisions : [];
 
-  // Gesamte "Zu erledigen"-Liste (Freigaben + Bestellungs-Abstimmungen + Kommandoabstimmungen)
-  const allPendingForMe = [...effectivePendingForMe, ...pendingVotesForMe, ...pendingDecisionsForMe];
+  // Gesamte "Zu erledigen"-Liste (Freigaben + Bestellungs-Abstimmungen + Kommandoabstimmungen + Problemberichte)
+  const allPendingForMe = [...effectivePendingForMe, ...pendingVotesForMe, ...pendingDecisionsForMe, ...openProblemReports];
 
   // Warten auf BL (für Kommandant-Übersicht)
   const effectiveWaitingForBL = effectiveIsKommandant ?
@@ -959,24 +967,24 @@ export default function Index() {
   function getUnreadOpenMessagesCount(): number {
     const conversations = getConversations();
     let count = 0;
-    
+
     for (const conversation of conversations) {
       // Conversation Key erstellen
       const firstMsg = conversation[0];
       const participants = [...(firstMsg.original_recipients || [])].sort().join(',');
       const subject = firstMsg.subject || 'Kein Betreff';
       const key = `${subject}::${participants}`;
-      
+
       // Prüfen ob Konversation geschlossen ist
       const status = conversationStatuses.get(key);
       if (status?.is_closed) {
         continue; // Geschlossene Konversationen überspringen
       }
-      
+
       // Ungelesene Nachrichten zählen
-      count += conversation.filter(msg => !msg.is_read).length;
+      count += conversation.filter((msg) => !msg.is_read).length;
     }
-    
+
     return count;
   }
 
@@ -1106,7 +1114,7 @@ export default function Index() {
   const totalMyItems = myAssignedTasks.length + myAssignedSteps.length;
 
   const [activeTab, setActiveTab] = useState<'pending' | 'waiting' | 'approved' | 'readyToOrder' | 'ordered' | 'waitingDelivery' | 'all'>(
-    effectiveIsKommandant ? 'pending' : 'all'
+    (effectiveIsKommandant || effectiveIsAdmin) ? 'pending' : 'all'
   );
   const [showCompleted, setShowCompleted] = useState(false);
   const [showMyOrders, setShowMyOrders] = useState(false);
@@ -1304,10 +1312,10 @@ export default function Index() {
   const tabs = [
   {
     id: 'pending' as const,
-    label: (pendingVotesForMe.length > 0 || pendingDecisionsForMe.length > 0) && effectivePendingForMe.length === 0 ? 'Abstimmungen' : 'Zu erledigen',
+    label: (pendingVotesForMe.length > 0 || pendingDecisionsForMe.length > 0) && effectivePendingForMe.length === 0 && openProblemReports.length === 0 ? 'Abstimmungen' : 'Zu erledigen',
     icon: ClipboardCheck,
     count: allPendingForMe.length,
-    show: effectiveIsBereichsleiter || effectiveIsKommandant || pendingVotesForMe.length > 0 || pendingDecisionsForMe.length > 0
+    show: effectiveIsBereichsleiter || effectiveIsKommandant || effectiveIsAdmin || pendingVotesForMe.length > 0 || pendingDecisionsForMe.length > 0 || openProblemReports.length > 0
   },
   {
     id: 'waiting' as const,
@@ -1355,7 +1363,7 @@ export default function Index() {
 
   const getActiveOrders = () => {
     switch (activeTab) {
-      case 'pending':return allPendingForMe;
+      case 'pending':return allPendingForMe.filter((item) => 'status' in item && !('category' in item && 'severity' in item));
       case 'waiting':return effectiveWaitingForBL;
       case 'approved':return effectiveApprovedOrders;
       case 'readyToOrder':return filteredOrders.filter((o) => (o.status === 'genehmigt' || o.status === 'freigegeben_kommandant') && !o.order_executed);
@@ -1504,12 +1512,12 @@ export default function Index() {
             if (!supabase || !user) return;
             try {
               // Finde Kassier
-              const { data: kassierProfiles } = await supabase
-                .from('profiles')
-                .select('id')
-                .contains('functions', ['kassier'])
-                .eq('is_active', true)
-                .limit(1);
+              const { data: kassierProfiles } = await supabase.
+              from('profiles').
+              select('id').
+              contains('functions', ['kassier']).
+              eq('is_active', true).
+              limit(1);
               const kassierProfile = kassierProfiles?.[0];
               if (!kassierProfile?.id) return;
 
@@ -1524,21 +1532,21 @@ export default function Index() {
 
               // Finde oder erstelle Standard-Liste für Kassier
               let listId: string | null = null;
-              const { data: existingLists } = await supabase
-                .from('todo_lists')
-                .select('id')
-                .eq('owner_id', kassierProfile.id)
-                .eq('is_smart_list', false)
-                .limit(1);
-              
+              const { data: existingLists } = await supabase.
+              from('todo_lists').
+              select('id').
+              eq('owner_id', kassierProfile.id).
+              eq('is_smart_list', false).
+              limit(1);
+
               if (existingLists && existingLists.length > 0) {
                 listId = existingLists[0].id;
               } else {
-                const { data: newList } = await supabase
-                  .from('todo_lists')
-                  .insert({ name: 'Aufgaben', owner_id: kassierProfile.id, is_smart_list: false })
-                  .select('id')
-                  .single();
+                const { data: newList } = await supabase.
+                from('todo_lists').
+                insert({ name: 'Aufgaben', owner_id: kassierProfile.id, is_smart_list: false }).
+                select('id').
+                single();
                 listId = newList?.id ?? null;
               }
 
@@ -1566,10 +1574,10 @@ export default function Index() {
           onMarkInvoiceCreated={async (contractId) => {
             if (!supabase) return;
             try {
-              await supabase
-                .from('rental_contracts')
-                .update({ status: 'invoiced' })
-                .eq('id', contractId);
+              await supabase.
+              from('rental_contracts').
+              update({ status: 'invoiced' }).
+              eq('id', contractId);
               refetchPendingInvoices();
               alert('Leihvertrag als "Rechnung erstellt" markiert.');
             } catch (err) {
@@ -1605,14 +1613,14 @@ export default function Index() {
             </div>
           </div>
           {canAccessBestellungen &&
-          <Link
+            <Link
               to="/bestellungen/neu"
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-primary rounded-xl font-medium hover:bg-white/90 transition-colors shadow-lg group">
 
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
             Neue Bestellung
           </Link>
-          }
+            }
         </div>
       </div>
 
@@ -2300,13 +2308,66 @@ export default function Index() {
                 }
               </div>
             </div> :
-            getActiveOrders().length === 0 ?
+            getActiveOrders().length === 0 && openProblemReports.length === 0 ?
             <div data-ev-id="ev_4227edda81" className="text-center py-12 text-muted-foreground">
               <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p data-ev-id="ev_da8c9db08c">Keine Bestellungen vorhanden</p>
+              <p data-ev-id="ev_da8c9db08c">Keine offenen Aufgaben</p>
             </div> :
 
             <div data-ev-id="ev_f69866a0b4" className="flex flex-col gap-3">
+              {/* Problemberichte für Admin/Kommandant */}
+              {activeTab === 'pending' && openProblemReports.length > 0 &&
+              <div data-ev-id="ev_0c424d8673" className="mb-4 bg-card rounded-xl border border-border overflow-hidden">
+                  <div data-ev-id="ev_388e8b65b3" className="p-3 bg-red-50 border-b border-border flex items-center justify-between">
+                    <div data-ev-id="ev_137d47005e" className="flex items-center gap-2">
+                      <div data-ev-id="ev_33a2c4c38c" className="p-1.5 bg-red-600 rounded-lg">
+                        <Bug className="w-4 h-4 text-white" />
+                      </div>
+                      <span data-ev-id="ev_3bb3910e1b" className="font-medium text-foreground">Offene Problemmeldungen</span>
+                      <span data-ev-id="ev_972977ad97" className="px-2 py-0.5 bg-red-600 text-white text-xs rounded-full font-bold">
+                        {openProblemReports.length}
+                      </span>
+                    </div>
+                    <Link
+                    to="/einstellungen?tab=probleme"
+                    className="text-xs text-red-600 hover:underline flex items-center gap-1 font-medium">
+                      Alle anzeigen
+                    </Link>
+                  </div>
+                  <div data-ev-id="ev_2636b1a645" className="divide-y divide-border">
+                    {openProblemReports.map((problem: ProblemReport) =>
+                  <Link
+                    key={problem.id}
+                    to="/einstellungen?tab=probleme"
+                    className="p-3 hover:bg-muted/50 transition-colors flex items-start justify-between gap-3 block">
+                        <div data-ev-id="ev_9bb9521948" className="flex-1 min-w-0">
+                          <div data-ev-id="ev_f829bb9811" className="flex items-center gap-2 mb-1">
+                            <span data-ev-id="ev_9a9cc2fa2a" className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        problem.severity === 'critical' ? 'bg-red-100 text-red-700' :
+                        problem.severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                        problem.severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'}`
+                        }>
+                              {problem.severity === 'critical' ? 'Kritisch' :
+                          problem.severity === 'high' ? 'Hoch' :
+                          problem.severity === 'medium' ? 'Mittel' : 'Niedrig'}
+                            </span>
+                            <span data-ev-id="ev_67f9f92629" className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        problem.status === 'open' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`
+                        }>
+                              {problem.status === 'open' ? 'Offen' : 'In Bearbeitung'}
+                            </span>
+                          </div>
+                          <h3 data-ev-id="ev_b51467b283" className="font-medium text-foreground truncate">{problem.title}</h3>
+                          <p data-ev-id="ev_62a88b89b6" className="text-sm text-muted-foreground truncate">
+                            {problem.category} • {new Date(problem.created_at).toLocaleDateString('de-DE')}
+                          </p>
+                        </div>
+                      </Link>
+                  )}
+                  </div>
+                </div>
+              }
               {getActiveOrders().map((order) => {
                 const collectiveInfo = getCollectiveOrderInfo(order);
                 return (

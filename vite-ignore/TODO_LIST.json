@@ -36,8 +36,17 @@
         "src/utils/generatePlannerPdf.ts"
       ],
       "status": "pending"
+    },
+    {
+      "id": 5,
+      "description": "Optimistic Updates überall: Lokale State-Updates statt fetchMeetingDetail() für attendance, agendaItems, decisions",
+      "files": [
+        "src/hooks/useMeetings.ts",
+        "src/pages/SitzungDetail.tsx"
+      ],
+      "status": "pending"
     }
   ],
   "createdAt": "2026-08-21T18:05:58.756Z",
-  "updatedAt": "2026-08-21T18:05:58.757Z"
+  "updatedAt": "2026-08-21T18:18:18.603Z"
 }
