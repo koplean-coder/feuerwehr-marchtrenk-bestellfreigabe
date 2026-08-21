@@ -680,56 +680,65 @@ export function useMeetingDetail(meetingId: string | undefined) {
       // Keine canManage-Prüfung hier - die Übernahme soll automatisch passieren
       if (meetingData.status !== 'abgeschlossen') {
         try {
-          // Finde alle abgeschlossenen Sitzungen des gleichen Typs
+          // Finde ALLE abgeschlossenen Sitzungen (unabhängig vom Typ)
+          // Vertagte Punkte sind personenbezogen und sollten typ-übergreifend übernommen werden
           const { data: closedMeetings } = await supabase
             .from('meetings')
-            .select('id')
-            .eq('meeting_type', meetingData.meeting_type)
+            .select('id, meeting_type, meeting_number')
             .eq('status', 'abgeschlossen')
             .neq('id', meetingId);
+
+          console.log('[Auto-Übernahme] Aktuelle Sitzung:', meetingId, 'Typ:', meetingData.meeting_type);
+          console.log('[Auto-Übernahme] Abgeschlossene Sitzungen gefunden:', closedMeetings?.length, closedMeetings);
 
           if (closedMeetings && closedMeetings.length > 0) {
             const closedMeetingIds = closedMeetings.map(m => m.id);
 
             // Finde vertagte Punkte (traffic_light = 'rot' ODER status = 'vertagt') aus diesen Sitzungen
-            // Wir prüfen NICHT mehr nur deferred_to_meeting_id = null, sondern ob der Punkt
-            // bereits in der aktuellen Sitzung existiert
-            const { data: deferredItems } = await supabase
+            const { data: deferredItems, error: deferredError } = await supabase
               .from('meeting_agenda_items')
               .select('*')
-              .in('meeting_id', closedMeetingIds)
-              .or('traffic_light.eq.rot,status.eq.vertagt');
+              .in('meeting_id', closedMeetingIds);
 
-            if (deferredItems && deferredItems.length > 0) {
+            console.log('[Auto-Übernahme] Alle Agenda-Items aus abgeschlossenen Sitzungen:', deferredItems?.length);
+            if (deferredError) console.error('[Auto-Übernahme] Fehler:', deferredError);
+
+            // Filtere auf rot/vertagt
+            const redOrDeferredItems = (deferredItems ?? []).filter(
+              item => item.traffic_light === 'rot' || item.status === 'vertagt'
+            );
+            console.log('[Auto-Übernahme] Rote/vertagte Punkte:', redOrDeferredItems.length, redOrDeferredItems.map(i => ({ title: i.title, traffic_light: i.traffic_light, status: i.status, deferred_to: i.deferred_to_meeting_id })));
+
+            if (redOrDeferredItems.length > 0) {
               // Prüfe welche Punkte noch nicht in dieser Sitzung sind
-              // Wir schauen auf deferred_from_meeting_id UND Titel-Match
-              const existingFromMeetingIds = new Set(
-                (agendaData ?? []).filter(a => a.deferred_from_meeting_id).map(a => a.deferred_from_meeting_id)
-              );
               const existingTitles = new Set(
                 (agendaData ?? []).map(a => a.title.toLowerCase())
               );
+              console.log('[Auto-Übernahme] Bereits existierende Titel in dieser Sitzung:', [...existingTitles]);
 
-              // Filtere Punkte die:
-              // 1. Noch nicht als "von dieser Sitzung übernommen" markiert sind
-              // 2. Deren deferred_to_meeting_id nicht auf diese Sitzung zeigt
-              // 3. Deren Titel noch nicht in dieser Sitzung existiert
-              const itemsToInsert = deferredItems.filter(item => {
-                // Bereits von diesem Item übernommen?
-                if (existingFromMeetingIds.has(item.meeting_id)) {
-                  // Prüfe ob genau dieser Titel schon übernommen wurde
-                  const alreadyTransferred = (agendaData ?? []).some(
-                    a => a.deferred_from_meeting_id === item.meeting_id && 
-                         a.title.toLowerCase() === item.title.toLowerCase()
-                  );
-                  if (alreadyTransferred) return false;
-                }
+              // Filtere Punkte die noch nicht übernommen wurden
+              const itemsToInsert = redOrDeferredItems.filter(item => {
                 // Zeigt deferred_to_meeting_id bereits auf diese Sitzung? Dann wurde er schon übertragen
-                if (item.deferred_to_meeting_id === meetingId) return false;
+                if (item.deferred_to_meeting_id === meetingId) {
+                  console.log('[Auto-Übernahme] Überspringe (bereits auf diese Sitzung verweisend):', item.title);
+                  return false;
+                }
                 // Titel existiert bereits in dieser Sitzung?
-                if (existingTitles.has(item.title.toLowerCase())) return false;
+                if (existingTitles.has(item.title.toLowerCase())) {
+                  console.log('[Auto-Übernahme] Überspringe (Titel existiert bereits):', item.title);
+                  return false;
+                }
+                // Wurde dieser Punkt bereits in eine ANDERE offene Sitzung übertragen?
+                // Wir prüfen das über deferred_to_meeting_id - wenn es gesetzt ist und nicht auf eine
+                // abgeschlossene Sitzung zeigt, wurde er bereits woanders hin übertragen
+                if (item.deferred_to_meeting_id && !closedMeetingIds.includes(item.deferred_to_meeting_id)) {
+                  console.log('[Auto-Übernahme] Überspringe (bereits zu anderer Sitzung übertragen):', item.title, '-> ', item.deferred_to_meeting_id);
+                  return false;
+                }
                 return true;
               });
+
+              console.log('[Auto-Übernahme] Zu übernehmende Punkte:', itemsToInsert.length, itemsToInsert.map(i => i.title));
 
               if (itemsToInsert.length > 0) {
                 // Füge die vertagten Punkte in diese Sitzung ein
@@ -747,29 +756,35 @@ export function useMeetingDetail(meetingId: string | undefined) {
                   traffic_light: 'gelb' as const,
                 }));
 
-                await supabase
+                const { error: insertError } = await supabase
                   .from('meeting_agenda_items')
                   .insert(newItems);
 
-                // Aktualisiere die Original-Punkte
-                for (const item of itemsToInsert) {
-                  await supabase
+                if (insertError) {
+                  console.error('[Auto-Übernahme] Insert Fehler:', insertError);
+                } else {
+                  console.log('[Auto-Übernahme] Erfolgreich eingefügt:', newItems.length, 'Punkte');
+
+                  // Aktualisiere die Original-Punkte
+                  for (const item of itemsToInsert) {
+                    await supabase
+                      .from('meeting_agenda_items')
+                      .update({ 
+                        deferred_to_meeting_id: meetingId,
+                        status: 'vertagt' as AgendaItemStatus
+                      })
+                      .eq('id', item.id);
+                  }
+
+                  // Lade die Agenda-Items neu
+                  const { data: updatedAgendaData } = await supabase
                     .from('meeting_agenda_items')
-                    .update({ 
-                      deferred_to_meeting_id: meetingId,
-                      status: 'vertagt' as AgendaItemStatus
-                    })
-                    .eq('id', item.id);
+                    .select('*')
+                    .eq('meeting_id', meetingId)
+                    .order('sort_order');
+
+                  setAgendaItems((updatedAgendaData as MeetingAgendaItem[]) ?? []);
                 }
-
-                // Lade die Agenda-Items neu
-                const { data: updatedAgendaData } = await supabase
-                  .from('meeting_agenda_items')
-                  .select('*')
-                  .eq('meeting_id', meetingId)
-                  .order('sort_order');
-
-                setAgendaItems((updatedAgendaData as MeetingAgendaItem[]) ?? []);
               }
             }
           }
