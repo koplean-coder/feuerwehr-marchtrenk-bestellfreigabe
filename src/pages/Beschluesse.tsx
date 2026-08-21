@@ -618,7 +618,8 @@ export default function Beschluesse() {
                         <tr
                           data-ev-id={`ev_row_${beschluss.id}`}
                           key={beschluss.id}
-                          className={`border-t border-gray-100 hover:bg-gray-50 transition-colors ${
+                          onClick={() => openDetail(beschluss)}
+                          className={`border-t border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                           baldAblaufend ? 'bg-yellow-50' : ''} ${
                           effStatus === 'aufgehoben' ? 'opacity-60' : ''}`}>
 
