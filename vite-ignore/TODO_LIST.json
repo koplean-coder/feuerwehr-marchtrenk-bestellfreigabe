@@ -1,25 +1,37 @@
 {
-  "summary": "Uploads für Tagesordnungspunkte (max 5 pro Eintrag)",
+  "summary": "Todo-Liste Verbesserungen",
   "todos": [
     {
       "id": 1,
-      "description": "DB-Tabelle + Storage für Anhänge erstellen",
+      "description": "Überfällige Tasks hervorheben + Sortierung reparieren",
       "files": [],
-      "status": "complete"
+      "status": "active"
     },
     {
       "id": 2,
-      "description": "Upload-Komponente und Vorschau-Modal",
+      "description": "Mehrstufige Priorität + Papierkorb/Archiv (DB + UI)",
       "files": [],
-      "status": "complete"
+      "status": "pending"
     },
     {
       "id": 3,
-      "description": "Integration in SitzungDetail.tsx",
+      "description": "Tags/Labels System (DB + UI)",
       "files": [],
-      "status": "complete"
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "description": "Datei-Anhänge UI + Heute/Morgen/Überfällig Filter",
+      "files": [],
+      "status": "pending"
+    },
+    {
+      "id": 5,
+      "description": "Smart List Counts aktualisieren + Feinschliff",
+      "files": [],
+      "status": "pending"
     }
   ],
-  "createdAt": "2026-08-21T20:32:36.524Z",
-  "updatedAt": "2026-08-21T20:35:23.369Z"
+  "createdAt": "2026-08-21T21:59:56.047Z",
+  "updatedAt": "2026-08-21T21:59:56.047Z"
 }

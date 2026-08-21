@@ -24,9 +24,11 @@ export interface TodoTaskWithSteps extends TodoTask {
 
 export interface TaskFilters {
   listId?: string;
-  smartList?: 'my_day' | 'important' | 'planned' | 'assigned_to_me' | 'all';
+  smartList?: 'my_day' | 'important' | 'planned' | 'assigned_to_me' | 'all' | 'today' | 'tomorrow' | 'overdue' | 'deleted';
   showCompleted?: boolean;
   search?: string;
+  sortBy?: 'manual' | 'due_date' | 'importance' | 'alphabetical' | 'created' | 'priority';
+  sortDirection?: 'asc' | 'desc';
 }
 
 // Calculate next due date based on recurrence
@@ -97,8 +99,29 @@ export function useTodoTasks(filters: TaskFilters = {}) {
         .select(`
           *,
           todo_task_steps(*)
-        `)
-        .order('sort_order', { ascending: true });
+        `);
+
+      // Apply sorting based on sortBy parameter
+      const sortDir = filters.sortDirection === 'desc' ? false : true;
+      switch (filters.sortBy) {
+        case 'due_date':
+          query = query.order('due_date', { ascending: sortDir, nullsFirst: false });
+          break;
+        case 'importance':
+          query = query.order('is_important', { ascending: false }).order('sort_order', { ascending: true });
+          break;
+        case 'alphabetical':
+          query = query.order('title', { ascending: sortDir });
+          break;
+        case 'created':
+          query = query.order('created_at', { ascending: sortDir });
+          break;
+        case 'priority':
+          query = query.order('priority', { ascending: sortDir, nullsFirst: false }).order('sort_order', { ascending: true });
+          break;
+        default: // 'manual'
+          query = query.order('sort_order', { ascending: true });
+      }
 
       // BASE FILTER: Only show tasks that belong to this user
       // (created by me OR assigned to me OR shared with me)
@@ -111,6 +134,10 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       // Apply additional filters based on smart list or regular list
       if (filters.smartList) {
         const today = new Date().toISOString().split('T')[0];
+        
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = tomorrow.toISOString().split('T')[0];
         
         switch (filters.smartList) {
           case 'my_day':
@@ -127,6 +154,18 @@ export function useTodoTasks(filters: TaskFilters = {}) {
             break;
           case 'assigned_to_me':
             query = query.eq('assigned_to', user.id);
+            break;
+          case 'today':
+            query = query.eq('due_date', today);
+            break;
+          case 'tomorrow':
+            query = query.eq('due_date', tomorrowStr);
+            break;
+          case 'overdue':
+            query = query.lt('due_date', today);
+            break;
+          case 'deleted':
+            query = query.eq('is_deleted', true);
             break;
           // 'all' - no additional filter, base filter already applied
         }
@@ -210,7 +249,7 @@ export function useTodoTasks(filters: TaskFilters = {}) {
     } finally {
       setLoading(false);
     }
-  }, [filters.listId, filters.smartList, filters.showCompleted, filters.search]);
+  }, [filters.listId, filters.smartList, filters.showCompleted, filters.search, filters.sortBy, filters.sortDirection]);
 
   useEffect(() => {
     fetchTasks();
