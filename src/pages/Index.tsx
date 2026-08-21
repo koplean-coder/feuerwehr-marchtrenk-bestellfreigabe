@@ -2338,7 +2338,7 @@ export default function Index() {
                     {openProblemReports.map((problem: ProblemReport) =>
                   <Link
                     key={problem.id}
-                    to="/einstellungen?tab=probleme"
+                    to={`/einstellungen?tab=probleme&problemId=${problem.id}`}
                     className="p-3 hover:bg-muted/50 transition-colors flex items-start justify-between gap-3 block">
                         <div data-ev-id="ev_9bb9521948" className="flex-1 min-w-0">
                           <div data-ev-id="ev_f829bb9811" className="flex items-center gap-2 mb-1">

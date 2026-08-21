@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { useProblemReports, type ProblemReport } from '@/hooks/useProblemReports';
 import { useSettings } from '@/hooks/useSettings';
 import {
@@ -34,10 +35,30 @@ const PRIORITY_OPTIONS = [
 const;
 
 export function ProblemReportsAdmin() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { reports, loading, canManageReports, updateReport } = useProblemReports();
   const { problemReportEnabled, updateProblemReportEnabled } = useSettings();
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // URL-Parameter für direktes Öffnen eines Problems
+  useEffect(() => {
+    const problemId = searchParams.get('problemId');
+    if (problemId && reports.length > 0) {
+      const problem = reports.find(r => r.id === problemId);
+      if (problem) {
+        setExpandedReport(problemId);
+        // Filter zurücksetzen damit das Problem sichtbar ist
+        if (statusFilter !== 'all' && problem.status !== statusFilter) {
+          setStatusFilter('all');
+        }
+        // URL-Parameter entfernen nach dem Öffnen
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('problemId');
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, [searchParams, reports, statusFilter, setSearchParams]);
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesText, setNotesText] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
