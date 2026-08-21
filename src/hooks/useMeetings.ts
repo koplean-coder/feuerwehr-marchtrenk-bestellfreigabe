@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSimulation } from '@/contexts/SimulationContext';
@@ -417,6 +417,9 @@ export function useMeetingDetail(meetingId: string | undefined) {
   const [pendingCommandDecisionItems, setPendingCommandDecisionItems] = useState<PendingCommandDecisionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref um Doppel-Ausführung der Auto-Übernahme zu verhindern
+  const deferredItemsProcessedRef = useRef<string | null>(null);
 
   // Use effective (simulated) profile for permission checks
   // BUT also allow real admins to manage during simulation
@@ -682,7 +685,12 @@ export function useMeetingDetail(meetingId: string | undefined) {
       // aus vorherigen abgeschlossenen Sitzungen gibt, die übernommen werden müssen
       // Keine canManage-Prüfung hier - die Übernahme soll automatisch passieren
       if (meetingData.status !== 'abgeschlossen') {
-        try {
+        // Verhindere Doppel-Ausführung (React StrictMode, etc.)
+        if (deferredItemsProcessedRef.current === meetingId) {
+          console.log('[Auto-Übernahme] Bereits für diese Sitzung ausgeführt, überspringe');
+        } else {
+          deferredItemsProcessedRef.current = meetingId;
+          try {
           // Finde alle abgeschlossenen Sitzungen des GLEICHEN TYPS
           const { data: closedMeetings } = await supabase
             .from('meetings')
@@ -793,8 +801,9 @@ export function useMeetingDetail(meetingId: string | undefined) {
               }
             }
           }
-        } catch (deferErr) {
-          console.error('Fehler beim Übernehmen vertagter Punkte:', deferErr);
+          } catch (deferErr) {
+            console.error('Fehler beim Übernehmen vertagter Punkte:', deferErr);
+          }
         }
       }
 
