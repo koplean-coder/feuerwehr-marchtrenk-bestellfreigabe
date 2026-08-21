@@ -279,7 +279,7 @@ export default function SitzungDetail() {
   const [commandItemNotes, setCommandItemNotes] = useState('');
   const [generatePdfOnConfirm, setGeneratePdfOnConfirm] = useState(true);
   const [sendToSchriftfuehrer, setSendToSchriftfuehrer] = useState(true);
-  const [isConfirmingItem, setIsConfirmingItem] = useState(false);
+  const [confirmingItemId, setConfirmingItemId] = useState<string | null>(null);
   const [showDeleteMeetingConfirm, setShowDeleteMeetingConfirm] = useState(false);
   const [deletingMeeting, setDeletingMeeting] = useState(false);
   const [editingMeetingDetails, setEditingMeetingDetails] = useState(false);
@@ -2148,12 +2148,12 @@ export default function SitzungDetail() {
                       {canManage &&
                 <div data-ev-id="ev_17bde87f8e" className="flex gap-2 ml-3">
                           <button data-ev-id="ev_9e27855dd2"
-                  disabled={isConfirmingItem}
+                  disabled={confirmingItemId === item.id}
                   onClick={async (e) => {
                     e.stopPropagation();
-                    if (isConfirmingItem) return;
+                    if (confirmingItemId) return;
 
-                    setIsConfirmingItem(true);
+                    setConfirmingItemId(item.id);
                     try {
                       const result = await confirmCommandDecisionItem(
                         item,
@@ -2166,11 +2166,11 @@ export default function SitzungDetail() {
                         console.error('Bestätigung fehlgeschlagen:', result.error);
                       }
                     } finally {
-                      setIsConfirmingItem(false);
+                      setConfirmingItemId(null);
                     }
                   }}
                   className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
-                            {isConfirmingItem ?
+                            {confirmingItemId === item.id ?
                     <><div data-ev-id="ev_160b0eab58" className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird bestätigt...</> :
 
                     <><CheckCircle2 className="w-3 h-3" /> Bestätigen</>
@@ -2232,19 +2232,14 @@ export default function SitzungDetail() {
                       {canManage &&
                 <div data-ev-id="ev_a5fa039475" className="flex gap-2 ml-3">
                           <button data-ev-id="ev_a0d366114c"
-                  disabled={isConfirmingItem}
+                  disabled={confirmingItemId === order.id}
                   onClick={async (e) => {
                     e.stopPropagation();
-                    console.log('[UI] BANF Bestätigen geklickt für:', order.id, order.title);
-                    if (isConfirmingItem) {
-                      console.log('[UI] Bereits in Bearbeitung');
-                      return;
-                    }
+                    if (confirmingItemId) return;
 
-                    setIsConfirmingItem(true);
+                    setConfirmingItemId(order.id);
                     try {
                       const decisionText = order.title + (order.description ? ` - ${order.description}` : '');
-                      console.log('[UI] Rufe confirmBanfDecision auf...');
                       const result = await confirmBanfDecision(
                         { ...order, title: decisionText },
                         'bestätigt',
@@ -2252,15 +2247,17 @@ export default function SitzungDetail() {
                         0,
                         0
                       );
-                      console.log('[UI] confirmBanfDecision Ergebnis:', result);
+                      if (result.error) {
+                        console.error('Bestätigung fehlgeschlagen:', result.error);
+                      }
                     } catch (err) {
-                      console.error('[UI] Fehler bei confirmBanfDecision:', err);
+                      console.error('Fehler bei confirmBanfDecision:', err);
                     } finally {
-                      setIsConfirmingItem(false);
+                      setConfirmingItemId(null);
                     }
                   }}
                   className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
-                            {isConfirmingItem ?
+                            {confirmingItemId === order.id ?
                     <><div data-ev-id="ev_28bc75cf41" className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird bestätigt...</> :
 
                     <><CheckCircle2 className="w-3 h-3" /> Bestätigen</>
@@ -3384,19 +3381,17 @@ export default function SitzungDetail() {
               setCommandItemGueltigBis('');
               setCommandItemHebtAuf('');
             }}
-            disabled={isConfirmingItem}
+            disabled={!!confirmingItemId}
             className="px-4 py-2 border border-border rounded-lg disabled:opacity-50">
                 Abbrechen
               </button>
               <button data-ev-id="ev_b7f7edac85"
             onClick={async (e) => {
               e.stopPropagation();
-              console.log('[UI] Bestätigen Button geklickt');
-              if (!showConfirmCommandItemModal || isConfirmingItem) return;
+              if (!showConfirmCommandItemModal || confirmingItemId) return;
 
-              setIsConfirmingItem(true);
+              setConfirmingItemId(showConfirmCommandItemModal.id);
               try {
-                console.log('[UI] Rufe confirmCommandDecisionItem auf...');
                 const result = await confirmCommandDecisionItem(
                   showConfirmCommandItemModal,
                   commandItemNotes || undefined,
@@ -3407,7 +3402,6 @@ export default function SitzungDetail() {
                     hebtAuf: commandItemHebtAuf || undefined
                   }
                 );
-                console.log('[UI] Ergebnis:', result);
 
                 if (!result.error) {
                   setShowConfirmCommandItemModal(null);
@@ -3416,14 +3410,14 @@ export default function SitzungDetail() {
                   setCommandItemHebtAuf('');
                 }
               } catch (err) {
-                console.error('[UI] Fehler:', err);
+                console.error('Fehler:', err);
               } finally {
-                setIsConfirmingItem(false);
+                setConfirmingItemId(null);
               }
             }}
-            disabled={isConfirmingItem}
+            disabled={!!confirmingItemId}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50">
-                {isConfirmingItem ?
+                {confirmingItemId ?
               <>
                     <div data-ev-id="ev_a0a4d50700" className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Wird verarbeitet...
