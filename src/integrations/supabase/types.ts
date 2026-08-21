@@ -3384,6 +3384,7 @@ export type Database = {
       }
       todo_tasks: {
         Row: {
+          agenda_item_id: string | null
           assigned_at: string | null
           assigned_by: string | null
           assigned_to: string | null
@@ -3403,6 +3404,7 @@ export type Database = {
           is_important: boolean
           is_in_my_day: boolean
           list_id: string
+          meeting_id: string | null
           my_day_date: string | null
           notes: string | null
           notes_updated_at: string | null
@@ -3416,6 +3418,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agenda_item_id?: string | null
           assigned_at?: string | null
           assigned_by?: string | null
           assigned_to?: string | null
@@ -3435,6 +3438,7 @@ export type Database = {
           is_important?: boolean
           is_in_my_day?: boolean
           list_id: string
+          meeting_id?: string | null
           my_day_date?: string | null
           notes?: string | null
           notes_updated_at?: string | null
@@ -3448,6 +3452,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agenda_item_id?: string | null
           assigned_at?: string | null
           assigned_by?: string | null
           assigned_to?: string | null
@@ -3467,6 +3472,7 @@ export type Database = {
           is_important?: boolean
           is_in_my_day?: boolean
           list_id?: string
+          meeting_id?: string | null
           my_day_date?: string | null
           notes?: string | null
           notes_updated_at?: string | null
@@ -3480,6 +3486,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "todo_tasks_agenda_item_id_fkey"
+            columns: ["agenda_item_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_agenda_items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "todo_tasks_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -3499,6 +3512,13 @@ export type Database = {
             columns: ["list_id"]
             isOneToOne: false
             referencedRelation: "todo_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "todo_tasks_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
             referencedColumns: ["id"]
           },
         ]

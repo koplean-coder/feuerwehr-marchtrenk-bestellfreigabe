@@ -250,6 +250,15 @@ export default function SitzungDetail() {
   const [editDecisionHebtAuf, setEditDecisionHebtAuf] = useState('');
   const [downloadingPdfDecisionId, setDownloadingPdfDecisionId] = useState<string | null>(null);
 
+  // Aufgaben-Modal State
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState<{
+    agendaItemId: string;
+    title: string;
+    description: string | null;
+  } | null>(null);
+  const [taskForm, setTaskForm] = useState({ assignedTo: '', dueDate: '', notes: '' });
+  const [creatingTask, setCreatingTask] = useState(false);
+
   // Pause Timer (90 minutes first, then 60 minutes repeating)
   // Timer state is persisted in localStorage so it survives page navigation
   const timerStorageKey = `sitzung_timer_${id}`;
@@ -1808,6 +1817,7 @@ export default function SitzungDetail() {
                             {canManageTrafficLights &&
                       <>
                                 {/* Traffic lights - horizontale Ampel */}
+                                {/* Bei Pflicht-/übernommenen Punkten: kein Rot (keine erneute Vertagung) */}
                                 <div data-ev-id="ev_74e12542f6" className="flex items-center bg-slate-800 rounded-full px-1.5 py-1 gap-1">
                                   <button data-ev-id="ev_3222c28f20"
                           onClick={() => updateAgendaItemTrafficLight(item.id, 'blau')}
@@ -1817,7 +1827,9 @@ export default function SitzungDetail() {
                           'bg-gradient-to-br from-sky-300 to-sky-500 shadow-lg shadow-sky-500/50' :
                           'bg-slate-600 hover:bg-slate-500'}`
                           } />
-                                  <button data-ev-id="ev_e892c58e9e"
+                                  {/* Rot (Vertagen) nur bei normalen Punkten - nicht bei übernommenen Pflichtpunkten */}
+                                  {!(item.is_mandatory && item.deferred_from_meeting_id) &&
+                          <button data-ev-id="ev_e892c58e9e"
                           onClick={() => updateAgendaItemTrafficLight(item.id, 'rot')}
                           title="Vertagen (nächste Sitzung)"
                           className={`w-4 h-4 rounded-full transition-all ${
@@ -1825,6 +1837,7 @@ export default function SitzungDetail() {
                           'bg-gradient-to-br from-red-400 to-red-600 shadow-lg shadow-red-500/50' :
                           'bg-slate-600 hover:bg-slate-500'}`
                           } />
+                          }
                                   <button data-ev-id="ev_df351f9483"
                           onClick={() => updateAgendaItemTrafficLight(item.id, 'gelb')}
                           title="Unbehandelt"
@@ -1853,6 +1866,20 @@ export default function SitzungDetail() {
                         }>
 
                                   <Vote className="w-4 h-4" />
+                                </button>
+                                {/* Aufgabe erstellen Button */}
+                                <button data-ev-id="ev_create_task_btn"
+                        onClick={() => {
+                          setShowCreateTaskModal({
+                            agendaItemId: item.id,
+                            title: item.title,
+                            description: item.description
+                          });
+                          setTaskForm({ assignedTo: '', dueDate: '', notes: '' });
+                        }}
+                        title="Aufgabe erstellen"
+                        className="p-1 hover:bg-emerald-100 rounded text-emerald-600 hover:text-emerald-700">
+                                  <ClipboardList className="w-4 h-4" />
                                 </button>
                               </>
                       }
@@ -3490,6 +3517,127 @@ export default function SitzungDetail() {
             onClick={handleSaveMeetingDetails}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
                 <Save className="w-4 h-4" /> Speichern
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      {/* Aufgabe erstellen Modal */}
+      {showCreateTaskModal &&
+      <div data-ev-id="ev_create_task_modal_overlay" className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div data-ev-id="ev_create_task_modal" className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div data-ev-id="ev_create_task_header" className="flex items-center justify-between mb-4">
+              <h3 data-ev-id="ev_create_task_title" className="text-lg font-semibold flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-emerald-600" />
+                Aufgabe erstellen
+              </h3>
+              <button data-ev-id="ev_close_task_modal"
+            onClick={() => setShowCreateTaskModal(null)}
+            className="p-1 hover:bg-muted rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div data-ev-id="ev_task_form" className="space-y-4">
+              {/* Aus Tagesordnungspunkt */}
+              <div data-ev-id="ev_task_source" className="bg-muted/30 p-3 rounded-lg">
+                <p data-ev-id="ev_task_source_label" className="text-xs text-muted-foreground mb-1">Aus Tagesordnungspunkt:</p>
+                <p data-ev-id="ev_task_source_title" className="font-medium text-sm">{showCreateTaskModal.title}</p>
+                {showCreateTaskModal.description &&
+              <p data-ev-id="ev_task_source_desc" className="text-xs text-muted-foreground mt-1">{showCreateTaskModal.description}</p>
+              }
+              </div>
+              
+              {/* Empfänger (nur anwesende Mitglieder) */}
+              <div data-ev-id="ev_task_assignee">
+                <label data-ev-id="ev_task_assignee_label" className="block text-sm font-medium mb-1">Aufgabe zuweisen an *</label>
+                <select data-ev-id="ev_task_assignee_select"
+              value={taskForm.assignedTo}
+              onChange={(e) => setTaskForm((f) => ({ ...f, assignedTo: e.target.value }))}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background">
+                  <option data-ev-id="ev_3305fe2d82" value="">-- Mitglied auswählen --</option>
+                  {attendance.
+                filter((a) => a.status === 'anwesend' || a.status === 'remote').
+                map((a) =>
+                <option data-ev-id="ev_88cdc60b06" key={a.profile_id} value={a.profile_id}>
+                    {a.profile?.full_name || 'Unbekannt'} {a.function_name ? `(${a.function_name})` : ''}
+                  </option>
+                )}
+                </select>
+              </div>
+              
+              {/* Fälligkeitsdatum */}
+              <div data-ev-id="ev_task_due_date">
+                <label data-ev-id="ev_task_due_label" className="block text-sm font-medium mb-1">Fälligkeitsdatum (optional)</label>
+                <input data-ev-id="ev_task_due_input"
+              type="date"
+              value={taskForm.dueDate}
+              onChange={(e) => setTaskForm((f) => ({ ...f, dueDate: e.target.value }))}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background" />
+              </div>
+              
+              {/* Zusätzliche Notizen */}
+              <div data-ev-id="ev_task_notes">
+                <label data-ev-id="ev_task_notes_label" className="block text-sm font-medium mb-1">Zusätzliche Notizen (optional)</label>
+                <textarea data-ev-id="ev_task_notes_input"
+              value={taskForm.notes}
+              onChange={(e) => setTaskForm((f) => ({ ...f, notes: e.target.value }))}
+              rows={2}
+              placeholder="Weitere Informationen zur Aufgabe..."
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background resize-none" />
+              </div>
+            </div>
+            
+            <div data-ev-id="ev_task_actions" className="flex justify-end gap-3 mt-6">
+              <button data-ev-id="ev_task_cancel"
+            onClick={() => setShowCreateTaskModal(null)}
+            className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors">
+                Abbrechen
+              </button>
+              <button data-ev-id="ev_task_submit"
+            onClick={async () => {
+              if (!taskForm.assignedTo) {
+                alert('Bitte wählen Sie ein Mitglied aus.');
+                return;
+              }
+              if (!supabase || !profile?.id) return;
+
+              setCreatingTask(true);
+              try {
+                // Erstelle die Aufgabe
+                const taskData = {
+                  title: showCreateTaskModal.title,
+                  notes: taskForm.notes || showCreateTaskModal.description || null,
+                  assigned_to: taskForm.assignedTo,
+                  assigned_by: profile.id,
+                  assigned_at: new Date().toISOString(),
+                  due_date: taskForm.dueDate || null,
+                  meeting_id: meeting?.id || null,
+                  agenda_item_id: showCreateTaskModal.agendaItemId,
+                  is_important: true
+                };
+
+                const { error: insertError } = await supabase.
+                from('todo_tasks').
+                insert({ ...taskData, created_by: profile.id });
+
+                if (insertError) {
+                  console.error('Fehler beim Erstellen der Aufgabe:', insertError);
+                  alert('Fehler beim Erstellen der Aufgabe.');
+                } else {
+                  setShowCreateTaskModal(null);
+                  // Optional: Toast/Notification zeigen
+                }
+              } catch (err) {
+                console.error('Fehler:', err);
+              } finally {
+                setCreatingTask(false);
+              }
+            }}
+            disabled={creatingTask || !taskForm.assignedTo}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50">
+                {creatingTask ? 'Wird erstellt...' : <><ClipboardList className="w-4 h-4" /> Aufgabe erstellen</>}
               </button>
             </div>
           </div>
