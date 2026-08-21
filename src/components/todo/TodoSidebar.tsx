@@ -16,7 +16,8 @@ import {
   UsersRound,
   Home,
   Folder,
-  X } from
+  X,
+  AlertTriangle } from
 'lucide-react';
 import type { TodoListWithCounts, TodoGroupWithShares, SmartListType, TodoFavorite } from '@/hooks/useTodoLists';
 
@@ -44,16 +45,27 @@ interface TodoSidebarProps {
     planned: number;
     assignedToMe: number;
     all: number;
+    today: number;
+    tomorrow: number;
+    overdue: number;
+    deleted: number;
   };
   currentUserId?: string;
 }
 
-const SMART_LISTS: {type: SmartListType;label: string;icon: typeof Sun;color: string;}[] = [
-{ type: 'my_day', label: 'Mein Tag', icon: Sun, color: 'text-amber-500' },
-{ type: 'important', label: 'Wichtig', icon: Star, color: 'text-rose-500' },
-{ type: 'planned', label: 'Geplant', icon: Calendar, color: 'text-emerald-500' },
-{ type: 'assigned_to_me', label: 'Mir zugewiesen', icon: User, color: 'text-blue-500' },
-{ type: 'all', label: 'Aufgaben', icon: Home, color: 'text-indigo-500' }];
+const SMART_LISTS: {type: SmartListType;label: string;icon: typeof Sun;color: string;section?: 'main' | 'date' | 'other';}[] = [
+// Main smart lists
+{ type: 'my_day', label: 'Mein Tag', icon: Sun, color: 'text-amber-500', section: 'main' },
+{ type: 'important', label: 'Wichtig', icon: Star, color: 'text-rose-500', section: 'main' },
+{ type: 'planned', label: 'Geplant', icon: Calendar, color: 'text-emerald-500', section: 'main' },
+{ type: 'assigned_to_me', label: 'Mir zugewiesen', icon: User, color: 'text-blue-500', section: 'main' },
+{ type: 'all', label: 'Aufgaben', icon: Home, color: 'text-indigo-500', section: 'main' },
+// Date filters
+{ type: 'today', label: 'Heute', icon: Calendar, color: 'text-blue-500', section: 'date' },
+{ type: 'tomorrow', label: 'Morgen', icon: Calendar, color: 'text-cyan-500', section: 'date' },
+{ type: 'overdue', label: 'Überfällig', icon: AlertTriangle, color: 'text-red-500', section: 'date' },
+// Other
+{ type: 'deleted', label: 'Papierkorb', icon: Trash2, color: 'text-slate-400', section: 'other' }];
 
 
 export function TodoSidebar({
@@ -206,9 +218,18 @@ export function TodoSidebar({
       case 'planned':return smartListCounts.planned;
       case 'assigned_to_me':return smartListCounts.assignedToMe;
       case 'all':return smartListCounts.all;
+      case 'today':return smartListCounts.today;
+      case 'tomorrow':return smartListCounts.tomorrow;
+      case 'overdue':return smartListCounts.overdue;
+      case 'deleted':return smartListCounts.deleted;
       default:return 0;
     }
   };
+
+  // Split smart lists by section
+  const mainSmartLists = SMART_LISTS.filter((l) => l.section === 'main');
+  const dateSmartLists = SMART_LISTS.filter((l) => l.section === 'date');
+  const otherSmartLists = SMART_LISTS.filter((l) => l.section === 'other');
 
   // Render a list item
   const renderListItem = (list: TodoListWithCounts, inGroup = false) =>
@@ -367,9 +388,9 @@ export function TodoSidebar({
 
   return (
     <div data-ev-id="ev_eb04ca29ff" className="w-72 bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-600 flex flex-col h-full max-h-screen overflow-y-auto">
-      {/* Smart Lists */}
+      {/* Smart Lists - Main */}
       <div data-ev-id="ev_928dc85547" className="p-3 flex flex-col gap-1">
-        {SMART_LISTS.map(({ type, label, icon: Icon, color }) => {
+        {mainSmartLists.map(({ type, label, icon: Icon, color }) => {
           const count = getSmartListCount(type);
           return (
             <button data-ev-id="ev_37913f4aa9"
@@ -387,8 +408,56 @@ export function TodoSidebar({
               <span data-ev-id="ev_3b621116f5" className="text-sm text-slate-500 dark:text-slate-300">{count}</span>
               }
             </button>);
-
         })}
+
+        {/* Date filters */}
+        <div data-ev-id="ev_date_filters" className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
+          <span data-ev-id="ev_8d78802976" className="text-[10px] text-slate-400 uppercase tracking-wider px-3">Datum</span>
+          <div data-ev-id="ev_7f4aa1fc6e" className="flex flex-col gap-1 mt-1">
+            {dateSmartLists.map(({ type, label, icon: Icon, color }) => {
+              const count = getSmartListCount(type);
+              return (
+                <button data-ev-id={`ev_date_${type}`}
+                key={type}
+                onClick={() => onSelectSmartList(type)}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors text-sm ${
+                selectedSmartList === type ?
+                'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300' :
+                'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'}`
+                }>
+                  <Icon size={16} className={color} />
+                  <span data-ev-id="ev_a6b5b2c9be" className="flex-1">{label}</span>
+                  {count > 0 &&
+                  <span data-ev-id="ev_a2deaa4f63" className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  type === 'overdue' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'text-slate-500 dark:text-slate-300'}`
+                  }>{count}</span>
+                  }
+                </button>);
+            })}
+          </div>
+        </div>
+
+        {/* Trash */}
+        <div data-ev-id="ev_trash_section" className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
+          {otherSmartLists.map(({ type, label, icon: Icon, color }) => {
+            const count = getSmartListCount(type);
+            return (
+              <button data-ev-id={`ev_other_${type}`}
+              key={type}
+              onClick={() => onSelectSmartList(type)}
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors text-sm ${
+              selectedSmartList === type ?
+              'bg-sky-100 dark:bg-sky-900/40 text-sky-700 dark:text-sky-300' :
+              'hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'}`
+              }>
+                <Icon size={16} className={color} />
+                <span data-ev-id="ev_bfbaab4cc7" className="flex-1">{label}</span>
+                {count > 0 &&
+                <span data-ev-id="ev_dbde4462ae" className="text-xs text-slate-500 dark:text-slate-300">{count}</span>
+                }
+              </button>);
+          })}
+        </div>
       </div>
 
       <div data-ev-id="ev_ca79bb7196" className="border-t border-slate-200 dark:border-slate-600 my-1" />

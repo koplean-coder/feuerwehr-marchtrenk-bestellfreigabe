@@ -12,7 +12,7 @@ export type TodoListInsert = TablesInsert<'todo_lists'>;
 export type TodoListGroupInsert = TablesInsert<'todo_list_groups'>;
 export type TodoListShareInsert = TablesInsert<'todo_list_shares'>;
 
-export type SmartListType = 'my_day' | 'important' | 'planned' | 'assigned_to_me' | 'all';
+export type SmartListType = 'my_day' | 'important' | 'planned' | 'assigned_to_me' | 'all' | 'today' | 'tomorrow' | 'overdue' | 'deleted';
 
 export interface TodoListWithCounts extends TodoList {
   task_count?: number;

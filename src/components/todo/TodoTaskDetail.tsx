@@ -18,8 +18,18 @@ import {
   ChevronRight,
   Clock,
   MessageCircle,
-  Send } from
+  Send,
+  Flag,
+  RotateCcw } from
 'lucide-react';
+
+// Priority levels
+const PRIORITY_LEVELS = [
+{ value: 0, label: 'Keine', color: 'text-slate-400', bgColor: 'bg-slate-100' },
+{ value: 1, label: 'Niedrig', color: 'text-blue-500', bgColor: 'bg-blue-100' },
+{ value: 2, label: 'Mittel', color: 'text-amber-500', bgColor: 'bg-amber-100' },
+{ value: 3, label: 'Hoch', color: 'text-red-500', bgColor: 'bg-red-100' }];
+
 import type { TodoTaskWithSteps, TodoTaskCommentWithUser } from '@/hooks/useTodoTasks';
 import type { Profile } from '@/hooks/useProfiles';
 
@@ -102,6 +112,7 @@ export function TodoTaskDetail({
   const [showTaskShareModal, setShowTaskShareModal] = useState(false);
   const [shareSearchQuery, setShareSearchQuery] = useState('');
   const [selectedSharePermission, setSelectedSharePermission] = useState<'view' | 'edit'>('edit');
+  const [showPriorityPicker, setShowPriorityPicker] = useState(false);
 
   // Comments state
   const [comments, setComments] = useState<TodoTaskCommentWithUser[]>([]);
@@ -709,6 +720,41 @@ export function TodoTaskDetail({
             <Star size={20} className={task.is_important ? 'fill-rose-500' : ''} />
             <span data-ev-id="ev_96453e070a" className="flex-1">{task.is_important ? 'Als wichtig markiert' : 'Als wichtig markieren'}</span>
           </button>
+
+          {/* Priority */}
+          <div data-ev-id="ev_priority_section" className="relative">
+            <button data-ev-id="ev_priority_btn"
+            onClick={() => setShowPriorityPicker(!showPriorityPicker)}
+            className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-100 dark:hover:bg-slate-600 ${
+            PRIORITY_LEVELS[task.priority ?? 0]?.color ?? 'text-slate-600 dark:text-slate-300'}`
+            }>
+              <Flag size={20} className={(task.priority ?? 0) > 0 ? 'fill-current' : ''} />
+              <span data-ev-id="ev_priority_label" className="flex-1 text-left">
+                Priorität: {PRIORITY_LEVELS[task.priority ?? 0]?.label ?? 'Keine'}
+              </span>
+            </button>
+
+            {showPriorityPicker &&
+            <div data-ev-id="ev_priority_picker" className="absolute left-4 right-4 top-full mt-1 bg-white dark:bg-slate-700 rounded-lg shadow-lg border border-slate-200 dark:border-slate-600 py-1 z-20">
+              {PRIORITY_LEVELS.map((level) =>
+              <button
+                key={level.value}
+                data-ev-id={`ev_priority_${level.value}`}
+                onClick={() => {
+                  onUpdateTask({ priority: level.value });
+                  setShowPriorityPicker(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-600 ${
+                (task.priority ?? 0) === level.value ? level.bgColor + ' dark:bg-opacity-20' : ''}`
+                }>
+
+                  <Flag size={16} className={`${level.color} ${level.value > 0 ? 'fill-current' : ''}`} />
+                  <span data-ev-id="ev_61872820fc" className={level.color}>{level.label}</span>
+                </button>
+              )}
+            </div>
+            }
+          </div>
 
           {/* Task Sharing */}
           {canEditTask && onShareTask &&

@@ -37,6 +37,9 @@ export default function Tasks() {
     createTask,
     updateTask,
     deleteTask,
+    restoreTask,
+    permanentDeleteTask,
+    emptyTrash,
     toggleComplete,
     toggleImportant,
     addToMyDay,
@@ -63,7 +66,11 @@ export default function Tasks() {
     important: 0,
     planned: 0,
     assignedToMe: 0,
-    all: 0
+    all: 0,
+    today: 0,
+    tomorrow: 0,
+    overdue: 0,
+    deleted: 0
   });
 
   // Fetch smart list counts
@@ -119,11 +126,49 @@ export default function Tasks() {
         .eq('assigned_to', profile.id)
         .eq('is_completed', false);
 
-      // All tasks count - only MY tasks
+      // All tasks count - only MY tasks (excluding deleted)
       const { count: allCount } = await supabase
         .from('todo_tasks')
         .select('*', { count: 'exact', head: true })
         .eq('is_completed', false)
+        .eq('is_deleted', false)
+        .or(myTasksFilter);
+
+      // Today count
+      const { count: todayCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('due_date', today)
+        .eq('is_completed', false)
+        .eq('is_deleted', false)
+        .or(myTasksFilter);
+
+      // Tomorrow count
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      const { count: tomorrowCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('due_date', tomorrowStr)
+        .eq('is_completed', false)
+        .eq('is_deleted', false)
+        .or(myTasksFilter);
+
+      // Overdue count
+      const { count: overdueCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .lt('due_date', today)
+        .eq('is_completed', false)
+        .eq('is_deleted', false)
+        .or(myTasksFilter);
+
+      // Deleted count
+      const { count: deletedCount } = await supabase
+        .from('todo_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_deleted', true)
         .or(myTasksFilter);
 
       setSmartListCounts({
@@ -131,7 +176,11 @@ export default function Tasks() {
         important: importantCount ?? 0,
         planned: plannedCount ?? 0,
         assignedToMe: assignedCount ?? 0,
-        all: allCount ?? 0
+        all: allCount ?? 0,
+        today: todayCount ?? 0,
+        tomorrow: tomorrowCount ?? 0,
+        overdue: overdueCount ?? 0,
+        deleted: deletedCount ?? 0
       });
     } catch (err) {
       console.error('Error fetching smart list counts:', err);
@@ -242,6 +291,29 @@ export default function Tasks() {
       await fetchSmartListCounts();
     } else {
       alert('Aufgabe konnte nicht gelöscht werden. Möglicherweise fehlen die Berechtigungen.');
+    }
+  };
+
+  const handleRestoreTask = async (taskId: string) => {
+    const success = await restoreTask(taskId);
+    if (success) {
+      await fetchSmartListCounts();
+    }
+  };
+
+  const handlePermanentDeleteTask = async (taskId: string) => {
+    const success = await permanentDeleteTask(taskId);
+    if (success) {
+      if (selectedTaskId === taskId) setSelectedTaskId(null);
+      await fetchSmartListCounts();
+    }
+  };
+
+  const handleEmptyTrash = async () => {
+    const success = await emptyTrash();
+    if (success) {
+      setSelectedTaskId(null);
+      await fetchSmartListCounts();
     }
   };
 
@@ -393,7 +465,10 @@ export default function Tasks() {
           onToggleComplete={handleToggleComplete}
           onToggleImportant={handleToggleImportant}
           onAddToMyDay={handleAddToMyDay}
-          onToggleMobileSidebar={() => setShowMobileSidebar(true)} />
+          onToggleMobileSidebar={() => setShowMobileSidebar(true)}
+          onRestoreTask={handleRestoreTask}
+          onPermanentDeleteTask={handlePermanentDeleteTask}
+          onEmptyTrash={handleEmptyTrash} />
 
 
         {/* Task Detail Panel */}

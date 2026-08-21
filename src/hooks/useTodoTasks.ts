@@ -178,6 +178,11 @@ export function useTodoTasks(filters: TaskFilters = {}) {
         query = query.eq('is_completed', false);
       }
 
+      // Exclude deleted tasks (except when viewing trash)
+      if (filters.smartList !== 'deleted') {
+        query = query.eq('is_deleted', false);
+      }
+
       // Search filter
       if (filters.search) {
         query = query.ilike('title', `%${filters.search}%`);
@@ -339,13 +344,72 @@ export function useTodoTasks(filters: TaskFilters = {}) {
     return true;
   };
 
+  // Soft delete - move to trash
   const deleteTask = async (id: string) => {
+    if (!supabase) return false;
+
+    const { error: deleteError } = await supabase
+      .from('todo_tasks')
+      .update({ is_deleted: true, deleted_at: new Date().toISOString() })
+      .eq('id', id);
+
+    if (deleteError) {
+      setError(deleteError.message);
+      return false;
+    }
+
+    await fetchTasks();
+    return true;
+  };
+
+  // Restore from trash
+  const restoreTask = async (id: string) => {
+    if (!supabase) return false;
+
+    const { error: restoreError } = await supabase
+      .from('todo_tasks')
+      .update({ is_deleted: false, deleted_at: null })
+      .eq('id', id);
+
+    if (restoreError) {
+      setError(restoreError.message);
+      return false;
+    }
+
+    await fetchTasks();
+    return true;
+  };
+
+  // Permanent delete
+  const permanentDeleteTask = async (id: string) => {
     if (!supabase) return false;
 
     const { error: deleteError } = await supabase
       .from('todo_tasks')
       .delete()
       .eq('id', id);
+
+    if (deleteError) {
+      setError(deleteError.message);
+      return false;
+    }
+
+    await fetchTasks();
+    return true;
+  };
+
+  // Empty trash (delete all deleted tasks)
+  const emptyTrash = async () => {
+    if (!supabase) return false;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { error: deleteError } = await supabase
+      .from('todo_tasks')
+      .delete()
+      .eq('is_deleted', true)
+      .eq('created_by', user.id);
 
     if (deleteError) {
       setError(deleteError.message);
@@ -805,6 +869,9 @@ export function useTodoTasks(filters: TaskFilters = {}) {
     createTask,
     updateTask,
     deleteTask,
+    restoreTask,
+    permanentDeleteTask,
+    emptyTrash,
     toggleComplete,
     toggleImportant,
     addToMyDay,

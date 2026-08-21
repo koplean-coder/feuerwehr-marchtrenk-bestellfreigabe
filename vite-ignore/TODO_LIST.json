@@ -5,19 +5,19 @@
       "id": 1,
       "description": "Überfällige Tasks hervorheben + Sortierung reparieren",
       "files": [],
-      "status": "active"
+      "status": "complete"
     },
     {
       "id": 2,
       "description": "Mehrstufige Priorität + Papierkorb/Archiv (DB + UI)",
       "files": [],
-      "status": "pending"
+      "status": "complete"
     },
     {
       "id": 3,
       "description": "Tags/Labels System (DB + UI)",
       "files": [],
-      "status": "pending"
+      "status": "active"
     },
     {
       "id": 4,
@@ -33,5 +33,5 @@
     }
   ],
   "createdAt": "2026-08-21T21:59:56.047Z",
-  "updatedAt": "2026-08-21T21:59:56.047Z"
+  "updatedAt": "2026-08-21T22:13:43.622Z"
 }

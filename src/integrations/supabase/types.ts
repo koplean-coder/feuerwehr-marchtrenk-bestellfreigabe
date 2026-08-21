@@ -3321,6 +3321,30 @@ export type Database = {
           },
         ]
       }
+      todo_tags: {
+        Row: {
+          color: string
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       todo_task_comments: {
         Row: {
           content: string
@@ -3426,6 +3450,42 @@ export type Database = {
           },
         ]
       }
+      todo_task_tags: {
+        Row: {
+          created_at: string
+          id: string
+          tag_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tag_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tag_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "todo_task_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "todo_tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "todo_task_tags_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "todo_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       todo_tasks: {
         Row: {
           agenda_item_id: string | null
@@ -3439,12 +3499,14 @@ export type Database = {
           completed_by: string | null
           created_at: string
           created_by: string
+          deleted_at: string | null
           due_date: string | null
           due_date_changed_at: string | null
           due_date_changed_by: string | null
           due_time: string | null
           id: string
           is_completed: boolean
+          is_deleted: boolean
           is_important: boolean
           is_in_my_day: boolean
           list_id: string | null
@@ -3453,6 +3515,7 @@ export type Database = {
           notes: string | null
           notes_updated_at: string | null
           notes_updated_by: string | null
+          priority: number | null
           recurrence_end_date: string | null
           recurrence_interval: number | null
           recurrence_type: string | null
@@ -3473,12 +3536,14 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           created_by: string
+          deleted_at?: string | null
           due_date?: string | null
           due_date_changed_at?: string | null
           due_date_changed_by?: string | null
           due_time?: string | null
           id?: string
           is_completed?: boolean
+          is_deleted?: boolean
           is_important?: boolean
           is_in_my_day?: boolean
           list_id?: string | null
@@ -3487,6 +3552,7 @@ export type Database = {
           notes?: string | null
           notes_updated_at?: string | null
           notes_updated_by?: string | null
+          priority?: number | null
           recurrence_end_date?: string | null
           recurrence_interval?: number | null
           recurrence_type?: string | null
@@ -3507,12 +3573,14 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
           due_date?: string | null
           due_date_changed_at?: string | null
           due_date_changed_by?: string | null
           due_time?: string | null
           id?: string
           is_completed?: boolean
+          is_deleted?: boolean
           is_important?: boolean
           is_in_my_day?: boolean
           list_id?: string | null
@@ -3521,6 +3589,7 @@ export type Database = {
           notes?: string | null
           notes_updated_at?: string | null
           notes_updated_by?: string | null
+          priority?: number | null
           recurrence_end_date?: string | null
           recurrence_interval?: number | null
           recurrence_type?: string | null

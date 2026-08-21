@@ -17,8 +17,19 @@ import {
   AlertTriangle,
   Clock,
   Inbox,
-  Edit3 } from
+  Edit3,
+  Flag,
+  RotateCcw,
+  Trash2 } from
 'lucide-react';
+
+// Priority colors
+const PRIORITY_COLORS = [
+  '', // 0 = keine
+  'text-blue-500', // 1 = niedrig
+  'text-amber-500', // 2 = mittel
+  'text-red-500' // 3 = hoch
+];
 import type { TodoTaskWithSteps } from '@/hooks/useTodoTasks';
 import type { SmartListType } from '@/hooks/useTodoLists';
 
@@ -36,14 +47,22 @@ interface TodoTaskListProps {
   showCompleted?: boolean;
   onToggleShowCompleted?: () => void;
   onToggleMobileSidebar?: () => void;
+  // Trash actions
+  onRestoreTask?: (taskId: string) => void;
+  onPermanentDeleteTask?: (taskId: string) => void;
+  onEmptyTrash?: () => void;
 }
 
-const SMART_LIST_HEADERS: Record<SmartListType, {title: string;subtitle?: string;bgClass: string;}> = {
+const SMART_LIST_HEADERS: Partial<Record<SmartListType, {title: string;subtitle?: string;bgClass: string;}>> = {
   my_day: { title: 'Mein Tag', subtitle: new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' }), bgClass: 'bg-gradient-to-br from-amber-400 to-orange-500' },
   important: { title: 'Wichtig', bgClass: 'bg-gradient-to-br from-rose-400 to-pink-500' },
   planned: { title: 'Geplant', bgClass: 'bg-gradient-to-br from-emerald-400 to-teal-500' },
   assigned_to_me: { title: 'Mir zugewiesen', bgClass: 'bg-gradient-to-br from-blue-400 to-indigo-500' },
-  all: { title: 'Aufgaben', bgClass: 'bg-gradient-to-br from-indigo-400 to-purple-500' }
+  all: { title: 'Aufgaben', bgClass: 'bg-gradient-to-br from-indigo-400 to-purple-500' },
+  today: { title: 'Heute', bgClass: 'bg-gradient-to-br from-blue-400 to-cyan-500' },
+  tomorrow: { title: 'Morgen', bgClass: 'bg-gradient-to-br from-cyan-400 to-teal-500' },
+  overdue: { title: 'Überfällig', bgClass: 'bg-gradient-to-br from-red-400 to-rose-500' },
+  deleted: { title: 'Papierkorb', bgClass: 'bg-gradient-to-br from-slate-400 to-slate-600' }
 };
 
 export function TodoTaskList({
@@ -59,8 +78,12 @@ export function TodoTaskList({
   onAddToMyDay,
   showCompleted = true,
   onToggleShowCompleted,
-  onToggleMobileSidebar
+  onToggleMobileSidebar,
+  onRestoreTask,
+  onPermanentDeleteTask,
+  onEmptyTrash
 }: TodoTaskListProps) {
+  const isTrashView = smartListType === 'deleted';
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [showCompletedSection, setShowCompletedSection] = useState(true);
@@ -139,6 +162,7 @@ export function TodoTaskList({
     const dueInfo = formatDueDate(task.due_date);
     const stepsTotal = task.steps.length;
     const stepsCompleted = task.steps.filter((s) => s.is_completed).length;
+    const isOverdue = task.due_date && task.due_date < today && !task.is_completed;
 
     return (
       <div data-ev-id="ev_5d97c670f1"
@@ -147,15 +171,46 @@ export function TodoTaskList({
       className={`group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
       selectedTaskId === task.id ?
       'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500' :
+      isOverdue ?
+      'bg-red-50 dark:bg-red-900/20 border-l-2 border-red-500 hover:bg-red-100 dark:hover:bg-red-900/30' :
       'hover:bg-slate-50 dark:hover:bg-slate-700/50 border-l-2 border-transparent'}`
       }>
 
-        {/* Drag Handle */}
+        {/* Drag Handle - hidden in trash view */}
+        {!isTrashView &&
         <div data-ev-id="ev_8a419c3e05" className="opacity-0 group-hover:opacity-100 cursor-grab mt-0.5">
           <GripVertical size={16} className="text-slate-400" />
         </div>
+        }
 
-        {/* Checkbox */}
+        {/* Trash actions OR Checkbox */}
+        {isTrashView ?
+        <div data-ev-id="ev_trash_actions" className="flex items-center gap-1 mt-0.5">
+          <button
+            data-ev-id="ev_restore_btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRestoreTask?.(task.id);
+            }}
+            className="p-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400"
+            title="Wiederherstellen"
+          >
+            <RotateCcw size={18} />
+          </button>
+          <button
+            data-ev-id="ev_perm_delete_btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (confirm('Endgültig löschen? Diese Aktion kann nicht rückgängig gemacht werden.')) {
+                onPermanentDeleteTask?.(task.id);
+              }
+            }}
+            className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
+            title="Endgültig löschen"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div> :
         <button data-ev-id="ev_0b3aedbc91"
         onClick={(e) => {
           e.stopPropagation();
@@ -169,16 +224,23 @@ export function TodoTaskList({
           <Circle size={22} className="text-slate-400 hover:text-blue-500" />
           }
         </button>
+        }
 
         {/* Content */}
         <div data-ev-id="ev_1cef8a9db8" className="flex-1 min-w-0">
-          <p data-ev-id="ev_b928d4c427" className={`font-medium ${
-          task.is_completed ?
-          'text-slate-400 line-through' :
-          'text-slate-900 dark:text-white'}`
-          }>
-            {task.title}
-          </p>
+          <div data-ev-id="ev_title_row" className="flex items-center gap-2">
+            {/* Priority flag */}
+            {(task.priority ?? 0) > 0 &&
+            <Flag size={14} className={`${PRIORITY_COLORS[task.priority ?? 0]} fill-current flex-shrink-0`} />
+            }
+            <p data-ev-id="ev_b928d4c427" className={`font-medium ${
+            task.is_completed ?
+            'text-slate-400 line-through' :
+            'text-slate-900 dark:text-white'}`
+            }>
+              {task.title}
+            </p>
+          </div>
 
           {/* Meta info - Row 1 */}
           <div data-ev-id="ev_c27a983cf5" className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm">
@@ -311,12 +373,26 @@ export function TodoTaskList({
                 <Menu size={24} />
               </button>
           }
-            <div data-ev-id="ev_e5864490ab">
+            <div data-ev-id="ev_e5864490ab" className="flex-1">
               <h1 data-ev-id="ev_d2b0884304" className="text-xl sm:text-2xl font-bold">{headerInfo.title}</h1>
               {headerInfo.subtitle &&
             <p data-ev-id="ev_9fefd4daa8" className="text-white/80 mt-1 text-sm sm:text-base">{headerInfo.subtitle}</p>
             }
             </div>
+            {/* Empty Trash button */}
+            {isTrashView && tasks.length > 0 && onEmptyTrash &&
+            <button
+              data-ev-id="ev_empty_trash_btn"
+              onClick={() => {
+                if (confirm('Papierkorb leeren? Alle Aufgaben werden endgültig gelöscht.')) {
+                  onEmptyTrash();
+                }
+              }}
+              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
+            >
+              Papierkorb leeren
+            </button>
+            }
           </div>
         </div> :
 
