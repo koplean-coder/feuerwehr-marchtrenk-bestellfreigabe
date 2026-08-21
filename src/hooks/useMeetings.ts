@@ -1052,14 +1052,26 @@ export function useMeetingDetail(meetingId: string | undefined) {
     }
   };
 
-  // Reorder agenda items (for drag & drop)
+  // Reorder agenda items (for drag & drop) - optimistic update
   const reorderAgendaItems = async (orderedItemIds: string[]) => {
     if (!supabase || !canManage) {
       return { error: new Error('Keine Berechtigung zum Sortieren') };
     }
 
+    // Optimistic update - immediately update local state
+    setAgendaItems(prev => {
+      const updated = [...prev];
+      orderedItemIds.forEach((id, index) => {
+        const item = updated.find(i => i.id === id);
+        if (item) {
+          item.sort_order = index;
+        }
+      });
+      return updated;
+    });
+
     try {
-      // Update sort_order for each item in order
+      // Update sort_order for each item in order (background)
       for (let i = 0; i < orderedItemIds.length; i++) {
         const { error: updateError } = await supabase
           .from('meeting_agenda_items')
@@ -1069,9 +1081,11 @@ export function useMeetingDetail(meetingId: string | undefined) {
         if (updateError) throw updateError;
       }
 
-      await fetchMeetingDetail();
+      // No fetchMeetingDetail needed - optimistic update already done
       return { error: null };
     } catch (err) {
+      // On error, refetch to restore correct state
+      await fetchMeetingDetail();
       return { error: err as Error };
     }
   };
