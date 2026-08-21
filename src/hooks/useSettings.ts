@@ -185,16 +185,16 @@ export function useSettings() {
   const [beschlussRegisterVisibleCards, setBeschlussRegisterVisibleCards] = useState<string[]>([
     'gesamt', 'gueltig', 'abgelehnt', 'in_abstimmung', 'ausstehend', 'finanzvolumen', 'aufgehoben', 'abgelaufen', 'bald_ablaufend'
   ]);
-  // Cards pro Rolle - überschreibt die globalen Cards wenn gesetzt
+  // Cards pro Rolle - nur für Kommandomitglieder sichtbar
   const defaultCardsByRole: Record<string, string[]> = {
     admin: ['gesamt', 'gueltig', 'abgelehnt', 'in_abstimmung', 'ausstehend', 'finanzvolumen', 'aufgehoben', 'abgelaufen', 'bald_ablaufend'],
     kommandant: ['gesamt', 'gueltig', 'abgelehnt', 'in_abstimmung', 'ausstehend', 'finanzvolumen', 'aufgehoben', 'abgelaufen', 'bald_ablaufend'],
-    schriftfuehrer: ['gesamt', 'gueltig', 'abgelehnt', 'in_abstimmung', 'ausstehend', 'finanzvolumen'],
-    kassier: ['gesamt', 'gueltig', 'finanzvolumen'],
-    bereichsleiter: ['gesamt', 'gueltig', 'in_abstimmung'],
-    kommandomitglied: ['gesamt', 'gueltig', 'in_abstimmung'],
-    erweitertes_kommando: ['gesamt', 'gueltig', 'in_abstimmung'],
-    nutzer: ['gesamt', 'gueltig']
+    schriftfuehrer: ['gesamt', 'gueltig', 'abgelehnt', 'in_abstimmung', 'ausstehend', 'finanzvolumen', 'aufgehoben', 'abgelaufen', 'bald_ablaufend'],
+    kassier: ['gesamt', 'gueltig', 'abgelehnt', 'in_abstimmung', 'ausstehend', 'finanzvolumen', 'aufgehoben', 'abgelaufen', 'bald_ablaufend'],
+    kommandomitglied: ['gesamt', 'gueltig', 'abgelehnt', 'in_abstimmung', 'ausstehend', 'finanzvolumen', 'aufgehoben', 'abgelaufen', 'bald_ablaufend'],
+    bereichsleiter: [],
+    erweitertes_kommando: [],
+    nutzer: []
   };
   const [beschlussRegisterCardsByRole, setBeschlussRegisterCardsByRole] = useState<Record<string, string[]>>(defaultCardsByRole);
   // Erinnerung vor Beschluss-Ablauf (in Tagen)
