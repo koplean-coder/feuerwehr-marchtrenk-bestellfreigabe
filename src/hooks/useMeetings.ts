@@ -1441,9 +1441,30 @@ export function useMeetingDetail(meetingId: string | undefined) {
         });
       }
 
-      await fetchMeetingDetail();
+      // Optimistic update: remove order from pending list (no fetchMeetingDetail to avoid white flash)
+      setPendingBanfDecisions(prev => prev.filter(o => o.id !== order.id));
+
+      // Add to decisions list optimistically
+      const newDecision: MeetingDecision = {
+        id: decisionData.id,
+        meeting_id: meetingId,
+        order_id: order.id,
+        decision_text: decisionText,
+        source: 'banf_confirmation',
+        votes_for: votesFor,
+        votes_against: votesAgainst,
+        votes_abstain: votesAbstain,
+        result: result,
+        is_in_register: true,
+        register_added_at: confirmedAt,
+        created_at: confirmedAt,
+      };
+      setDecisions(prev => [...prev, newDecision]);
+
       return { error: null };
     } catch (err) {
+      // On error, refetch to restore correct state
+      await fetchMeetingDetail();
       return { error: err as Error };
     }
   };
@@ -1735,9 +1756,30 @@ export function useMeetingDetail(meetingId: string | undefined) {
         }
       }
 
-      await fetchMeetingDetail();
+      // Optimistic update: remove item from pending list (no fetchMeetingDetail to avoid white flash)
+      setPendingCommandDecisionItems(prev => prev.filter(i => i.id !== item.id));
+
+      // Add to decisions list optimistically
+      const newDecision: MeetingDecision = {
+        id: decisionData.id,
+        meeting_id: meetingId,
+        command_decision_item_id: item.id,
+        decision_text: decisionText,
+        source: 'kommando_confirmation',
+        votes_for: votesFor,
+        votes_against: votesAgainst,
+        votes_abstain: votesAbstain,
+        result: resultLabel.toLowerCase(),
+        is_in_register: true,
+        register_added_at: confirmedAt,
+        created_at: confirmedAt,
+      };
+      setDecisions(prev => [...prev, newDecision]);
+
       return { error: null };
     } catch (err) {
+      // On error, refetch to restore correct state
+      await fetchMeetingDetail();
       return { error: err as Error };
     }
   };
