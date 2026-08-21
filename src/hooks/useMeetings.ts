@@ -1828,6 +1828,11 @@ export function useMeetingDetail(meetingId: string | undefined) {
     fetchMeetingDetail();
   }, [fetchMeetingDetail]);
 
+  // Update meeting locally without triggering loading state (for optimistic updates)
+  const updateMeetingLocally = useCallback((updates: Partial<Meeting>) => {
+    setMeeting(prev => prev ? { ...prev, ...updates } : null);
+  }, []);
+
   return {
     meeting,
     attendance,
@@ -1843,6 +1848,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
     canEditAgendaItems,
     isDeadlinePassed,
     fetchMeetingDetail,
+    updateMeetingLocally,
     updateAttendance,
     removeAttendance,
     addAgendaItem,
