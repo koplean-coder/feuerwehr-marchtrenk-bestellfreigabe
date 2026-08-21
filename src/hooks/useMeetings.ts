@@ -950,6 +950,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
             category: item.category,
             submitted_by: item.submitted_by,
             submitted_by_name: item.submitted_by_name,
+            for_profile_id: item.for_profile_id, // Behalte die Person bei der der Punkt war
             is_mandatory: true,
             deferred_from_meeting_id: meetingId,
           });
@@ -1797,6 +1798,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
           category: item.category,
           submitted_by: item.submitted_by,
           submitted_by_name: item.submitted_by_name,
+          for_profile_id: item.for_profile_id, // Behalte die Person bei der der Punkt war
           is_mandatory: true,
           deferred_from_meeting_id: meetingId,
           sort_order: idx + 1,

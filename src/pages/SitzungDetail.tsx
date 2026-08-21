@@ -253,7 +253,7 @@ export default function SitzungDetail() {
   // Pause Timer (90 minutes first, then 60 minutes repeating)
   // Timer state is persisted in localStorage so it survives page navigation
   const timerStorageKey = `sitzung_timer_${id}`;
-  
+
   const [pauseTimerRunning, setPauseTimerRunning] = useState(() => {
     if (!id) return false;
     const stored = localStorage.getItem(timerStorageKey);
@@ -262,7 +262,7 @@ export default function SitzungDetail() {
     const elapsed = Math.floor((Date.now() - data.startedAt) / 1000);
     return elapsed < data.duration;
   });
-  
+
   const [pauseTimerSeconds, setPauseTimerSeconds] = useState(() => {
     if (!id) return 90 * 60;
     const stored = localStorage.getItem(timerStorageKey);
@@ -272,9 +272,9 @@ export default function SitzungDetail() {
     const remaining = data.duration - elapsed;
     return remaining > 0 ? remaining : 0;
   });
-  
+
   const [showPausePopup, setShowPausePopup] = useState(false);
-  
+
   const [pauseCount, setPauseCount] = useState(() => {
     if (!id) return 0;
     const stored = localStorage.getItem(timerStorageKey);
@@ -931,8 +931,8 @@ export default function SitzungDetail() {
         if (item.is_fixed_item) return false;
         const itemCategoryKey = normalizeToCategoryKey(item.category || '');
         // Item must be assigned to this person (for_profile_id) and not be Allfälliges
-        return item.for_profile_id === person.id && 
-               itemCategoryKey !== 'allfaelliges';
+        return item.for_profile_id === person.id &&
+        itemCategoryKey !== 'allfaelliges';
       });
 
       return {
@@ -1232,9 +1232,9 @@ export default function SitzungDetail() {
               }
             }}
             className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1.5 font-medium ${
-            isDeadlinePassed() 
-              ? 'bg-red-500 text-white hover:bg-red-600' 
-              : 'bg-green-500 text-white hover:bg-green-600'}`
+            isDeadlinePassed() ?
+            'bg-red-500 text-white hover:bg-red-600' :
+            'bg-green-500 text-white hover:bg-green-600'}`
             }>
                 {isDeadlinePassed() ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                 {isDeadlinePassed() ? 'Gesperrt' : 'Offen'}
@@ -1708,7 +1708,7 @@ export default function SitzungDetail() {
                   item.traffic_light === 'rot' ? 'bg-red-50 border-l-4 border-l-red-500' : ''}`
                   }>
 
-                          <span data-ev-id="ev_12b611934b" className="text-xs text-muted-foreground w-6">{idx + 1}.</span>
+                          <span data-ev-id="ev_12b611934b" className="text-xs text-muted-foreground w-6">{item.sort_order || idx + 1}.</span>
                           <div data-ev-id="ev_6f6f23293c" className="flex-1">
                             {editingAgendaItem === item.id ?
                       <div data-ev-id="ev_c0ce976929" className="flex flex-col gap-2">
@@ -1745,11 +1745,19 @@ export default function SitzungDetail() {
                               </div> :
 
                       <>
-                                <p data-ev-id="ev_e5e4a8b15a" className={`text-sm whitespace-pre-wrap ${
-                        item.traffic_light === 'gruen' ? 'line-through text-muted-foreground' : ''}`
-                        }>
-                                  {item.title}
-                                </p>
+                                <div data-ev-id="ev_title_badges" className="flex items-center gap-2 flex-wrap">
+                                  <p data-ev-id="ev_e5e4a8b15a" className={`text-sm whitespace-pre-wrap ${
+                          item.traffic_light === 'gruen' ? 'line-through text-muted-foreground' : ''}`
+                          }>
+                                    {item.title}
+                                  </p>
+                                  {item.is_mandatory &&
+                          <span data-ev-id="ev_6a7bef11c1" className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">Pflicht</span>
+                          }
+                                  {item.deferred_from_meeting_id &&
+                          <span data-ev-id="ev_ee02af5ce7" className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">übernommen</span>
+                          }
+                                </div>
                                 {item.description &&
                         <p data-ev-id="ev_49e3d4d65f" className={`text-xs text-muted-foreground mt-1 whitespace-pre-wrap ${
                         item.traffic_light === 'gruen' ? 'line-through' : ''}`
@@ -1863,10 +1871,10 @@ export default function SitzungDetail() {
                       {/* New Entry Input - Textarea + Save Button */}
                       {/* Nur anzeigen wenn: eigene Person ODER Allfälliges ODER Admin/Kdt */}
                       {canEditAgendaItems && (
-                        isAllfaelliges || 
-                        person.id === profile?.id || 
-                        (canManage && !isAllfaelliges)
-                      ) &&
+                  isAllfaelliges ||
+                  person.id === profile?.id ||
+                  canManage && !isAllfaelliges) &&
+
                   <div data-ev-id="ev_47503771b6" className="px-4 py-3 bg-muted/20">
                           <div data-ev-id="ev_11b08ed707" className="flex gap-2">
                             <textarea data-ev-id="ev_952ef8f3e5"
