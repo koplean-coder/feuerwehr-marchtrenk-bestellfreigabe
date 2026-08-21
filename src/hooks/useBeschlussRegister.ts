@@ -301,11 +301,19 @@ export function useBeschlussRegister() {
     return new Date(b.gueltig_bis) < new Date();
   };
 
-  // Statistiken berechnen
+  // Statistiken berechnen - basierend auf tatsächlichen Stimmen
   const stats: BeschlussStats = {
     gesamt: beschluesse.length,
-    genehmigt: beschluesse.filter(b => b.status === 'genehmigt' && !isAbgelaufen(b)).length,
-    abgelehnt: beschluesse.filter(b => b.status === 'abgelehnt').length,
+    genehmigt: beschluesse.filter(b => {
+      const ja = b.abstimmung_ja || 0;
+      const nein = b.abstimmung_nein || 0;
+      return (b.status === 'genehmigt' || ja > nein) && !isAbgelaufen(b) && b.status !== 'aufgehoben';
+    }).length,
+    abgelehnt: beschluesse.filter(b => {
+      const ja = b.abstimmung_ja || 0;
+      const nein = b.abstimmung_nein || 0;
+      return b.status === 'abgelehnt' || nein > ja;
+    }).length,
     inAbstimmung: beschluesse.filter(b => b.status === 'in_abstimmung' || b.status === 'offen').length,
     ausstehend: beschluesse.filter(b => b.status === 'ausstehend').length,
     aufgehoben: beschluesse.filter(b => b.status === 'aufgehoben').length,

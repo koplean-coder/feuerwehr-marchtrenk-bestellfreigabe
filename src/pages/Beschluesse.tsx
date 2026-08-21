@@ -58,6 +58,9 @@ export default function Beschluesse() {
   const { profile } = useAuth();
   const [nurGueltige, setNurGueltige] = useState(false);
 
+  // Protokoll-Modal State (einfache Ansicht)
+  const [protokollBeschluss, setProtokollBeschluss] = useState<BeschlussRegister | null>(null);
+
   // Berechtigungsprüfung
   const canViewRegister = useMemo(() => {
     if (!profile) return false;
@@ -106,6 +109,14 @@ export default function Beschluesse() {
 
   // Prüfen ob Benutzer erweiterte Filterrechte hat (Typ-Filter)
   const canFilterByType = useMemo(() => {
+    if (!profile) return false;
+    return ['admin', 'kommandant', 'schriftfuehrer', 'kassier', 'bereichsleiter'].includes(profile.role) ||
+    profile.functions?.includes('kommandomitglied') ||
+    profile.functions?.includes('erweitertes_kommando');
+  }, [profile]);
+
+  // Prüfen ob Benutzer Kommandomitglied ist (für Detail-Auge-Button)
+  const isKommandomitglied = useMemo(() => {
     if (!profile) return false;
     return ['admin', 'kommandant', 'schriftfuehrer', 'kassier', 'bereichsleiter'].includes(profile.role) ||
     profile.functions?.includes('kommandomitglied') ||
@@ -617,8 +628,7 @@ export default function Beschluesse() {
                         <tr
                           data-ev-id={`ev_row_${beschluss.id}`}
                           key={beschluss.id}
-                          onClick={() => openDetail(beschluss)}
-                          className={`border-t border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                          className={`border-t border-gray-100 hover:bg-gray-50 transition-colors ${
                           baldAblaufend ? 'bg-yellow-50' : ''} ${
                           effStatus === 'aufgehoben' ? 'opacity-60' : ''}`}>
 
@@ -629,9 +639,13 @@ export default function Beschluesse() {
                                   </td>
                                   <td data-ev-id={`ev_td_titel_${beschluss.id}`} className="px-6 py-4">
                                     <div data-ev-id={`ev_titel_wrapper_${beschluss.id}`}>
-                                      <p data-ev-id={`ev_titel_${beschluss.id}`} className="font-medium text-foreground">
+                                      <button
+                                data-ev-id={`ev_titel_btn_${beschluss.id}`}
+                                onClick={() => setProtokollBeschluss(beschluss)}
+                                className="font-medium text-foreground hover:text-primary hover:underline text-left">
+
                                         {beschluss.titel}
-                                      </p>
+                                      </button>
                                       {beschluss.meeting_title &&
                               <p data-ev-id={`ev_meeting_${beschluss.id}`} className="text-xs text-muted-foreground mt-1">
                                         Sitzung: {beschluss.meeting_title}
@@ -655,7 +669,8 @@ export default function Beschluesse() {
                                   </td>
                                   <td data-ev-id={`ev_td_aktion_${beschluss.id}`} className="px-6 py-4">
                                     <div data-ev-id={`ev_actions_${beschluss.id}`} className="flex items-center gap-2">
-                                      <button
+                                      {isKommandomitglied &&
+                              <button
                                 data-ev-id={`ev_detail_btn_${beschluss.id}`}
                                 onClick={() => openDetail(beschluss)}
                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -663,6 +678,7 @@ export default function Beschluesse() {
 
                                         <Eye className="w-4 h-4 text-muted-foreground" />
                                       </button>
+                              }
                                       {beschluss.pdf_url &&
                               <a
                                 data-ev-id={`ev_pdf_link_${beschluss.id}`}
@@ -1198,6 +1214,107 @@ export default function Beschluesse() {
             </div>
           </div>
         }
+
+        {/* Protokoll-Modal - Einfache protokollarische Ansicht */}
+        {protokollBeschluss && (() => {
+          const jaStimmen = protokollBeschluss.abstimmung_ja || 0;
+          const neinStimmen = protokollBeschluss.abstimmung_nein || 0;
+          const enthaltungen = protokollBeschluss.abstimmung_enthaltung || 0;
+          const istGenehmigt = jaStimmen > neinStimmen;
+
+          return (
+            <div
+              data-ev-id="ev_protokoll_modal_overlay"
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+              onClick={() => setProtokollBeschluss(null)}>
+
+              <div
+                data-ev-id="ev_protokoll_modal"
+                className="bg-white rounded-xl shadow-xl w-full max-w-lg"
+                onClick={(e) => e.stopPropagation()}>
+
+                {/* Header */}
+                <div data-ev-id="ev_protokoll_header" className="flex items-center justify-between p-4 border-b border-gray-200">
+                  <div data-ev-id="ev_protokoll_header_text">
+                    <p data-ev-id="ev_protokoll_nummer" className="text-sm text-muted-foreground font-mono">
+                      {protokollBeschluss.beschluss_nummer}
+                    </p>
+                    <p data-ev-id="ev_protokoll_datum" className="text-xs text-muted-foreground">
+                      {formatDate(protokollBeschluss.erstellt_am)}
+                    </p>
+                  </div>
+                  <button
+                    data-ev-id="ev_protokoll_close"
+                    onClick={() => setProtokollBeschluss(null)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div data-ev-id="ev_protokoll_content" className="p-6">
+                  <div data-ev-id="ev_protokoll_text" className="text-center mb-6">
+                    {istGenehmigt ?
+                    <p data-ev-id="ev_protokoll_genehmigt" className="text-lg text-foreground">
+                        Das Kommando beschließt, <span data-ev-id="ev_aef6da725e" className="font-semibold">{protokollBeschluss.titel}</span> zuzustimmen.
+                      </p> :
+
+                    <p data-ev-id="ev_protokoll_abgelehnt" className="text-lg text-foreground">
+                        Das Kommando hat <span data-ev-id="ev_1090ed4002" className="font-semibold">{protokollBeschluss.titel}</span> abgelehnt.
+                      </p>
+                    }
+                  </div>
+
+                  {/* Abstimmungsergebnis */}
+                  <div data-ev-id="ev_protokoll_abstimmung" className="bg-gray-50 rounded-lg p-4">
+                    <p data-ev-id="ev_protokoll_abstimmung_label" className="text-sm text-muted-foreground mb-3 text-center">Abstimmungsergebnis</p>
+                    <div data-ev-id="ev_protokoll_votes" className="flex justify-center gap-6">
+                      <div data-ev-id="ev_protokoll_ja" className="text-center">
+                        <p data-ev-id="ev_43fbe4524e" className="text-2xl font-bold text-emerald-600">{jaStimmen}</p>
+                        <p data-ev-id="ev_c59501609f" className="text-xs text-muted-foreground">Ja</p>
+                      </div>
+                      <div data-ev-id="ev_protokoll_nein" className="text-center">
+                        <p data-ev-id="ev_c776408c8f" className="text-2xl font-bold text-red-600">{neinStimmen}</p>
+                        <p data-ev-id="ev_499406820d" className="text-xs text-muted-foreground">Nein</p>
+                      </div>
+                      <div data-ev-id="ev_protokoll_enthaltung" className="text-center">
+                        <p data-ev-id="ev_1e55de9217" className="text-2xl font-bold text-gray-500">{enthaltungen}</p>
+                        <p data-ev-id="ev_fc871a194f" className="text-xs text-muted-foreground">Enthaltung</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ergebnis Badge */}
+                  <div data-ev-id="ev_protokoll_ergebnis" className="mt-4 text-center">
+                    {istGenehmigt ?
+                    <span data-ev-id="ev_3d96b9123d" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                        <CheckCircle className="w-5 h-5" />
+                        Genehmigt
+                      </span> :
+
+                    <span data-ev-id="ev_3e9260ed4c" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-100 text-red-700 font-medium">
+                        <XCircle className="w-5 h-5" />
+                        Abgelehnt
+                      </span>
+                    }
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div data-ev-id="ev_protokoll_footer" className="flex justify-end p-4 border-t border-gray-200">
+                  <button
+                    data-ev-id="ev_protokoll_schliessen"
+                    onClick={() => setProtokollBeschluss(null)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+
+                    Schließen
+                  </button>
+                </div>
+              </div>
+            </div>);
+
+        })()}
       </div>
     </Layout>);
 
