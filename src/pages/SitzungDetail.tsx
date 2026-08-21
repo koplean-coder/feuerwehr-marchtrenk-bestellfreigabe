@@ -558,8 +558,8 @@ export default function SitzungDetail() {
     });
   }, [profile?.functions]);
 
-  // Ampel/Traffic lights: Kommandant, Admin ODER Kdt-Stellvertreter
-  const canManageTrafficLights = canManage || isKdtStellvertreter;
+  // Ampel/Traffic lights: Kommandant, Admin ODER Kdt-Stellvertreter - aber NUR wenn Sitzung nicht abgeschlossen
+  const canManageTrafficLights = (canManage || isKdtStellvertreter) && meeting?.status !== 'abgeschlossen';
 
   // Check if current user can edit entries for a specific category
   const userId = profile?.id;
