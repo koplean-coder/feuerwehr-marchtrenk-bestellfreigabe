@@ -444,6 +444,8 @@ export function useMeetingDetail(meetingId: string | undefined) {
   const fetchMeetingDetail = useCallback(async () => {
     if (!supabase || !meetingId) return;
 
+    console.log('[fetchMeetingDetail] Start für Sitzung:', meetingId);
+
     try {
       setLoading(true);
 
@@ -455,6 +457,7 @@ export function useMeetingDetail(meetingId: string | undefined) {
         .single();
 
       if (meetingError) throw meetingError;
+      console.log('[fetchMeetingDetail] Sitzung geladen:', meetingData?.meeting_number, 'Status:', meetingData?.status, 'Typ:', meetingData?.meeting_type);
       setMeeting(meetingData as Meeting);
 
       // Fetch attendance with profiles
