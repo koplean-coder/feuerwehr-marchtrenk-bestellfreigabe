@@ -3342,36 +3342,9 @@ export default function SitzungDetail() {
                 Abbrechen
               </button>
               <button data-ev-id="ev_b7f7edac85"
-            onClick={async () => {
-              console.log('[UI] Bestätigen Button clicked', { item: showConfirmCommandItemModal });
-              if (!showConfirmCommandItemModal) {
-                console.error('[UI] showConfirmCommandItemModal is null!');
-                return;
-              }
-              setIsConfirmingItem(true);
-              try {
-                await confirmCommandDecisionItem(
-                  showConfirmCommandItemModal,
-                  commandItemNotes.trim() || undefined,
-                  {
-                    generatePdf: generatePdfOnConfirm,
-                    sendToSchriftfuehrer: sendToSchriftfuehrer,
-                    pdfBackgroundUrl: pdfBackgroundUrl || undefined,
-                    pdfBackgroundOpacity: pdfBackgroundOpacity,
-                    signatureUrl: commanderSignatureUrl || undefined,
-                    stampUrl: commanderStampUrl || undefined,
-                    commanderName: commanderProfile?.full_name,
-                    gueltigBis: commandItemGueltigBis || undefined,
-                    hebtAufId: commandItemHebtAuf || undefined
-                  }
-                );
-              } finally {
-                setIsConfirmingItem(false);
-                setShowConfirmCommandItemModal(null);
-                setCommandItemNotes('');
-                setCommandItemGueltigBis('');
-                setCommandItemHebtAuf('');
-              }
+            onClick={() => {
+              console.log('[UI] BUTTON CLICKED!');
+              alert('Button wurde geklickt!');
             }}
             disabled={isConfirmingItem}
             className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 flex items-center gap-2 disabled:opacity-50">
