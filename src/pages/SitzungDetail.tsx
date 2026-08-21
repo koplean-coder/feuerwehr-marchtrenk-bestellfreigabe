@@ -2232,13 +2232,31 @@ export default function SitzungDetail() {
                       {canManage &&
                 <div data-ev-id="ev_a5fa039475" className="flex gap-2 ml-3">
                           <button data-ev-id="ev_a0d366114c"
-                  onClick={() => {
-                    setShowConfirmBanfModal(order);
-                    setBanfDecisionText(order.title + (order.description ? ` - ${order.description}` : ''));
-                  }}
-                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700">
+                  disabled={isConfirmingItem}
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (isConfirmingItem) return;
 
-                            Bestätigen
+                    setIsConfirmingItem(true);
+                    try {
+                      const decisionText = order.title + (order.description ? ` - ${order.description}` : '');
+                      await confirmBanfDecision(
+                        { ...order, title: decisionText },
+                        'bestätigt',
+                        quorum.votingMembersPresent,
+                        0,
+                        0
+                      );
+                    } finally {
+                      setIsConfirmingItem(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1">
+                            {isConfirmingItem ?
+                    <><div data-ev-id="ev_28bc75cf41" className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Wird bestätigt...</> :
+
+                    <><CheckCircle2 className="w-3 h-3" /> Bestätigen</>
+                    }
                           </button>
                         </div>
                 }
