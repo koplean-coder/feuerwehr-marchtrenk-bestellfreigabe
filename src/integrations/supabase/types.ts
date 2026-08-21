@@ -1337,6 +1337,47 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_agenda_item_attachments: {
+        Row: {
+          agenda_item_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string
+          uploaded_by: string
+        }
+        Insert: {
+          agenda_item_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          mime_type: string
+          uploaded_by: string
+        }
+        Update: {
+          agenda_item_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_agenda_item_attachments_agenda_item_id_fkey"
+            columns: ["agenda_item_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_agenda_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_agenda_items: {
         Row: {
           category: string | null

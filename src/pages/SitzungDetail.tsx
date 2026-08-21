@@ -6,6 +6,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useSettings } from '@/hooks/useSettings';
+import { AgendaItemAttachments } from '@/components/AgendaItemAttachments';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useBeschlussRegister } from '@/hooks/useBeschlussRegister';
 import { supabase } from '@/integrations/supabase/client';
@@ -1881,6 +1882,13 @@ export default function SitzungDetail() {
                                     </p> :
                           null;
                         })()}
+                                {/* Anhänge */}
+                                <AgendaItemAttachments
+                                  agendaItemId={item.id}
+                                  canUpload={canEditAgendaItems && !meeting?.status?.includes('abgeschlossen')}
+                                  canDelete={canManage || item.submitted_by === effectiveUserId}
+                                  maxAttachments={5}
+                                />
                               </>
                       }
                           </div>
