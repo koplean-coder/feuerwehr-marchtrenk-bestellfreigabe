@@ -601,7 +601,6 @@ export default function Beschluesse() {
                               <th data-ev-id={`ev_th_typ_${year}`} className="px-6 py-3 font-medium">Typ</th>
                               <th data-ev-id={`ev_th_status_${year}`} className="px-6 py-3 font-medium">Status</th>
                               <th data-ev-id={`ev_th_abstimmung_${year}`} className="px-6 py-3 font-medium text-center">Abstimmung</th>
-                              <th data-ev-id={`ev_th_betrag_${year}`} className="px-6 py-3 font-medium text-right">Betrag</th>
                               <th data-ev-id={`ev_th_datum_${year}`} className="px-6 py-3 font-medium">Datum</th>
                               <th data-ev-id={`ev_th_aktion_${year}`} className="px-6 py-3 font-medium"></th>
                             </tr>
@@ -698,11 +697,6 @@ export default function Beschluesse() {
                               <span data-ev-id="ev_8f436af46d" className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">Abgelehnt</span> :
                               null}
                                     </div>
-                                  </td>
-                                  <td data-ev-id={`ev_td_betrag_${beschluss.id}`} className="px-6 py-4 text-right">
-                                    <span data-ev-id={`ev_betrag_${beschluss.id}`} className="font-medium">
-                                      {formatCurrency(beschluss.betrag)}
-                                    </span>
                                   </td>
                                   <td data-ev-id={`ev_td_datum_${beschluss.id}`} className="px-6 py-4">
                                     <span data-ev-id={`ev_datum_${beschluss.id}`} className="text-sm text-muted-foreground">
