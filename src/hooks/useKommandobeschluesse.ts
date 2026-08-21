@@ -28,14 +28,14 @@ export function useKommandobeschluesse() {
   // Nur Kommandomitglieder, Kommandant und Admin haben Zugriff (mit Simulation)
   const hasAccess = effectiveIsKommandant || effectiveIsAdmin || effectiveHasKommandomitgliedFunction;
 
-  const fetchBeschluesse = useCallback(async () => {
+  const fetchBeschluesse = useCallback(async (silent = false) => {
     if (!supabase || !hasAccess) {
       setBeschluesse([]);
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
 
     try {
       // Alle Bestellungen mit Kommandoabstimmung laden
@@ -61,7 +61,7 @@ export function useKommandobeschluesse() {
       setBeschluesse([]);
     }
 
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [hasAccess]);
 
   useEffect(() => {

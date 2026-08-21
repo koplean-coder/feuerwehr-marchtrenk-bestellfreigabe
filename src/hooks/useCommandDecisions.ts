@@ -46,10 +46,10 @@ export function useCommandDecisions() {
   const canCreate = isKommandomitglied || isKommandant || isKdtStellvertreter || isAdmin;
   const canEndVoting = isKommandant || isKdtStellvertreter || isAdmin;
 
-  const fetchDecisions = useCallback(async () => {
+  const fetchDecisions = useCallback(async (silent = false) => {
     if (!supabase) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
 
     try {
@@ -176,7 +176,7 @@ export function useCommandDecisions() {
 
       if (insertError) throw insertError;
 
-      await fetchDecisions();
+      await fetchDecisions(true);
       return newDecision;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Erstellen');
@@ -196,7 +196,7 @@ export function useCommandDecisions() {
 
       if (updateError) throw updateError;
 
-      await fetchDecisions();
+      await fetchDecisions(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren');
@@ -217,7 +217,7 @@ export function useCommandDecisions() {
 
       if (deleteError) throw deleteError;
 
-      await fetchDecisions();
+      await fetchDecisions(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Löschen');

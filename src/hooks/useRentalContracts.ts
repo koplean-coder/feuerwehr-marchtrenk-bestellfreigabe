@@ -96,10 +96,10 @@ export function useRentalContracts() {
   const [contracts, setContracts] = useState<RentalContract[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchContracts = useCallback(async () => {
+  const fetchContracts = useCallback(async (silent = false) => {
     if (!supabase) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('rental_contracts')
@@ -364,7 +364,7 @@ export function useRentalContracts() {
         }
       }
 
-      await fetchContracts();
+      await fetchContracts(true);
       return {
         ...newContract,
         items: (newContract.items as RentalContractItem[]) || []
@@ -385,7 +385,7 @@ export function useRentalContracts() {
         .eq('id', id);
 
       if (error) throw error;
-      await fetchContracts();
+      await fetchContracts(true);
     } catch (err) {
       console.error('Error updating rental contract:', err);
     }
@@ -415,7 +415,7 @@ export function useRentalContracts() {
         .eq('id', id);
 
       if (error) throw error;
-      await fetchContracts();
+      await fetchContracts(true);
     } catch (err) {
       console.error('Error marking contract as returned:', err);
     }
@@ -444,7 +444,7 @@ export function useRentalContracts() {
         .eq('id', id);
 
       if (error) throw error;
-      await fetchContracts();
+      await fetchContracts(true);
     } catch (err) {
       console.error('Error deleting rental contract:', err);
     }

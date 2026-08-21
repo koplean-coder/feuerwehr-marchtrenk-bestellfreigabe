@@ -72,11 +72,11 @@ export function useTodoTasks(filters: TaskFilters = {}) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTasks = useCallback(async () => {
+  const fetchTasks = useCallback(async (silent = false) => {
     if (!supabase) return;
     
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       
       // Get current user first
       const { data: { user } } = await supabase.auth.getUser();
@@ -278,7 +278,7 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       return null;
     }
 
-    await fetchTasks();
+    await fetchTasks(true);
     return data;
   };
 
@@ -340,7 +340,7 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       return false;
     }
 
-    await fetchTasks();
+    await fetchTasks(true);
     return true;
   };
 
@@ -358,7 +358,10 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       return false;
     }
 
-    await fetchTasks();
+    // Optimistic update - remove from local state immediately
+    setTasks(prev => prev.filter(t => t.id !== id));
+    
+    await fetchTasks(true);
     return true;
   };
 
@@ -376,7 +379,7 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       return false;
     }
 
-    await fetchTasks();
+    await fetchTasks(true);
     return true;
   };
 
@@ -394,7 +397,10 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       return false;
     }
 
-    await fetchTasks();
+    // Optimistic update - remove from local state immediately
+    setTasks(prev => prev.filter(t => t.id !== id));
+    
+    await fetchTasks(true);
     return true;
   };
 
@@ -416,7 +422,10 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       return false;
     }
 
-    await fetchTasks();
+    // Optimistic update - clear all deleted tasks
+    setTasks([]);
+    
+    await fetchTasks(true);
     return true;
   };
 

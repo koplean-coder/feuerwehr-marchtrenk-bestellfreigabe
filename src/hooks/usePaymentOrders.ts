@@ -63,11 +63,11 @@ export function usePaymentOrders() {
   const { effectiveProfile, effectiveIsKommandant } = useSimulation();
   const profile = effectiveProfile;
 
-  const fetchPaymentOrders = useCallback(async () => {
+  const fetchPaymentOrders = useCallback(async (silent = false) => {
     if (!supabase || !user) return;
 
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const { data, error: fetchError } = await supabase
         .from('payment_orders')
         .select('*')
@@ -151,7 +151,7 @@ export function usePaymentOrders() {
           throw insertError;
         }
         
-        await fetchPaymentOrders();
+        await fetchPaymentOrders(true);
         return newOrder as PaymentOrder;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
@@ -177,7 +177,7 @@ export function usePaymentOrders() {
         .eq('id', id);
 
       if (updateError) throw updateError;
-      await fetchPaymentOrders();
+      await fetchPaymentOrders(true);
     } catch (err) {
       console.error('Error updating payment order:', err);
       throw err;
@@ -310,7 +310,7 @@ export function usePaymentOrders() {
           .eq('id', id);
       }
 
-      await fetchPaymentOrders();
+      await fetchPaymentOrders(true);
     } catch (err) {
       console.error('Error submitting payment order:', err);
       throw err;
@@ -437,7 +437,7 @@ export function usePaymentOrders() {
           .eq('id', id);
       }
 
-      await fetchPaymentOrders();
+      await fetchPaymentOrders(true);
     } catch (err) {
       console.error('Error approving payment order:', err);
       throw err;
@@ -483,7 +483,7 @@ export function usePaymentOrders() {
         console.log(`[PaymentOrder ${orderData.reference_number}] Paid notification sent to creator`);
       }
 
-      await fetchPaymentOrders();
+      await fetchPaymentOrders(true);
     } catch (err) {
       console.error('Error marking as paid:', err);
       throw err;
@@ -507,7 +507,7 @@ export function usePaymentOrders() {
       if (deleteError) {
         console.error('[PaymentOrder] Delete error:', deleteError);
         // Revert on error - refetch from DB
-        await fetchPaymentOrders();
+        await fetchPaymentOrders(true);
         throw deleteError;
       }
       
@@ -558,7 +558,7 @@ export function usePaymentOrders() {
         console.log(`[PaymentOrder ${orderData.reference_number}] Rejection notification sent to creator`);
       }
 
-      await fetchPaymentOrders();
+      await fetchPaymentOrders(true);
     } catch (err) {
       console.error('Error rejecting payment order:', err);
       throw err;
@@ -579,7 +579,7 @@ export function usePaymentOrders() {
         .eq('id', id);
 
       if (updateError) throw updateError;
-      await fetchPaymentOrders();
+      await fetchPaymentOrders(true);
       return newReferenceNumber;
     } catch (err) {
       console.error('Error resetting reference number:', err);
@@ -598,7 +598,7 @@ export function usePaymentOrders() {
         .eq('id', id);
 
       if (updateError) throw updateError;
-      await fetchPaymentOrders();
+      await fetchPaymentOrders(true);
       return true;
     } catch (err) {
       console.error('Error toggling no_expense_report_required:', err);

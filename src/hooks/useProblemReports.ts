@@ -45,10 +45,10 @@ export function useProblemReports() {
 
   const canManageReports = isAdmin || isKommandant;
 
-  const fetchReports = useCallback(async () => {
+  const fetchReports = useCallback(async (silent = false) => {
     if (!supabase || !user) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
 
     try {
@@ -107,7 +107,7 @@ export function useProblemReports() {
 
       if (insertError) throw insertError;
 
-      await fetchReports();
+      await fetchReports(true);
       return { success: true };
     } catch (err) {
       console.error('Error creating problem report:', err);
@@ -209,7 +209,7 @@ export function useProblemReports() {
         }
       }
 
-      await fetchReports();
+      await fetchReports(true);
       return { success: true };
     } catch (err) {
       console.error('Error updating problem report:', err);

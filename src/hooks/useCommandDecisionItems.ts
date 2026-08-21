@@ -69,10 +69,10 @@ export function useCommandDecisionItems(decisionId: string | undefined) {
   const canVote = hasKommandomitgliedFunction || isKommandant || isKdtStellvertreter || isAdmin;
   const canEndVoting = isKommandant || isKdtStellvertreter || isAdmin;
 
-  const fetchItems = useCallback(async () => {
+  const fetchItems = useCallback(async (silent = false) => {
     if (!supabase || !decisionId) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
 
     try {
       // Fetch items
@@ -183,7 +183,7 @@ export function useCommandDecisionItems(decisionId: string | undefined) {
         });
 
       if (error) throw error;
-      await fetchItems();
+      await fetchItems(true);
       return true;
     } catch (err) {
       console.error('Error adding item:', err);
@@ -202,7 +202,7 @@ export function useCommandDecisionItems(decisionId: string | undefined) {
         .eq('id', itemId);
 
       if (error) throw error;
-      await fetchItems();
+      await fetchItems(true);
       return true;
     } catch (err) {
       console.error('Error updating item:', err);
@@ -221,7 +221,7 @@ export function useCommandDecisionItems(decisionId: string | undefined) {
         .eq('id', itemId);
 
       if (error) throw error;
-      await fetchItems();
+      await fetchItems(true);
       return true;
     } catch (err) {
       console.error('Error deleting item:', err);
@@ -244,7 +244,7 @@ export function useCommandDecisionItems(decisionId: string | undefined) {
         .eq('id', itemId);
 
       if (error) throw error;
-      await fetchItems();
+      await fetchItems(true);
       return true;
     } catch (err) {
       console.error('Error starting voting:', err);
@@ -269,7 +269,7 @@ export function useCommandDecisionItems(decisionId: string | undefined) {
         });
 
       if (error) throw error;
-      await fetchItems();
+      await fetchItems(true);
       return true;
     } catch (err) {
       console.error('Error submitting vote:', err);
@@ -299,7 +299,7 @@ export function useCommandDecisionItems(decisionId: string | undefined) {
       // Wenn ja, die Hauptentscheidung automatisch schließen
       await checkAndCloseDecisionIfAllItemsComplete();
       
-      await fetchItems();
+      await fetchItems(true);
       return true;
     } catch (err) {
       console.error('Error completing voting:', err);

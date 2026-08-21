@@ -9,11 +9,11 @@ export function useExpenseCategories() {
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async (silent = false) => {
     if (!supabase) return;
 
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const { data, error } = await supabase
         .from('expense_categories')
         .select('*')
@@ -44,7 +44,7 @@ export function useExpenseCategories() {
         .single();
 
       if (error) throw error;
-      await fetchCategories();
+      await fetchCategories(true);
       return data;
     } catch (err) {
       console.error('Error adding category:', err);

@@ -39,14 +39,14 @@ export function useEventFormTemplates() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTemplates = useCallback(async () => {
+  const fetchTemplates = useCallback(async (silent = false) => {
     if (!supabase || !user) {
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const { data, error: fetchError } = await supabase
         .from('event_form_templates')
         .select('*')
@@ -90,7 +90,7 @@ export function useEventFormTemplates() {
 
       if (insertError) throw insertError;
       
-      await fetchTemplates();
+      await fetchTemplates(true);
       return {
         ...newTemplate,
         categories: newTemplate.categories as CategoryOption[] || []
@@ -114,7 +114,7 @@ export function useEventFormTemplates() {
         .eq('id', id);
 
       if (updateError) throw updateError;
-      await fetchTemplates();
+      await fetchTemplates(true);
     } catch (err) {
       console.error('Error updating template:', err);
       throw err;
@@ -131,7 +131,7 @@ export function useEventFormTemplates() {
         .eq('id', id);
 
       if (deleteError) throw deleteError;
-      await fetchTemplates();
+      await fetchTemplates(true);
     } catch (err) {
       console.error('Error deleting template:', err);
       throw err;

@@ -160,13 +160,13 @@ export function useTodoLists() {
     setFavorites(data ?? []);
   }, []);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     // Fetch groups first to get group shares for list visibility
     const { groupShares: gShares } = await fetchGroups();
     await fetchLists(gShares);
     await fetchFavorites();
-    setLoading(false);
+    if (!silent) setLoading(false);
   }, [fetchLists, fetchGroups, fetchFavorites]);
 
   useEffect(() => {
@@ -337,7 +337,7 @@ export function useTodoLists() {
       console.error('Push notification failed:', e);
     }
 
-    await refresh();
+    await refresh(true);
     return true;
   };
 
@@ -355,7 +355,7 @@ export function useTodoLists() {
       return false;
     }
 
-    await refresh();
+    await refresh(true);
     return true;
   };
 
@@ -373,7 +373,7 @@ export function useTodoLists() {
       return false;
     }
 
-    await refresh();
+    await refresh(true);
     return true;
   };
 

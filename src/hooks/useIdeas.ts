@@ -104,9 +104,9 @@ export function useIdeas() {
   const [readIdeaIds, setReadIdeaIds] = useState<Set<string>>(new Set());
   const [totalEligibleVoters, setTotalEligibleVoters] = useState(0);
 
-  const fetchIdeas = useCallback(async () => {
+  const fetchIdeas = useCallback(async (silent = false) => {
     if (!supabase || !user) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError(null);
 
     try {
@@ -504,7 +504,7 @@ export function useIdeas() {
       }
     }
 
-    await fetchIdeas();
+    await fetchIdeas(true);
     return newIdea as Idea;
   };
 
@@ -521,7 +521,7 @@ export function useIdeas() {
       return false;
     }
 
-    await fetchIdeas();
+    await fetchIdeas(true);
     return true;
   };
 
@@ -538,7 +538,7 @@ export function useIdeas() {
       return false;
     }
 
-    await fetchIdeas();
+    await fetchIdeas(true);
     return true;
   };
 
@@ -598,7 +598,7 @@ export function useIdeas() {
       });
     }
 
-    await fetchIdeas();
+    await fetchIdeas(true);
     return true;
   };
 
@@ -659,7 +659,7 @@ export function useIdeas() {
     
     console.log('[addComment] Comment inserted successfully:', data);
 
-    await fetchIdeas();
+    await fetchIdeas(true);
     return true;
   };
 
@@ -673,7 +673,7 @@ export function useIdeas() {
 
     if (deleteError) return false;
 
-    await fetchIdeas();
+    await fetchIdeas(true);
     return true;
   };
 
@@ -762,7 +762,7 @@ export function useIdeas() {
       
       if (insertError) throw insertError;
       
-      await fetchIdeas();
+      await fetchIdeas(true);
       return publicUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Hochladen');
@@ -808,7 +808,7 @@ export function useIdeas() {
           });
       }
       
-      await fetchIdeas();
+      await fetchIdeas(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Abstimmen');
@@ -835,7 +835,7 @@ export function useIdeas() {
       
       if (pollError) throw pollError;
       
-      await fetchIdeas();
+      await fetchIdeas(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Erstellen der Umfrage');
@@ -881,7 +881,7 @@ export function useIdeas() {
           });
       }
       
-      await fetchIdeas();
+      await fetchIdeas(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Abstimmen');
@@ -902,7 +902,7 @@ export function useIdeas() {
       
       if (deleteError) throw deleteError;
       
-      await fetchIdeas();
+      await fetchIdeas(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Löschen der Umfrage');
@@ -941,7 +941,7 @@ export function useIdeas() {
       
       if (deleteError) throw deleteError;
       
-      await fetchIdeas();
+      await fetchIdeas(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Löschen');
@@ -999,7 +999,7 @@ export function useIdeas() {
       
       if (updateError) throw updateError;
       
-      await fetchIdeas();
+      await fetchIdeas(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren der Frist');

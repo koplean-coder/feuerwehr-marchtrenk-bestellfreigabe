@@ -27,11 +27,11 @@ export function useTodoSettings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSettings = useCallback(async () => {
+  const fetchSettings = useCallback(async (silent = false) => {
     if (!supabase) return;
 
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
 
       // Fetch global settings
       const { data: settings, error: settingsError } = await supabase
@@ -141,7 +141,7 @@ export function useTodoSettings() {
         if (updateError) throw updateError;
       }
 
-      await fetchSettings();
+      await fetchSettings(true);
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Fehler beim Speichern');
