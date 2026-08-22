@@ -224,31 +224,32 @@ export function Layout({ children }: LayoutProps) {
     navItems.push({ path: '/lieferanten', label: 'Lieferanten', icon: Truck, category: 'verwaltung' });
 
     // Kommandobeschlüsse für Kommandomitglieder, Kommandant und Admin (use effective values)
-    const canViewKommandobeschluesse = effectiveIsAdmin || effectiveIsKommandant || effectiveProfile?.functions?.includes('kommandomitglied');
+    const effectiveFunctionsLower = (effectiveProfile?.functions || []).map(f => f.toLowerCase());
+    const canViewKommandobeschluesse = effectiveIsAdmin || effectiveIsKommandant || effectiveFunctionsLower.includes('kommandomitglied');
     if (canViewKommandobeschluesse) {
       navItems.push({ path: '/kommandobeschluesse', label: 'Umlaufbeschlüsse', icon: Vote, category: 'verwaltung' });
     }
 
     // Sitzungen basierend auf Settings und Rollen/Funktionen ODER Einladungen
     const userRoleForSitzungen = effectiveProfile?.role || profile?.role;
-    const userFunctionsForSitzungen = effectiveProfile?.functions || profile?.functions || [];
-    // Case-insensitive comparison for functions
+    // Case-insensitive comparison for functions and roles
     const sitzungenViewRolesLower = sitzungenViewRoles.map(r => r.toLowerCase());
     const hasRoleBasedSitzungenAccess = effectiveIsAdmin || effectiveIsKommandant ||
       (userRoleForSitzungen && sitzungenViewRolesLower.includes(userRoleForSitzungen.toLowerCase())) ||
-      userFunctionsForSitzungen.some(f => sitzungenViewRolesLower.includes(f.toLowerCase()));
+      effectiveFunctionsLower.some(f => sitzungenViewRolesLower.includes(f));
     // Also show menu if user has any meeting invitations
     const canViewSitzungen = hasRoleBasedSitzungenAccess || hasMeetingInvitations;
     if (canViewSitzungen) {
       navItems.push({ path: '/sitzungen', label: 'Sitzungen', icon: CalendarCheck, category: 'verwaltung' });
     }
 
-    // Beschluss-Register basierend auf Settings und Rollen
+    // Beschluss-Register basierend auf Settings und Rollen (case-insensitive)
     const userRole = effectiveProfile?.role || profile?.role;
+    const beschlussRegisterViewRolesLower = beschlussRegisterViewRoles.map(r => r.toLowerCase());
     const canViewBeschlussRegister = effectiveIsAdmin || effectiveIsKommandant || 
-      (userRole && beschlussRegisterViewRoles.includes(userRole)) ||
-      effectiveProfile?.functions?.includes('kommandomitglied') ||
-      effectiveProfile?.functions?.includes('erweitertes_kommando');
+      (userRole && beschlussRegisterViewRolesLower.includes(userRole.toLowerCase())) ||
+      effectiveFunctionsLower.includes('kommandomitglied') ||
+      effectiveFunctionsLower.includes('erweitertes_kommando');
     if (canViewBeschlussRegister) {
       navItems.push({ path: '/beschluesse', label: 'Beschluss-Register', icon: FileText, category: 'verwaltung' });
     }
