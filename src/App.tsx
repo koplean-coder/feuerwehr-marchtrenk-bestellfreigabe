@@ -34,6 +34,7 @@ import Dokumentation from '@/pages/Dokumentation';
 import Beschluesse from '@/pages/Beschluesse';
 import MockupPreview from '@/pages/MockupPreview';
 import SettingsMockup from '@/pages/SettingsMockup';
+import TrainingPlan from '@/pages/TrainingPlan';
 
 
 // Redirect component for old /order/:id links
@@ -131,6 +132,7 @@ export default function App() {
       <Route path="/dokumentation" element={<ProtectedRoute><Dokumentation /></ProtectedRoute>} />
       <Route path="/mockup-preview" element={<ProtectedRoute><MockupPreview /></ProtectedRoute>} />
       <Route path="/settings-mockup" element={<ProtectedRoute><SettingsMockup /></ProtectedRoute>} />
+      <Route path="/uebungsplan" element={<ProtectedRoute><TrainingPlan /></ProtectedRoute>} />
     </Routes>);
 
 }
