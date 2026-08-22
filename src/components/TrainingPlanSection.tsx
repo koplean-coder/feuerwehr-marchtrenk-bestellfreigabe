@@ -57,14 +57,15 @@ const COLOR_OPTIONS = [
 'bg-indigo-100 text-indigo-700 border-indigo-300'];
 
 
-// Mock instructors - in real app from DB
-const INSTRUCTORS = [
+// Default-Übungsleiter
+const DEFAULT_INSTRUCTORS = [
 'Mustermann Max',
 'Huber Franz',
 'Gruber Thomas',
 'Maier Stefan',
 'Berger Michael',
 'Wagner Peter'];
+
 
 
 // Österreichische Feiertage 2024-2026
@@ -134,16 +135,18 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
 
   // Data
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const [instructors, setInstructors] = useState<string[]>(DEFAULT_INSTRUCTORS);
   const [scenarioTemplates, setScenarioTemplates] = useState<ScenarioTemplate[]>([]);
   const [recurrenceRules, setRecurrenceRules] = useState<RecurrenceRule[]>([]);
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
 
   // UI State
-  const [activeTab, setActiveTab] = useState<'plan' | 'templates' | 'settings'>('plan');
+  const [activeTab, setActiveTab] = useState<'plan' | 'templates' | 'settings' | 'instructors'>('plan');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState(COLOR_OPTIONS[0]);
+  const [newInstructorName, setNewInstructorName] = useState('');
 
   // Template editing
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -212,6 +215,22 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
         [...s.categoryIds, categoryId]
       };
     }));
+  };
+
+  const deleteSession = (id: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  // Instructor management
+  const addInstructor = () => {
+    if (!newInstructorName.trim()) return;
+    if (instructors.includes(newInstructorName.trim())) return;
+    setInstructors((prev) => [...prev, newInstructorName.trim()]);
+    setNewInstructorName('');
+  };
+
+  const deleteInstructor = (name: string) => {
+    setInstructors((prev) => prev.filter((i) => i !== name));
   };
 
   // Category management
@@ -325,13 +344,21 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           <Copy className="w-4 h-4 inline mr-2" />
           Vorlagen & Regeln
         </button>
-        <button data-ev-id="ev_15bc85ce87"
+        <button data-ev-id="ev_36d23d684d"
         onClick={() => setActiveTab('settings')}
         className={`px-4 py-2 font-medium border-b-2 -mb-px transition-colors ${
         activeTab === 'settings' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`
         }>
           <Settings className="w-4 h-4 inline mr-2" />
           Kategorien
+        </button>
+        <button data-ev-id="ev_5ed3e3d461"
+        onClick={() => setActiveTab('instructors')}
+        className={`px-4 py-2 font-medium border-b-2 -mb-px transition-colors ${
+        activeTab === 'instructors' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`
+        }>
+          <Users className="w-4 h-4 inline mr-2" />
+          Übungsleiter
         </button>
       </div>
 
@@ -416,14 +443,15 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                   <div data-ev-id="ev_f251e7a587" className="overflow-x-auto">
                     <table data-ev-id="ev_280f2b1aaa" className="w-full">
                       <thead data-ev-id="ev_e0617d1079">
-                        <tr data-ev-id="ev_705c1e2e32" className="bg-gray-100 text-sm">
-                          <th data-ev-id="ev_4e47d47722" className="px-4 py-2 text-left font-semibold w-[100px]">Datum</th>
-                          <th data-ev-id="ev_55324edb62" className="px-4 py-2 text-left font-semibold w-[70px]">Uhrzeit</th>
-                          <th data-ev-id="ev_3a4dadbc9f" className="px-4 py-2 text-left font-semibold">Übungsthema</th>
-                          <th data-ev-id="ev_ca9a3abfb4" className="px-4 py-2 text-left font-semibold w-[200px]">Kategorien</th>
-                          <th data-ev-id="ev_61f1b4bb66" className="px-4 py-2 text-left font-semibold w-[180px]">Übungsleiter</th>
-                          <th data-ev-id="ev_1505de5c11" className="px-4 py-2 text-left font-semibold w-[120px]">Anmerkungen</th>
-                          <th data-ev-id="ev_858c7eb4da" className="px-4 py-2 text-left font-semibold w-[100px]">Vorlage</th>
+                        <tr data-ev-id="ev_611cf0dc04" className="bg-gray-100 text-sm">
+                          <th data-ev-id="ev_5133f88906" className="px-3 py-2 text-left font-semibold w-[90px]">Datum</th>
+                          <th data-ev-id="ev_3bd838b999" className="px-2 py-2 text-left font-semibold w-[65px]">Uhrzeit</th>
+                          <th data-ev-id="ev_b3c4ed1cb2" className="px-2 py-2 text-left font-semibold">Übungsthema</th>
+                          <th data-ev-id="ev_9a2ca8bd15" className="px-2 py-2 text-left font-semibold w-[180px]">Kategorien</th>
+                          <th data-ev-id="ev_64a59c24e0" className="px-2 py-2 text-left font-semibold w-[150px]">Übungsleiter</th>
+                          <th data-ev-id="ev_9d4dfb24a1" className="px-2 py-2 text-left font-semibold w-[100px]">Anmerkungen</th>
+                          <th data-ev-id="ev_bde837891b" className="px-2 py-2 text-left font-semibold w-[90px]">Vorlage</th>
+                          <th data-ev-id="ev_94193a77a7" className="px-2 py-2 text-center font-semibold w-[40px]"></th>
                         </tr>
                       </thead>
                       <tbody data-ev-id="ev_4ae88cf19a">
@@ -491,7 +519,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                         className="px-2 py-1 border border-border rounded bg-background w-full text-sm" />
 
                                 <datalist data-ev-id="ev_32b329d6a6" id={`instructors-${session.id}`}>
-                                  {INSTRUCTORS.map((name) =>
+                                  {instructors.map((name) =>
                           <option data-ev-id="ev_35085f66b2" key={name} value={name} />
                           )}
                                 </datalist>
@@ -506,21 +534,34 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                       className="px-2 py-1 border border-border rounded bg-background w-full text-sm" />
 
                             </td>
-                            <td data-ev-id="ev_5d4f69b73e" className="px-4 py-2 align-top">
-                              {scenarioTemplates.length > 0 &&
-                      <select data-ev-id="ev_2d8ee907b2"
+                            <td data-ev-id="ev_0e05104671" className="px-2 py-2 align-top">
+                              {scenarioTemplates.length > 0 ?
+                      <select data-ev-id="ev_afbfee6a98"
                       onChange={(e) => {
                         const tpl = scenarioTemplates.find((t) => t.id === e.target.value);
-                        if (tpl) applyTemplateToSession(session.id, tpl);
+                        if (tpl) {
+                          applyTemplateToSession(session.id, tpl);
+                          e.target.value = '';
+                        }
                       }}
-                      value=""
+                      defaultValue=""
                       className="px-2 py-1 border border-border rounded bg-background w-full text-sm">
-                                  <option data-ev-id="ev_41bb16ca76" value="">Anwenden...</option>
+                                  <option data-ev-id="ev_6d923cf69a" value="">Vorlage...</option>
                                   {scenarioTemplates.map((tpl) =>
-                        <option data-ev-id="ev_5ee18b71fb" key={tpl.id} value={tpl.id}>{tpl.name}</option>
+                        <option data-ev-id="ev_6a9a4583a3" key={tpl.id} value={tpl.id}>{tpl.name}</option>
                         )}
-                                </select>
+                                </select> :
+
+                      <span data-ev-id="ev_60a50c45a9" className="text-xs text-muted-foreground">-</span>
                       }
+                            </td>
+                            <td data-ev-id="ev_fb8f10debb" className="px-2 py-2 align-top text-center">
+                              <button data-ev-id="ev_459b7ed69a"
+                      onClick={() => deleteSession(session.id)}
+                      className="p-1 hover:bg-red-100 text-red-500 rounded transition-colors"
+                      title="Termin löschen">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
                   )}
@@ -621,7 +662,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
             onChange={(e) => setNewTemplateInstructor(e.target.value)}
             className="w-full px-3 py-2 border border-border rounded-lg bg-background">
                 <option data-ev-id="ev_a73b2e5bf7" value="">Standard-Übungsleiter (optional)</option>
-                {INSTRUCTORS.map((name) =>
+                {instructors.map((name) =>
               <option data-ev-id="ev_d46504d51c" key={name} value={name}>{name}</option>
               )}
               </select>
@@ -773,6 +814,54 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
             <button data-ev-id="ev_f0eb94415d"
           onClick={addCategory}
           disabled={!newCategoryName.trim()}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Hinzufügen
+            </button>
+          </div>
+        </div>
+      }
+
+      {activeTab === 'instructors' &&
+      <div data-ev-id="ev_972576b74d" className="bg-card border border-border rounded-xl p-6">
+          <h3 data-ev-id="ev_ab2c4472bd" className="text-lg font-semibold mb-4">Übungsleiter verwalten</h3>
+          <p data-ev-id="ev_267dd8ba3f" className="text-sm text-muted-foreground mb-4">
+            Übungsleiter für die Dropdown-Auswahl im Übungsplan definieren.
+          </p>
+
+          {/* Existing Instructors */}
+          <div data-ev-id="ev_69a0c595de" className="space-y-2 mb-6">
+            {instructors.map((name) =>
+          <div data-ev-id="ev_b5d6397e73" key={name} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <span data-ev-id="ev_1c0733ad3f" className="flex-1 font-medium">{name}</span>
+                <button data-ev-id="ev_164b25041a"
+            onClick={() => deleteInstructor(name)}
+            className="p-1 hover:bg-red-100 text-red-600 rounded">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+          )}
+            {instructors.length === 0 &&
+          <p data-ev-id="ev_8040cb3cd1" className="text-muted-foreground text-center py-4">Noch keine Übungsleiter angelegt.</p>
+          }
+          </div>
+
+          {/* Add Instructor */}
+          <div data-ev-id="ev_eb55f7f801" className="flex gap-3 items-end p-4 bg-muted/30 rounded-lg">
+            <div data-ev-id="ev_05dd918163" className="flex-1">
+              <label data-ev-id="ev_453a986291" className="block text-sm font-medium mb-1">Neuer Übungsleiter</label>
+              <input data-ev-id="ev_b4e3d66251"
+            type="text"
+            value={newInstructorName}
+            onChange={(e) => setNewInstructorName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addInstructor()}
+            placeholder="z.B. Mustermann Max"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background" />
+            </div>
+            <button data-ev-id="ev_267ce04a27"
+          onClick={addInstructor}
+          disabled={!newInstructorName.trim()}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Hinzufügen
