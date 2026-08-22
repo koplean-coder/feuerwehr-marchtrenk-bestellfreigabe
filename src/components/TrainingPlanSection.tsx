@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Plus, X, Download, Calendar, FileText, ChevronLeft, ChevronRight, ChevronDown, Settings, Save, Trash2, Copy, RotateCcw, Users, FolderOpen, Check } from 'lucide-react';
 import ffmLogo from '@/assets/uploads/ffm-logo-header.png';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
   useTrainingCategories,
   useScenarioTemplates,
@@ -649,9 +651,119 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 Abbrechen
               </button>
               <button data-ev-id="ev_195a80c6e4"
-            onClick={() => {
-              // TODO: PDF generieren mit gefiltertem Zeitraum
-              alert('PDF Export mit ' + pdfPeriod + ' wird erstellt...');
+            onClick={async () => {
+              // Filter sessions based on selected period
+              let filteredSessions = sessions;
+              if (pdfPeriod === 'Q1') filteredSessions = sessions.filter((s) => s.date.getMonth() <= 2);
+              else if (pdfPeriod === 'Q2') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 3 && s.date.getMonth() <= 5);
+              else if (pdfPeriod === 'Q3') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 6 && s.date.getMonth() <= 8);
+              else if (pdfPeriod === 'Q4') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 9);
+              else if (pdfPeriod === 'H1') filteredSessions = sessions.filter((s) => s.date.getMonth() <= 5);
+              else if (pdfPeriod === 'H2') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 6);
+              else if (pdfPeriod === 'custom') filteredSessions = sessions.filter((s) => s.date >= pdfCustomStart && s.date <= pdfCustomEnd);
+              
+              if (filteredSessions.length === 0) {
+                alert('Keine Termine im gewählten Zeitraum!');
+                return;
+              }
+              
+              // Create PDF container
+              const pdfContainer = document.createElement('div');
+              pdfContainer.style.cssText = 'position: absolute; left: -9999px; width: 1190px; padding: 40px; background: white; font-family: Arial, sans-serif;';
+              
+              // Group sessions by month
+              const grouped: { month: string; sessions: typeof filteredSessions }[] = [];
+              filteredSessions.forEach((s) => {
+                const monthName = s.date.toLocaleDateString('de-AT', { month: 'long', year: 'numeric' });
+                const existing = grouped.find((g) => g.month === monthName);
+                if (existing) existing.sessions.push(s);
+                else grouped.push({ month: monthName, sessions: [s] });
+              });
+              
+              // Date range for header
+              const startDate = filteredSessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long' });
+              const endDate = filteredSessions[filteredSessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' });
+              
+              pdfContainer.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 4px solid #C8102E;">
+                  <div>
+                    <h1 style="font-size: 32px; font-weight: bold; color: #C8102E; margin: 0;">Übungsplan</h1>
+                    <p style="font-size: 16px; color: #666; margin-top: 8px;">${startDate} - ${endDate}</p>
+                  </div>
+                  <img src="${ffmLogo}" alt="Logo" style="height: 80px; width: auto;" />
+                </div>
+                ${grouped.map(({ month, sessions: monthSessions }) => `
+                  <div style="margin-bottom: 16px;">
+                    <div style="background: #C8102E; color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; border-radius: 4px 4px 0 0;">
+                      ${month}
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                      <thead>
+                        <tr style="background: #f3f4f6;">
+                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 70px;">Datum</th>
+                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 50px;">Zeit</th>
+                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Thema/Szenario</th>
+                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 140px;">Kategorien</th>
+                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 100px;">Übungsleiter</th>
+                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 120px;">Anmerkungen</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${monthSessions.map((s, idx) => `
+                          <tr style="background: ${idx % 2 === 0 ? '#fff' : '#f9fafb'};">
+                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.time}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top; white-space: pre-line;">${s.topic || '-'}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">
+                              ${s.categoryIds.map((catId) => {
+                                const cat = categories.find((c) => c.id === catId);
+                                return cat ? `<span style="display: inline-block; padding: 2px 6px; margin: 1px; border-radius: 4px; font-size: 10px; background: #fef3c7; color: #92400e;">${cat.name}</span>` : '';
+                              }).join('')}
+                            </td>
+                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.instructor || '-'}</td>
+                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.notes || '-'}</td>
+                          </tr>
+                        `).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                `).join('')}
+                <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; font-size: 10px; color: #666;">
+                  <span>Freiwillige Feuerwehr Marchtrenk · Linzerstraße 43 · 4614 Marchtrenk</span>
+                  <span>Stand: ${new Date().toLocaleDateString('de-AT')}</span>
+                </div>
+              `;
+              
+              document.body.appendChild(pdfContainer);
+              
+              try {
+                const canvas = await html2canvas(pdfContainer, { scale: 2, useCORS: true });
+                const imgData = canvas.toDataURL('image/png');
+                
+                // A3 landscape dimensions in mm
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                const imgWidth = pdfWidth - 20;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                if (imgHeight <= pdfHeight - 20) {
+                  pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+                } else {
+                  // Scale to fit height if needed
+                  const scaledHeight = pdfHeight - 20;
+                  const scaledWidth = (canvas.width * scaledHeight) / canvas.height;
+                  pdf.addImage(imgData, 'PNG', 10, 10, scaledWidth, scaledHeight);
+                }
+                
+                // Generate filename
+                const periodLabel = pdfPeriod === 'all' ? 'Gesamt' : pdfPeriod === 'custom' ? `${pdfCustomStart.toLocaleDateString('de-AT')}-${pdfCustomEnd.toLocaleDateString('de-AT')}` : pdfPeriod;
+                pdf.save(`Uebungsplan_${currentYear}_${periodLabel}.pdf`);
+              } finally {
+                document.body.removeChild(pdfContainer);
+              }
+              
               setShowPdfDialog(false);
             }}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
@@ -916,7 +1028,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                                 </button>
                                 <div data-ev-id="ev_79beb57f52"
                         id={`cat-dropdown-${session.id}`}
-                        className="hidden absolute z-50 mt-1 min-w-[200px] w-max bg-white border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto">
+                        className="hidden absolute z-50 mt-1 w-64 bg-white border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto">
 
                                   {categories.map((cat) => {
                             const isSelected = session.categoryIds.includes(cat.id);
@@ -1404,11 +1516,11 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               {/* Header with Title and Logo */}
               <div data-ev-id="ev_e8fb3659a5" className="flex items-center justify-between mb-4 pb-4 border-b-4 border-[#C8102E]">
                 <div data-ev-id="ev_pdf_title_wrapper">
-                  <h1 data-ev-id="ev_pdf_title" className="text-3xl font-bold text-[#C8102E]">
+                  <h1 data-ev-id="ev_pdf_title" className="text-4xl font-bold text-[#C8102E]">
                     Übungsplan
                   </h1>
-                  <p data-ev-id="ev_pdf_date_range" className="text-sm text-gray-600 mt-1">
-                    {sessions.length > 0 ? `${sessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${sessions[sessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })}` : ''}
+                  <p data-ev-id="ev_pdf_date_range" className="text-base text-gray-600 mt-2">
+                    {sessions.length > 0 ? `${sessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long' })} - ${sessions[sessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' })}` : ''}
                   </p>
                 </div>
                 <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-24 w-auto" />
