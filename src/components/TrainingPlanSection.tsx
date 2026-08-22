@@ -777,7 +777,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                           <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.time}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; white-space: pre-line; line-height: 1.4; font-size: 18px;">${s.topic || '<span style="color: #9ca3af;">—</span>'}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; white-space: pre-line; line-height: 1.4; font-size: 22px; font-weight: 700;">${s.topic || '<span style="color: #9ca3af;">—</span>'}</td>
                             <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; text-align: left;">${renderCategories(s.categoryIds)}</td>
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 500; font-size: 18px;">${s.instructor || '<span style="color: #9ca3af;">—</span>'}</td>
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; color: #6b7280; font-size: 18px;">${s.notes || '<span style="color: #9ca3af;">—</span>'}</td>
