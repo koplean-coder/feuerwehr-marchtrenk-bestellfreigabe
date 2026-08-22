@@ -185,6 +185,12 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // PDF Export state
+  const [showPdfDialog, setShowPdfDialog] = useState(false);
+  const [pdfPeriod, setPdfPeriod] = useState<'all' | 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'H1' | 'H2' | 'custom'>('all');
+  const [pdfCustomStart, setPdfCustomStart] = useState<Date>(new Date(currentYear, 0, 1));
+  const [pdfCustomEnd, setPdfCustomEnd] = useState<Date>(new Date(currentYear, 11, 31));
+
   // Calculate date range and wednesdays
   const dateRange = useMemo(() =>
   getDateRangeForPeriod(selectedYear, selectedPeriod, customStartDate, customEndDate),
@@ -409,8 +415,8 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 <Save className="w-4 h-4" />
                 Speichern
               </button>
-              <button data-ev-id="ev_618903f6bd"
-            onClick={() => alert('PDF Export kommt als nächstes!')}
+              <button data-ev-id="ev_ff26d2678c"
+            onClick={() => setShowPdfDialog(true)}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
 
                 <Download className="w-4 h-4" />
@@ -420,6 +426,182 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           }
         </div>
       </div>
+
+      {/* PDF Export Dialog */}
+      {showPdfDialog &&
+      <div data-ev-id="ev_80be118731" className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div data-ev-id="ev_92109e4614" className="bg-card border border-border rounded-xl p-6 w-full max-w-lg">
+            <h3 data-ev-id="ev_ba2f3d3306" className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Download className="w-5 h-5" />
+              PDF Druckansicht wählen
+            </h3>
+            
+            <p data-ev-id="ev_3b1b524dde" className="text-sm text-muted-foreground mb-4">
+              Wähle aus, welcher Zeitraum im PDF angezeigt werden soll:
+            </p>
+
+            <div data-ev-id="ev_31349bb45b" className="space-y-3 mb-6">
+              {/* All */}
+              <label data-ev-id="ev_30760c2276" className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+            pdfPeriod === 'all' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`
+            }>
+                <input data-ev-id="ev_4189257d5c"
+              type="radio"
+              name="pdfPeriod"
+              checked={pdfPeriod === 'all'}
+              onChange={() => setPdfPeriod('all')}
+              className="w-4 h-4 text-primary" />
+
+                <div data-ev-id="ev_33d316b6f2">
+                  <div data-ev-id="ev_198247c188" className="font-medium">Gesamter Plan</div>
+                  <div data-ev-id="ev_a8c0683aaf" className="text-sm text-muted-foreground">
+                    Alle {sessions.length} Termine ({sessions.length > 0 ? `${sessions[0].date.toLocaleDateString('de-AT')} - ${sessions[sessions.length - 1].date.toLocaleDateString('de-AT')}` : '-'})
+                  </div>
+                </div>
+              </label>
+
+              {/* Quarters */}
+              <div data-ev-id="ev_816abe1e0e" className="grid grid-cols-2 gap-2">
+                {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map((q) => {
+                const qSessions = sessions.filter((s) => {
+                  const month = s.date.getMonth();
+                  if (q === 'Q1') return month >= 0 && month <= 2;
+                  if (q === 'Q2') return month >= 3 && month <= 5;
+                  if (q === 'Q3') return month >= 6 && month <= 8;
+                  return month >= 9 && month <= 11;
+                });
+                return (
+                  <label data-ev-id="ev_fc395d6aa6" key={q} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  pdfPeriod === q ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'} ${
+                  qSessions.length === 0 ? 'opacity-50' : ''}`}>
+                      <input data-ev-id="ev_b05bb9da97"
+                    type="radio"
+                    name="pdfPeriod"
+                    checked={pdfPeriod === q}
+                    onChange={() => setPdfPeriod(q)}
+                    disabled={qSessions.length === 0}
+                    className="w-4 h-4 text-primary" />
+
+                      <div data-ev-id="ev_154ffb9488">
+                        <div data-ev-id="ev_de0e453dfe" className="font-medium">{q.replace('Q', '')}. Quartal</div>
+                        <div data-ev-id="ev_f28fd4fa9c" className="text-sm text-muted-foreground">{qSessions.length} Termine</div>
+                      </div>
+                    </label>);
+
+              })}
+              </div>
+
+              {/* Half Years */}
+              <div data-ev-id="ev_a9e8fffd34" className="grid grid-cols-2 gap-2">
+                {(['H1', 'H2'] as const).map((h) => {
+                const hSessions = sessions.filter((s) => {
+                  const month = s.date.getMonth();
+                  return h === 'H1' ? month <= 5 : month >= 6;
+                });
+                return (
+                  <label data-ev-id="ev_c5e64e66fd" key={h} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                  pdfPeriod === h ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'} ${
+                  hSessions.length === 0 ? 'opacity-50' : ''}`}>
+                      <input data-ev-id="ev_0c55bb7aaa"
+                    type="radio"
+                    name="pdfPeriod"
+                    checked={pdfPeriod === h}
+                    onChange={() => setPdfPeriod(h)}
+                    disabled={hSessions.length === 0}
+                    className="w-4 h-4 text-primary" />
+
+                      <div data-ev-id="ev_b934818e95">
+                        <div data-ev-id="ev_26e7e272b3" className="font-medium">{h === 'H1' ? '1. Halbjahr' : '2. Halbjahr'}</div>
+                        <div data-ev-id="ev_6d242acca1" className="text-sm text-muted-foreground">{hSessions.length} Termine</div>
+                      </div>
+                    </label>);
+
+              })}
+              </div>
+
+              {/* Custom Range */}
+              <label data-ev-id="ev_d237b03d9b" className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+            pdfPeriod === 'custom' ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/50'}`
+            }>
+                <input data-ev-id="ev_45760115e3"
+              type="radio"
+              name="pdfPeriod"
+              checked={pdfPeriod === 'custom'}
+              onChange={() => setPdfPeriod('custom')}
+              className="w-4 h-4 text-primary" />
+
+                <div data-ev-id="ev_a7ae801885" className="font-medium">Benutzerdefinierter Zeitraum</div>
+              </label>
+
+              {pdfPeriod === 'custom' &&
+            <div data-ev-id="ev_ae6660d92e" className="flex gap-4 pl-7">
+                  <div data-ev-id="ev_765f67e441" className="flex items-center gap-2">
+                    <label data-ev-id="ev_6a11d442c9" className="text-sm">Von:</label>
+                    <input data-ev-id="ev_e27695d3f5"
+                type="date"
+                value={pdfCustomStart.toISOString().split('T')[0]}
+                onChange={(e) => {
+                  const date = new Date(e.target.value);
+                  if (!isNaN(date.getTime())) setPdfCustomStart(date);
+                }}
+                className="px-2 py-1 border border-border rounded bg-background text-sm" />
+
+                  </div>
+                  <div data-ev-id="ev_79af49e16c" className="flex items-center gap-2">
+                    <label data-ev-id="ev_8891bb7036" className="text-sm">Bis:</label>
+                    <input data-ev-id="ev_c283d96271"
+                type="date"
+                value={pdfCustomEnd.toISOString().split('T')[0]}
+                onChange={(e) => {
+                  const date = new Date(e.target.value);
+                  if (!isNaN(date.getTime())) setPdfCustomEnd(date);
+                }}
+                className="px-2 py-1 border border-border rounded bg-background text-sm" />
+
+                  </div>
+                </div>
+            }
+            </div>
+
+            {/* Preview count */}
+            <div data-ev-id="ev_3891d105eb" className="p-3 bg-muted/50 rounded-lg mb-4 text-sm">
+              <strong data-ev-id="ev_c00947f3b0">
+                {(() => {
+                let filtered = sessions;
+                if (pdfPeriod === 'Q1') filtered = sessions.filter((s) => s.date.getMonth() <= 2);else
+                if (pdfPeriod === 'Q2') filtered = sessions.filter((s) => s.date.getMonth() >= 3 && s.date.getMonth() <= 5);else
+                if (pdfPeriod === 'Q3') filtered = sessions.filter((s) => s.date.getMonth() >= 6 && s.date.getMonth() <= 8);else
+                if (pdfPeriod === 'Q4') filtered = sessions.filter((s) => s.date.getMonth() >= 9);else
+                if (pdfPeriod === 'H1') filtered = sessions.filter((s) => s.date.getMonth() <= 5);else
+                if (pdfPeriod === 'H2') filtered = sessions.filter((s) => s.date.getMonth() >= 6);else
+                if (pdfPeriod === 'custom') filtered = sessions.filter((s) => s.date >= pdfCustomStart && s.date <= pdfCustomEnd);
+                return filtered.length;
+              })()}
+              </strong> Termine werden im PDF angezeigt
+            </div>
+
+            <div data-ev-id="ev_04f9d4364d" className="flex gap-2 justify-end">
+              <button data-ev-id="ev_e8818a28e4"
+            onClick={() => setShowPdfDialog(false)}
+            className="px-4 py-2 border border-border rounded-lg hover:bg-muted">
+
+                Abbrechen
+              </button>
+              <button data-ev-id="ev_195a80c6e4"
+            onClick={() => {
+              // TODO: PDF generieren mit gefiltertem Zeitraum
+              alert('PDF Export mit ' + pdfPeriod + ' wird erstellt...');
+              setShowPdfDialog(false);
+            }}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
+
+                <Download className="w-4 h-4" />
+                PDF erstellen
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       {/* Save Dialog */}
       {showSaveDialog &&
