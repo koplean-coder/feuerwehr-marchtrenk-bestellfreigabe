@@ -1403,17 +1403,8 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           <div data-ev-id="ev_e92066105c" className="border-2 border-dashed border-border rounded-lg p-4 bg-white overflow-auto">
             <div data-ev-id="ev_a7f7a3e6c6" className="min-w-[900px]" style={{ aspectRatio: '1.414/1' }}>
               {/* Header with Logo */}
-              <div data-ev-id="ev_e8fb3659a5" className="flex items-start justify-between mb-4 pb-4 border-b-4 border-[#C8102E]">
-                <div data-ev-id="ev_e24f9fb4a9">
-                  <h2 data-ev-id="ev_49dfd3fc5a" className="text-2xl font-bold text-[#C8102E]">ÜBUNGSPLAN {selectedYear}</h2>
-                  <p data-ev-id="ev_9f701e00b6" className="text-lg font-medium text-gray-600">
-                    {selectedPeriod.startsWith('Q') ? `${selectedPeriod.replace('Q', '')}. Quartal` :
-                  selectedPeriod === 'H1' ? 'Jänner - Juni' : 'Juli - Dezember'}
-                  </p>
-                </div>
-                <div data-ev-id="ev_f34e264433" className="text-right flex-shrink-0">
-                  <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-20 w-auto ml-auto" />
-                </div>
+              <div data-ev-id="ev_e8fb3659a5" className="flex items-center justify-end mb-4 pb-4 border-b-4 border-[#C8102E]">
+                <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-24 w-auto" />
               </div>
 
               {/* Mini Table Preview */}

@@ -222,7 +222,9 @@ export default function SettingsNew() {
             updateTodoAdminUsers={async (users: string[]) => {
               const success = await todoSettings.updateGlobalSettings({ adminUsers: users });
               return { error: success ? null : new Error('Fehler beim Speichern') };
-            }} />);
+            }}
+            trainingPlanAdminUsers={settings.trainingPlanAdminUsers}
+            updateTrainingPlanAdminUsers={settings.updateTrainingPlanAdminUsers} />);
 
 
 

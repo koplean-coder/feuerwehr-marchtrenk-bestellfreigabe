@@ -145,6 +145,7 @@ export function useSettings() {
   const [antragsformulareViewUsers, setAntragsformulareViewUsers] = useState<string[]>([]);
   const [ideasPoolViewUsers, setIdeasPoolViewUsers] = useState<string[]>([]);
   const [rentalItemsAdminUsers, setRentalItemsAdminUsers] = useState<string[]>([]);
+  const [trainingPlanAdminUsers, setTrainingPlanAdminUsers] = useState<string[]>([]);
   const [supplierApprovalUsers, setSupplierApprovalUsers] = useState<string[]>([]);
   const [rentalDeliveryCost, setRentalDeliveryCost] = useState<number>(55);
   const [rentalOverduePerDay, setRentalOverduePerDay] = useState<number>(50);
@@ -422,6 +423,14 @@ Grüße, FF Marchtrenk`);
           setRentalItemsAdminUsers(JSON.parse(rentalAdminSetting.value) as string[]);
         } catch {
           setRentalItemsAdminUsers([]);
+        }
+      }
+      const trainingPlanAdminSetting = data.find(s => s.key === 'training_plan_admin_users');
+      if (trainingPlanAdminSetting) {
+        try {
+          setTrainingPlanAdminUsers(JSON.parse(trainingPlanAdminSetting.value) as string[]);
+        } catch {
+          setTrainingPlanAdminUsers([]);
         }
       }
       const rentalDeliverySetting = data.find(s => s.key === 'rental_delivery_cost');
@@ -769,6 +778,19 @@ Grüße, FF Marchtrenk`);
     
     if (!error) {
       setRentalItemsAdminUsers(userIds);
+    }
+    return { error };
+  }
+
+  async function updateTrainingPlanAdminUsers(userIds: string[]) {
+    if (!supabase) return { error: new Error('Database not connected') };
+    
+    const { error } = await supabase
+      .from('settings')
+      .upsert({ key: 'training_plan_admin_users', value: JSON.stringify(userIds) }, { onConflict: 'key' });
+    
+    if (!error) {
+      setTrainingPlanAdminUsers(userIds);
     }
     return { error };
   }
@@ -1129,6 +1151,7 @@ Grüße, FF Marchtrenk`);
     antragsformulareViewUsers,
     ideasPoolViewUsers,
     rentalItemsAdminUsers,
+    trainingPlanAdminUsers,
     supplierApprovalUsers,
     rentalDeliveryCost,
     rentalOverduePerDay,
@@ -1164,6 +1187,7 @@ Grüße, FF Marchtrenk`);
     updateAntragsformulareViewUsers,
     updateIdeasPoolViewUsers,
     updateRentalItemsAdminUsers,
+    updateTrainingPlanAdminUsers,
     updateSupplierApprovalUsers,
     updateRentalDeliveryCost,
     updateRentalOverduePerDay,

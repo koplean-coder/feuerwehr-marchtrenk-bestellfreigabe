@@ -9,7 +9,8 @@ import {
   Lightbulb,
   Box,
   ClipboardList,
-  CheckSquare } from
+  CheckSquare,
+  Calendar } from
 'lucide-react';
 import { SectionHeader, UserPermissionList } from '../SettingsContent';
 
@@ -55,6 +56,9 @@ interface ZugriffsrechteSectionProps {
   // Aufgaben
   todoAdminUsers?: string[];
   updateTodoAdminUsers?: (users: string[]) => Promise<{error: Error | null;}>;
+  // Übungsplan
+  trainingPlanAdminUsers?: string[];
+  updateTrainingPlanAdminUsers?: (users: string[]) => Promise<{error: Error | null;}>;
 }
 
 export function ZugriffsrechteSection({
@@ -80,7 +84,9 @@ export function ZugriffsrechteSection({
   rentalItemsAdminUsers,
   updateRentalItemsAdminUsers,
   todoAdminUsers = [],
-  updateTodoAdminUsers
+  updateTodoAdminUsers,
+  trainingPlanAdminUsers = [],
+  updateTrainingPlanAdminUsers
 }: ZugriffsrechteSectionProps) {
   const [saving, setSaving] = useState<string | null>(null);
 
@@ -246,6 +252,19 @@ export function ZugriffsrechteSection({
     updateFn: updateTodoAdminUsers,
     emptyMessage: 'Nur Admin und Kdt können Einstellungen ändern.',
     selectedMessage: (n: number) => `${n} zusätzliche Benutzer können administrieren.`
+  }] : []),
+  ...(updateTrainingPlanAdminUsers ? [{
+    id: 'uebungsplan',
+    title: 'Übungsplan-Generator',
+    description: 'Übungspläne erstellen und verwalten',
+    icon: Calendar,
+    iconColor: 'text-red-600',
+    bgColor: 'bg-red-100',
+    users: nonAdminProfiles,
+    selectedIds: trainingPlanAdminUsers,
+    updateFn: updateTrainingPlanAdminUsers,
+    emptyMessage: 'Nur Admin und Kdt können Übungspläne verwalten.',
+    selectedMessage: (n: number) => `${n} zusätzliche Benutzer können Übungspläne verwalten.`
   }] : [])];
 
 
