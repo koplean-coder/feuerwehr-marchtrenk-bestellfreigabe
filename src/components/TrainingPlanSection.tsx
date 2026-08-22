@@ -707,12 +707,12 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
 
               // Helper to render category tags with real colors
               const renderCategories = (categoryIds: string[]) => {
-                if (categoryIds.length === 0) return '<span style="color: #9ca3af; font-size: 18px; vertical-align: middle;">—</span>';
+                if (categoryIds.length === 0) return '<span style="color: #c1c5cb; font-size: 13px; font-style: italic; vertical-align: middle;">–</span>';
                 return categoryIds.map((catId) => {
                   const cat = dbCategories.find((c) => c.id === catId);
                   if (!cat) return '';
                   const colors = getCatColor(catId);
-                  return `<span style="display: inline-block; vertical-align: middle; padding: 6px 14px; margin: 3px 4px; border-radius: 6px; font-size: 16px; font-weight: 600; line-height: 1.2; background: ${colors.bg}; color: ${colors.text}; border: 2px solid ${colors.border};">${cat.name}</span>`;
+                  return `<span style="display: inline-block; vertical-align: middle; padding: 4px 10px; margin: 2px 3px 2px 0; border-radius: 999px; font-size: 11.5px; font-weight: 600; line-height: 1.3; background: ${colors.bg}; color: ${colors.text}; border: 1px solid ${colors.border};">${cat.name}</span>`;
                 }).join('');
               };
 
@@ -734,12 +734,12 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               const headerContainer = document.createElement('div');
               headerContainer.style.cssText = `position: absolute; left: -9999px; width: ${containerWidthPx}px; padding: 40px 50px; background: white; font-family: "Segoe UI", Arial, sans-serif;`;
               headerContainer.innerHTML = `
-                <div style="display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 30px; border-bottom: 6px solid #C8102E;">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 22px; border-bottom: 3px solid #C8102E;">
                   <div>
-                    <h1 style="font-size: 72px; font-weight: 800; color: #C8102E; margin: 0; letter-spacing: -2px;">Übungsplan</h1>
-                    <p style="font-size: 28px; color: #333; margin-top: 16px; font-weight: 500;">${startDate} – ${endDate}</p>
+                    <h1 style="font-size: 52px; font-weight: 800; color: #1f2937; margin: 0; letter-spacing: -1px;">Übungsplan</h1>
+                    <p style="font-size: 19px; color: #6b7280; margin-top: 10px; font-weight: 500;">${startDate} – ${endDate}</p>
                   </div>
-                  <img src="${ffmLogo}" alt="Logo" style="height: 130px; width: auto;" />
+                  <img src="${ffmLogo}" alt="Logo" style="height: 90px; width: auto;" />
                 </div>
               `;
               document.body.appendChild(headerContainer);
@@ -758,29 +758,29 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 monthContainer.style.cssText = `position: absolute; left: -9999px; width: ${containerWidthPx}px; padding: 0 50px; background: white; font-family: "Segoe UI", Arial, sans-serif;`;
                 monthContainer.innerHTML = `
                   <div style="margin-bottom: 0;">
-                    <div style="background: linear-gradient(135deg, #C8102E 0%, #9a0c22 100%); color: white; padding: 16px 28px; font-weight: 700; font-size: 26px; border-radius: 8px 8px 0 0;">
+                    <div style="background: linear-gradient(135deg, #C8102E 0%, #8f0c22 100%); color: white; padding: 12px 24px; font-weight: 700; font-size: 18px; letter-spacing: 0.04em; text-transform: uppercase; border-radius: 8px 8px 0 0;">
                       ${month}
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 18px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
                       <thead>
-                        <tr style="background: #f1f3f4;">
-                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 130px; font-weight: 700; color: #374151; font-size: 18px;">Datum</th>
-                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 90px; font-weight: 700; color: #374151; font-size: 18px;">Zeit</th>
-                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; font-weight: 700; color: #374151; font-size: 18px;">Thema / Szenario</th>
-                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 380px; font-weight: 700; color: #374151; font-size: 18px;">Kategorien</th>
-                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 200px; font-weight: 700; color: #374151; font-size: 18px;">Übungsleiter</th>
-                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 220px; font-weight: 700; color: #374151; font-size: 18px;">Anmerkungen</th>
+                        <tr style="background: rgba(200,16,46,0.06);">
+                          <th style="border-bottom: 2px solid #C8102E; padding: 10px 18px; text-align: left; width: 120px; font-weight: 700; color: #7a0f1f; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">Datum</th>
+                          <th style="border-bottom: 2px solid #C8102E; padding: 10px 18px; text-align: left; width: 80px; font-weight: 700; color: #7a0f1f; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">Zeit</th>
+                          <th style="border-bottom: 2px solid #C8102E; padding: 10px 18px; text-align: left; font-weight: 700; color: #7a0f1f; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">Thema / Szenario</th>
+                          <th style="border-bottom: 2px solid #C8102E; padding: 10px 18px; text-align: left; width: 340px; font-weight: 700; color: #7a0f1f; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">Kategorien</th>
+                          <th style="border-bottom: 2px solid #C8102E; padding: 10px 18px; text-align: left; width: 190px; font-weight: 700; color: #7a0f1f; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">Übungsleiter</th>
+                          <th style="border-bottom: 2px solid #C8102E; padding: 10px 18px; text-align: left; width: 200px; font-weight: 700; color: #7a0f1f; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;">Anmerkungen</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${monthSessions.map((s, idx) => `
                           <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
-                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.time}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; white-space: pre-line; line-height: 1.4; font-size: 22px; font-weight: 700;">${s.topic || '<span style="color: #9ca3af;">—</span>'}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; text-align: left;">${renderCategories(s.categoryIds)}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 500; font-size: 18px;">${s.instructor || '<span style="color: #9ca3af;">—</span>'}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; color: #6b7280; font-size: 18px;">${s.notes || '<span style="color: #9ca3af;">—</span>'}</td>
+                            <td style="border-bottom: 1px solid #e5e7eb; padding: 12px 18px; vertical-align: middle; font-weight: 600; font-size: 14px; color: #1f2937;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
+                            <td style="border-bottom: 1px solid #e5e7eb; padding: 12px 18px; vertical-align: middle; font-weight: 600; font-size: 14px; color: #1f2937;">${s.time}</td>
+                            <td style="border-bottom: 1px solid #e5e7eb; padding: 12px 18px; vertical-align: middle; white-space: pre-line; line-height: 1.35; font-size: 17px; font-weight: 700; color: #111827; word-break: break-word; overflow-wrap: break-word;">${s.topic || '<span style="color: #c1c5cb; font-style: italic;">–</span>'}</td>
+                            <td style="border-bottom: 1px solid #e5e7eb; padding: 10px 14px; vertical-align: middle; text-align: left;">${renderCategories(s.categoryIds)}</td>
+                            <td style="border-bottom: 1px solid #e5e7eb; padding: 12px 18px; vertical-align: middle; font-weight: 500; font-size: 14px; color: #374151;">${s.instructor || '<span style="color: #c1c5cb; font-style: italic;">–</span>'}</td>
+                            <td style="border-bottom: 1px solid #e5e7eb; padding: 12px 18px; vertical-align: middle; color: #6b7280; font-size: 14px; font-style: italic; word-break: break-word; overflow-wrap: break-word;">${s.notes || '<span style="color: #c1c5cb;">–</span>'}</td>
                           </tr>
                         `).join('')}
                       </tbody>
@@ -805,12 +805,20 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 document.body.removeChild(monthContainer);
               }
 
-              // Add footer to last page
-              const footerY = pdfHeight - margin - 8;
-              pdf.setFontSize(10);
-              pdf.setTextColor(100, 100, 100);
-              pdf.text('Freiwillige Feuerwehr Marchtrenk \u00b7 Linzerstra\u00dfe 43 \u00b7 4614 Marchtrenk', margin, footerY);
-              pdf.text(`Stand: ${new Date().toLocaleDateString('de-AT')}`, pdfWidth - margin, footerY, { align: 'right' });
+              // Add footer with divider + page numbers to every page
+              const totalPages = pdf.getNumberOfPages();
+              const footerY = pdfHeight - margin - 6;
+              for (let p = 1; p <= totalPages; p++) {
+              pdf.setPage(p);
+              pdf.setDrawColor(229, 231, 235);
+              pdf.setLineWidth(0.3);
+              pdf.line(margin, footerY - 7, pdfWidth - margin, footerY - 7);
+              pdf.setFontSize(9);
+              pdf.setTextColor(130, 130, 130);
+              pdf.text('Freiwillige Feuerwehr Marchtrenk · Linzerstraße 43 · 4614 Marchtrenk', margin, footerY);
+              pdf.text(`Stand: ${new Date().toLocaleDateString('de-AT')}`, pdfWidth / 2, footerY, { align: 'center' });
+              pdf.text(`Seite ${p} / ${totalPages}`, pdfWidth - margin, footerY, { align: 'right' });
+              }
 
               // Generate filename
               const periodLabel = pdfPeriod === 'all' ? 'Gesamt' : pdfPeriod === 'custom' ? `${pdfCustomStart.toLocaleDateString('de-AT')}-${pdfCustomEnd.toLocaleDateString('de-AT')}` : pdfPeriod;
