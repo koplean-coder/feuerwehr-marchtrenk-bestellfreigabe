@@ -74,9 +74,9 @@ const AUSTRIAN_HOLIDAYS: Record<number, string[]> = {
   2030: ['2030-01-01', '2030-01-06', '2030-04-22', '2030-05-01', '2030-05-30', '2030-06-10', '2030-06-20', '2030-08-15', '2030-10-26', '2030-11-01', '2030-12-08', '2030-12-25', '2030-12-26']
 };
 
-type PeriodType = 'H1' | 'H2' | 'Q1' | 'Q2' | 'Q3' | 'Q4';
+type PeriodType = 'H1' | 'H2' | 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'custom';
 
-function getDateRangeForPeriod(year: number, period: PeriodType): {start: Date;end: Date;} {
+function getDateRangeForPeriod(year: number, period: PeriodType, customStart?: Date, customEnd?: Date): {start: Date;end: Date;} {
   switch (period) {
     case 'Q1':return { start: new Date(year, 0, 1), end: new Date(year, 2, 31) };
     case 'Q2':return { start: new Date(year, 3, 1), end: new Date(year, 5, 30) };
@@ -84,6 +84,10 @@ function getDateRangeForPeriod(year: number, period: PeriodType): {start: Date;e
     case 'Q4':return { start: new Date(year, 9, 1), end: new Date(year, 11, 31) };
     case 'H1':return { start: new Date(year, 0, 1), end: new Date(year, 5, 30) };
     case 'H2':return { start: new Date(year, 6, 1), end: new Date(year, 11, 31) };
+    case 'custom':return {
+        start: customStart || new Date(year, 0, 1),
+        end: customEnd || new Date(year, 11, 31)
+      };
   }
 }
 
@@ -122,6 +126,8 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   // Period selection
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('Q1');
+  const [customStartDate, setCustomStartDate] = useState<Date>(new Date(currentYear, 0, 1));
+  const [customEndDate, setCustomEndDate] = useState<Date>(new Date(currentYear, 11, 31));
 
   // DB hooks
   const { categories: dbCategories, loading: catLoading, addCategory: dbAddCategory, updateCategory: dbUpdateCategory, deleteCategory: dbDeleteCategory } = useTrainingCategories();
@@ -180,7 +186,10 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   const [saving, setSaving] = useState(false);
 
   // Calculate date range and wednesdays
-  const dateRange = useMemo(() => getDateRangeForPeriod(selectedYear, selectedPeriod), [selectedYear, selectedPeriod]);
+  const dateRange = useMemo(() =>
+  getDateRangeForPeriod(selectedYear, selectedPeriod, customStartDate, customEndDate),
+  [selectedYear, selectedPeriod, customStartDate, customEndDate]
+  );
   const wednesdays = useMemo(() => getWednesdaysInRange(dateRange.start, dateRange.end), [dateRange]);
 
   // Group sessions by month
@@ -495,9 +504,9 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               )}
               </div>
               
-              <div data-ev-id="ev_ea0be6f102" className="flex gap-1 bg-muted p-1 rounded-lg">
+              <div data-ev-id="ev_5054f7787c" className="flex gap-1 bg-muted p-1 rounded-lg">
                 {(['H1', 'H2'] as PeriodType[]).map((p) =>
-              <button data-ev-id="ev_670793a071"
+              <button data-ev-id="ev_0e0fba696d"
               key={p}
               onClick={() => setSelectedPeriod(p)}
               className={`px-3 py-1.5 rounded-md font-medium text-sm transition-colors ${
@@ -509,7 +518,16 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               )}
               </div>
 
-              <button data-ev-id="ev_4e4266d162"
+              <button data-ev-id="ev_3af76c8627"
+            onClick={() => setSelectedPeriod('custom')}
+            className={`px-3 py-1.5 rounded-md font-medium text-sm transition-colors ${
+            selectedPeriod === 'custom' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-background'}`
+            }>
+
+                Benutzerdefiniert
+              </button>
+
+              <button data-ev-id="ev_e2029d7251"
             onClick={initializeSessions}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 ml-auto">
 
@@ -518,8 +536,41 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               </button>
             </div>
 
-            <div data-ev-id="ev_a0146afb36" className="mt-4 flex gap-4 text-sm">
-              <span data-ev-id="ev_58c349628d"><strong data-ev-id="ev_b53b30c315">{wednesdays.length}</strong> Mittwoche</span>
+            {/* Custom Date Range */}
+            {selectedPeriod === 'custom' &&
+          <div data-ev-id="ev_95c471a9a4" className="mt-4 flex flex-wrap items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                <div data-ev-id="ev_bc7d841089" className="flex items-center gap-2">
+                  <label data-ev-id="ev_c40a9fdb2b" className="text-sm font-medium">Von:</label>
+                  <input data-ev-id="ev_4ff9556e4f"
+              type="date"
+              value={customStartDate.toISOString().split('T')[0]}
+              onChange={(e) => {
+                const date = new Date(e.target.value);
+                if (!isNaN(date.getTime())) setCustomStartDate(date);
+              }}
+              className="px-3 py-1.5 border border-border rounded-lg bg-background text-sm" />
+
+                </div>
+                <div data-ev-id="ev_0e018c589e" className="flex items-center gap-2">
+                  <label data-ev-id="ev_5fe620158f" className="text-sm font-medium">Bis:</label>
+                  <input data-ev-id="ev_66143478d6"
+              type="date"
+              value={customEndDate.toISOString().split('T')[0]}
+              onChange={(e) => {
+                const date = new Date(e.target.value);
+                if (!isNaN(date.getTime())) setCustomEndDate(date);
+              }}
+              className="px-3 py-1.5 border border-border rounded-lg bg-background text-sm" />
+
+                </div>
+                <span data-ev-id="ev_c34cce9964" className="text-sm text-muted-foreground">
+                  Zeitraum: {Math.ceil((customEndDate.getTime() - customStartDate.getTime()) / (1000 * 60 * 60 * 24))} Tage
+                </span>
+              </div>
+          }
+
+            <div data-ev-id="ev_c6b86069fd" className="mt-4 flex gap-4 text-sm">
+              <span data-ev-id="ev_dba1163786"><strong data-ev-id="ev_3f19800e17">{wednesdays.length}</strong> Mittwoche</span>
               <span data-ev-id="ev_503454de59" className="text-orange-600"><strong data-ev-id="ev_c1a19aac01">{wednesdays.filter((d) => isHoliday(d)).length}</strong> Feiertage</span>
               {recurrenceRules.length > 0 &&
             <span data-ev-id="ev_881fc1dfd8" className="text-green-600"><strong data-ev-id="ev_41d1b02b12">{recurrenceRules.length}</strong> Wiederholungsregeln aktiv</span>
