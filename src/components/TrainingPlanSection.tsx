@@ -458,9 +458,9 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                               <textarea data-ev-id="ev_911a34b98b"
                       value={session.topic}
                       onChange={(e) => updateSession(session.id, { topic: e.target.value })}
-                      placeholder="z.B. Löschangriff, THL PKW..."
-                      rows={2}
-                      className="px-2 py-1 border border-border rounded bg-background w-full text-sm resize-none" />
+                      placeholder={"z.B. Löschangriff\nTHL PKW Bergung"}
+                      rows={3}
+                      className="px-2 py-1 border border-border rounded bg-background w-full text-sm resize-none leading-snug" />
 
                             </td>
                             <td data-ev-id="ev_70cfde5a71" className="px-4 py-2 align-top">
