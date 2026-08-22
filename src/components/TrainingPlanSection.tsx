@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Plus, X, Download, Calendar, FileText, ChevronLeft, ChevronRight, Settings, Save, Trash2, Copy, RotateCcw, Users, FolderOpen, Check } from 'lucide-react';
+import { ArrowLeft, Plus, X, Download, Calendar, FileText, ChevronLeft, ChevronRight, ChevronDown, Settings, Save, Trash2, Copy, RotateCcw, Users, FolderOpen, Check } from 'lucide-react';
 import ffmLogo from '@/assets/uploads/ffm-logo-header.png';
 import {
   useTrainingCategories,
@@ -235,7 +235,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
     const newSessions: TrainingSession[] = wednesdays.map((date, index) => {
       const weekNum = getWeekOfMonth(date);
       const monthIndex = date.getMonth();
-      
+
       // Find matching rule based on interval type
       const rule = recurrenceRules.find((r) => {
         switch (r.intervalType) {
@@ -257,7 +257,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
             return false;
         }
       });
-      
+
       const template = rule ? scenarioTemplates.find((t) => t.id === rule.scenarioTemplateId) : null;
       return {
         id: date.toISOString(),
@@ -287,6 +287,20 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
       };
     }));
   };
+
+  // Close category dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[id^="cat-dropdown-"]') && !target.closest('[data-ev-id="ev_cat_dropdown_btn"]')) {
+        document.querySelectorAll('[id^="cat-dropdown-"]').forEach((el) => {
+          el.classList.add('hidden');
+        });
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const deleteSession = (id: string) => {
     setSessions((prev) => prev.filter((s) => s.id !== id));
@@ -876,21 +890,55 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
 
                             </td>
                             <td data-ev-id="ev_ca3111485f" className="px-4 py-2 align-top">
-                              <div data-ev-id="ev_0d4805142d" className="flex flex-wrap gap-1">
-                                {categories.map((cat) => {
-                          const isSelected = session.categoryIds.includes(cat.id);
-                          return (
-                            <button data-ev-id="ev_3f1fbee55a"
-                            key={cat.id}
-                            onClick={() => toggleSessionCategory(session.id, cat.id)}
-                            className={`px-2 py-0.5 rounded text-xs font-medium border transition-all ${
-                            isSelected ? cat.color : 'bg-gray-100 text-gray-400 border-gray-200 opacity-50'}`
-                            }>
+                              <div data-ev-id="ev_0d4805142d" className="relative">
+                                <button
+                          data-ev-id="ev_cat_dropdown_btn"
+                          onClick={() => {
+                            const el = document.getElementById(`cat-dropdown-${session.id}`);
+                            if (el) el.classList.toggle('hidden');
+                          }}
+                          className="w-full px-2 py-1 border border-border rounded bg-background text-sm text-left flex items-center justify-between gap-2 min-h-[32px]">
 
-                                      {cat.name}
-                                    </button>);
+                                  <span data-ev-id="ev_4d35bc78a0" className="flex flex-wrap gap-1 flex-1">
+                                    {session.categoryIds.length === 0 ?
+                            <span data-ev-id="ev_c2e5e06fd4" className="text-gray-400">Kategorien wählen...</span> :
 
-                        })}
+                            session.categoryIds.map((catId) => {
+                              const cat = getCategoryById(catId);
+                              return cat ?
+                              <span data-ev-id="ev_f1aa1b3095" key={catId} className={`px-1.5 py-0.5 rounded text-xs font-medium ${cat.color}`}>
+                                            {cat.name}
+                                          </span> :
+                              null;
+                            })
+                            }
+                                  </span>
+                                  <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                </button>
+                                <div data-ev-id="ev_79beb57f52"
+                        id={`cat-dropdown-${session.id}`}
+                        className="hidden absolute z-50 mt-1 w-full bg-white border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-auto">
+
+                                  {categories.map((cat) => {
+                            const isSelected = session.categoryIds.includes(cat.id);
+                            return (
+                              <label data-ev-id="ev_f0f7a2da32"
+                              key={cat.id}
+                              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+
+                                        <input data-ev-id="ev_a0a50f81f3"
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleSessionCategory(session.id, cat.id)}
+                                className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
+
+                                        <span data-ev-id="ev_02a387e115" className={`px-2 py-0.5 rounded text-xs font-medium ${cat.color}`}>
+                                          {cat.name}
+                                        </span>
+                                      </label>);
+
+                          })}
+                                </div>
                               </div>
                             </td>
                             <td data-ev-id="ev_9a3429f307" className="px-4 py-2 align-top">
@@ -1362,7 +1410,6 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                     {selectedPeriod.startsWith('Q') ? `${selectedPeriod.replace('Q', '')}. Quartal` :
                   selectedPeriod === 'H1' ? 'Jänner - Juni' : 'Juli - Dezember'}
                   </p>
-                  <p data-ev-id="ev_2560ab8846" className="text-sm text-gray-500 mt-1">Übung jeden Mittwoch, 18:20 Uhr</p>
                 </div>
                 <div data-ev-id="ev_f34e264433" className="text-right flex-shrink-0">
                   <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-20 w-auto ml-auto" />
