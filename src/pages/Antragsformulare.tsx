@@ -14,6 +14,7 @@ import { FormGeneratorSection } from '@/components/FormGeneratorSection';
 import { RentalContractsSection } from '@/components/RentalContractsSection';
 import { CommandDecisionSection } from '@/components/CommandDecisionSection';
 import { ExpenseReportSection } from '@/components/ExpenseReportSection';
+import { TrainingPlanSection } from '@/components/TrainingPlanSection';
 import {
   FileText, Plus, Search, Filter, Download, Eye, Edit2, Trash2, Pencil,
   Send, CheckCircle, Banknote, Clock, X, ChevronDown, Upload, Paperclip, Image, File,
@@ -22,7 +23,7 @@ import {
 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-type ModuleType = 'none' | 'payment_orders' | 'event_participations' | 'form_generator' | 'rental_contracts' | 'command_decisions' | 'expense_reports';
+type ModuleType = 'none' | 'payment_orders' | 'event_participations' | 'form_generator' | 'rental_contracts' | 'command_decisions' | 'expense_reports' | 'training_plan';
 type TabType = 'overview' | 'new';
 type FilterStatus = 'all' | 'draft' | 'submitted' | 'approved' | 'paid' | 'rejected';
 
@@ -69,7 +70,7 @@ export default function Antragsformulare() {
 
   // Berechtigung für Genehmigung: Nur Kommandant oder Kommandant-Stellvertreter (mit Simulation)
   const canApprove = canApprovePaymentOrders;
-  const profileFunctionsLower = profile?.functions?.map(f => f.toLowerCase()) || [];
+  const profileFunctionsLower = profile?.functions?.map((f) => f.toLowerCase()) || [];
   const isKassier = effectiveHasKassierFunction || profileFunctionsLower.includes('kassier');
   const isKommandomitglied = profileFunctionsLower.includes('kommandomitglied');
   // Leserecht: Kassier, Kommandant, Admin, Kommandant-Stellvertreter, Kommandomitglieder (Transparenz)
@@ -502,6 +503,14 @@ export default function Antragsformulare() {
       </Layout>);
   }
 
+  // Show Training Plan module
+  if (selectedModule === 'training_plan') {
+    return (
+      <Layout>
+        <TrainingPlanSection onBack={() => setSelectedModule('none')} />
+      </Layout>);
+  }
+
   // Show Module Selection
   if (selectedModule === 'none') {
     // Get pending items for overview
@@ -609,6 +618,31 @@ export default function Antragsformulare() {
                     <span data-ev-id="ev_b31a83d691" className="flex items-center gap-1">
                       <FileText className="w-3 h-3" />
                       PDF-Export
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </button>
+            }
+
+            {/* Training Plan Card - check permissions for nutzer role */}
+            {(!shouldCheckPermissions || hasModuleAccess('formulargenerator')) &&
+            <button data-ev-id="ev_a0294b2400"
+            onClick={() => setSelectedModule('training_plan')}
+            className="bg-card border border-border rounded-xl p-6 text-left hover:border-primary hover:shadow-lg transition-all group">
+              <div data-ev-id="ev_3123c87375" className="flex items-start gap-4">
+                <div data-ev-id="ev_722ac8db62" className="p-3 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors">
+                  <Calendar className="w-8 h-8 text-purple-600" />
+                </div>
+                <div data-ev-id="ev_e64337d8d1" className="flex-1">
+                  <h3 data-ev-id="ev_3dc701e5aa" className="text-lg font-semibold text-foreground mb-1">Übungsplan Generator</h3>
+                  <p data-ev-id="ev_116525b58d" className="text-sm text-muted-foreground mb-3">
+                    Erstellen Sie Übungspläne im A3-Format mit Szenarien und Kategorien.
+                  </p>
+                  <div data-ev-id="ev_f667ff18ce" className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span data-ev-id="ev_4f888575f4" className="flex items-center gap-1">
+                      <FileText className="w-3 h-3" />
+                      A3 PDF-Export
                     </span>
                   </div>
                 </div>
