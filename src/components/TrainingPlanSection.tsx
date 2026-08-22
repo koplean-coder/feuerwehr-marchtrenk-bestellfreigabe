@@ -1366,8 +1366,6 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 </div>
                 <div data-ev-id="ev_f34e264433" className="text-right flex-shrink-0">
                   <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-20 w-auto ml-auto" />
-                  <div data-ev-id="ev_cc10e71550" className="text-xs font-bold mt-1 text-gray-700">Freiwillige Feuerwehr</div>
-                  <div data-ev-id="ev_3489500629" className="text-xs font-bold text-[#C8102E]">Marchtrenk</div>
                 </div>
               </div>
 
