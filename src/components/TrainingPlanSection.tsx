@@ -232,9 +232,32 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
 
   // Initialize sessions with recurrence rules
   const initializeSessions = () => {
-    const newSessions: TrainingSession[] = wednesdays.map((date) => {
+    const newSessions: TrainingSession[] = wednesdays.map((date, index) => {
       const weekNum = getWeekOfMonth(date);
-      const rule = recurrenceRules.find((r) => r.weekOfMonth === weekNum);
+      const monthIndex = date.getMonth();
+      
+      // Find matching rule based on interval type
+      const rule = recurrenceRules.find((r) => {
+        switch (r.intervalType) {
+          case 'weekly':
+            return true; // Every week
+          case 'biweekly':
+            return index % 2 === 0; // Every 2 weeks
+          case 'monthly':
+            return r.weekOfPeriod === weekNum; // Specific week of month
+          case 'bimonthly':
+            return monthIndex % 2 === 0 && r.weekOfPeriod === weekNum;
+          case 'quarterly':
+            return [0, 3, 6, 9].includes(monthIndex) && r.weekOfPeriod === weekNum;
+          case 'semiannually':
+            return [0, 6].includes(monthIndex) && r.weekOfPeriod === weekNum;
+          case 'yearly':
+            return monthIndex === 0 && r.weekOfPeriod === weekNum;
+          default:
+            return false;
+        }
+      });
+      
       const template = rule ? scenarioTemplates.find((t) => t.id === rule.scenarioTemplateId) : null;
       return {
         id: date.toISOString(),
@@ -1341,8 +1364,10 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                   </p>
                   <p data-ev-id="ev_2560ab8846" className="text-sm text-gray-500 mt-1">Übung jeden Mittwoch, 18:20 Uhr</p>
                 </div>
-                <div data-ev-id="ev_f34e264433" className="text-right">
-                  <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="w-48 h-auto ml-auto" />
+                <div data-ev-id="ev_f34e264433" className="text-right flex-shrink-0">
+                  <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-20 w-auto ml-auto" />
+                  <div data-ev-id="ev_cc10e71550" className="text-xs font-bold mt-1 text-gray-700">Freiwillige Feuerwehr</div>
+                  <div data-ev-id="ev_3489500629" className="text-xs font-bold text-[#C8102E]">Marchtrenk</div>
                 </div>
               </div>
 
