@@ -263,18 +263,33 @@ export function useTrainingPlans() {
   const fetchPlans = useCallback(async () => {
     if (!supabase) return;
     try {
-      const { data, error: err } = await supabase
+      // Fetch plans first
+      const { data: plansData, error: err } = await supabase
         .from('training_plans')
-        .select(`
-          *,
-          profiles:created_by (full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
       if (err) throw err;
-      setPlans((data ?? []).map(p => ({
+      
+      // Get unique creator IDs
+      const creatorIds = [...new Set((plansData ?? []).map(p => p.created_by))];
+      
+      // Fetch creator names
+      let creatorMap: Record<string, string> = {};
+      if (creatorIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', creatorIds);
+        creatorMap = (profilesData ?? []).reduce((acc, p) => {
+          acc[p.id] = p.full_name;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+      
+      setPlans((plansData ?? []).map(p => ({
         ...p,
         sessions: (p.sessions as TrainingSession[]) ?? [],
-        creator_name: (p.profiles as { full_name: string } | null)?.full_name ?? 'Unbekannt'
+        creator_name: creatorMap[p.created_by] ?? 'Unbekannt'
       })));
     } catch (e: unknown) {
       setError((e as Error).message);
@@ -301,17 +316,21 @@ export function useTrainingPlans() {
         sessions: plan.sessions as unknown as Record<string, unknown>,
         created_by: userData.user.id
       })
-      .select(`
-        *,
-        profiles:created_by (full_name)
-      `)
+      .select('*')
       .single();
     if (err) throw err;
     if (data) {
+      // Fetch creator name
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userData.user.id)
+        .single();
+      
       const newPlan: TrainingPlan = {
         ...data,
         sessions: (data.sessions as TrainingSession[]) ?? [],
-        creator_name: (data.profiles as { full_name: string } | null)?.full_name ?? 'Unbekannt'
+        creator_name: profileData?.full_name ?? 'Unbekannt'
       };
       setPlans(prev => [newPlan, ...prev]);
     }
