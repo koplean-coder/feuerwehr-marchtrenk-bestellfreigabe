@@ -25,6 +25,9 @@ export interface RecurrenceRule {
   description: string | null;
   scenario_template_id: string | null;
   interval_weeks: number;
+  interval_type: 'weekly' | 'biweekly' | 'monthly' | 'bimonthly' | 'quarterly' | 'semiannually' | 'yearly';
+  week_of_period: number;
+  day_of_week: number;
   created_by: string;
 }
 
@@ -207,7 +210,14 @@ export function useRecurrenceRules() {
     fetchRules();
   }, [fetchRules]);
 
-  const addRule = async (rule: { name: string; description?: string; scenario_template_id?: string; interval_weeks: number }) => {
+  const addRule = async (rule: { 
+    name: string; 
+    description?: string; 
+    scenario_template_id?: string; 
+    interval_type: 'weekly' | 'biweekly' | 'monthly' | 'bimonthly' | 'quarterly' | 'semiannually' | 'yearly';
+    week_of_period: number;
+    day_of_week?: number;
+  }) => {
     if (!supabase) return;
     const { data: userData } = await supabase.auth.getUser();
     if (!userData.user) return;
@@ -218,13 +228,16 @@ export function useRecurrenceRules() {
         name: rule.name,
         description: rule.description ?? null,
         scenario_template_id: rule.scenario_template_id ?? null,
-        interval_weeks: rule.interval_weeks,
+        interval_weeks: rule.week_of_period,
+        interval_type: rule.interval_type,
+        week_of_period: rule.week_of_period,
+        day_of_week: rule.day_of_week ?? 3,
         created_by: userData.user.id
       })
       .select()
       .single();
     if (err) throw err;
-    if (data) setRules(prev => [...prev, data]);
+    if (data) setRules(prev => [...prev, data as RecurrenceRule]);
     return data;
   };
 

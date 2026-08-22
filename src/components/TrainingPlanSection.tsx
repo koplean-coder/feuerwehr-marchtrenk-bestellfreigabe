@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Plus, X, Download, Calendar, FileText, ChevronLeft, ChevronRight, Settings, Save, Trash2, Copy, RotateCcw, Users, FolderOpen, Check } from 'lucide-react';
+import ffmLogo from '@/assets/uploads/ffm-logo-header.png';
 import {
   useTrainingCategories,
   useScenarioTemplates,
@@ -28,9 +29,21 @@ interface ScenarioTemplate {
 
 interface RecurrenceRule {
   id: string;
-  weekOfMonth: 1 | 2 | 3 | 4 | 5;
+  intervalType: 'weekly' | 'biweekly' | 'monthly' | 'bimonthly' | 'quarterly' | 'semiannually' | 'yearly';
+  weekOfPeriod: 1 | 2 | 3 | 4 | 5;
   scenarioTemplateId: string;
+  name: string;
 }
+
+const INTERVAL_LABELS: Record<string, string> = {
+  'weekly': 'Wöchentlich',
+  'biweekly': 'Alle 2 Wochen',
+  'monthly': 'Monatlich',
+  'bimonthly': 'Alle 2 Monate',
+  'quarterly': 'Quartalsweise',
+  'semiannually': 'Halbjährlich',
+  'yearly': 'Jährlich'
+};
 
 interface TrainingSession {
   id: string;
@@ -155,8 +168,10 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   const recurrenceRules: RecurrenceRule[] = useMemo(() =>
   dbRules.map((r) => ({
     id: r.id,
-    weekOfMonth: r.interval_weeks as 1 | 2 | 3 | 4 | 5,
-    scenarioTemplateId: r.scenario_template_id ?? ''
+    intervalType: (r.interval_type || 'monthly') as RecurrenceRule['intervalType'],
+    weekOfPeriod: (r.week_of_period || 1) as 1 | 2 | 3 | 4 | 5,
+    scenarioTemplateId: r.scenario_template_id ?? '',
+    name: r.name
   })).filter((r) => r.scenarioTemplateId),
   [dbRules]
   );
@@ -177,7 +192,8 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   const [newTemplateInstructor, setNewTemplateInstructor] = useState('');
 
   // Recurrence editing
-  const [newRuleWeek, setNewRuleWeek] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [newRuleIntervalType, setNewRuleIntervalType] = useState<'weekly' | 'biweekly' | 'monthly' | 'bimonthly' | 'quarterly' | 'semiannually' | 'yearly'>('monthly');
+  const [newRuleWeekOfPeriod, setNewRuleWeekOfPeriod] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [newRuleTemplateId, setNewRuleTemplateId] = useState('');
 
   // Save plan state
@@ -318,12 +334,21 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   // Recurrence rules
   const addRecurrenceRule = async () => {
     if (!newRuleTemplateId) return;
+    const tpl = scenarioTemplates.find((t) => t.id === newRuleTemplateId);
+    const intervalLabel = INTERVAL_LABELS[newRuleIntervalType];
+    const weekLabel = newRuleIntervalType === 'weekly' || newRuleIntervalType === 'biweekly' ?
+    '' :
+    `, ${newRuleWeekOfPeriod}. Mittwoch`;
+    const ruleName = `${intervalLabel}${weekLabel}: ${tpl?.name || 'Vorlage'}`;
+
     try {
       await dbAddRule({
-        name: `${newRuleWeek}. Mittwoch`,
-        interval_weeks: newRuleWeek,
+        name: ruleName,
+        interval_type: newRuleIntervalType,
+        week_of_period: newRuleWeekOfPeriod,
         scenario_template_id: newRuleTemplateId
       });
+      setNewRuleTemplateId('');
     } catch (e) {
       console.error('Failed to add rule:', e);
     }
@@ -1070,27 +1095,30 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           </div>
 
           {/* Recurrence Rules */}
-          <div data-ev-id="ev_e11c0adebb" className="bg-card border border-border rounded-xl p-6">
-            <h3 data-ev-id="ev_9ab1cc508e" className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <div data-ev-id="ev_5a4014ab86" className="bg-card border border-border rounded-xl p-6">
+            <h3 data-ev-id="ev_634e14ea02" className="text-lg font-semibold mb-4 flex items-center gap-2">
               <RotateCcw className="w-5 h-5" />
               Wiederholungsregeln
             </h3>
-            <p data-ev-id="ev_1f759527cd" className="text-sm text-muted-foreground mb-4">
-              Automatische Zuweisung von Vorlagen basierend auf dem Mittwoch im Monat.
+            <p data-ev-id="ev_920215a385" className="text-sm text-muted-foreground mb-4">
+              Automatische Zuweisung von Vorlagen mit flexiblen Intervallen.
             </p>
 
             {recurrenceRules.length > 0 &&
-          <div data-ev-id="ev_f355599447" className="space-y-2 mb-4">
+          <div data-ev-id="ev_b1cb8c85c4" className="space-y-2 mb-4">
                 {recurrenceRules.map((rule) => {
               const tpl = scenarioTemplates.find((t) => t.id === rule.scenarioTemplateId);
               return (
-                <div data-ev-id="ev_45d6e82fa8" key={rule.id} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                      <div data-ev-id="ev_7e8248fffa" className="flex-1">
-                        <span data-ev-id="ev_3e9dd8e608" className="font-medium">{rule.weekOfMonth}. Mittwoch</span>
-                        <span data-ev-id="ev_562eb88f73" className="text-muted-foreground mx-2">→</span>
-                        <span data-ev-id="ev_7aaaf13847" className="text-primary font-medium">{tpl?.name || 'Unbekannt'}</span>
+                <div data-ev-id="ev_674214a0f0" key={rule.id} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                      <div data-ev-id="ev_05747dda87" className="flex-1">
+                        <span data-ev-id="ev_8154311a52" className="font-medium">{INTERVAL_LABELS[rule.intervalType] || rule.name}</span>
+                        {rule.intervalType !== 'weekly' && rule.intervalType !== 'biweekly' &&
+                    <span data-ev-id="ev_3a50d3664c" className="text-muted-foreground text-sm ml-1">({rule.weekOfPeriod}. Mi)</span>
+                    }
+                        <span data-ev-id="ev_9657241250" className="text-muted-foreground mx-2">→</span>
+                        <span data-ev-id="ev_1736c6a682" className="text-primary font-medium">{tpl?.name || 'Unbekannt'}</span>
                       </div>
-                      <button data-ev-id="ev_b765b2e32d"
+                      <button data-ev-id="ev_f7312a8c35"
                   onClick={() => deleteRecurrenceRule(rule.id)}
                   className="p-1 hover:bg-red-100 text-red-600 rounded">
 
@@ -1103,31 +1131,59 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           }
 
             {scenarioTemplates.length > 0 ?
-          <div data-ev-id="ev_d4228b33de" className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                <div data-ev-id="ev_6029e73f86" className="grid grid-cols-2 gap-3">
-                  <select data-ev-id="ev_1397d390b9"
-              value={newRuleWeek}
-              onChange={(e) => setNewRuleWeek(parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5)}
-              className="px-3 py-2 border border-border rounded-lg bg-background">
+          <div data-ev-id="ev_502fcaa1ce" className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                {/* Interval Type */}
+                <div data-ev-id="ev_f71c7c44d1">
+                  <label data-ev-id="ev_02a4d05e90" className="block text-sm font-medium mb-1">Intervall</label>
+                  <select data-ev-id="ev_4096f16490"
+              value={newRuleIntervalType}
+              onChange={(e) => setNewRuleIntervalType(e.target.value as typeof newRuleIntervalType)}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background">
 
-                    <option data-ev-id="ev_9c4b1b212a" value={1}>1. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_e888a82591" value={2}>2. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_b41ef8eb5f" value={3}>3. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_1897ff6e03" value={4}>4. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_e42b439a64" value={5}>5. Mittwoch im Monat</option>
+                    <option data-ev-id="ev_6581fb07e8" value="weekly">Wöchentlich (jeden Mittwoch)</option>
+                    <option data-ev-id="ev_07b7c7351e" value="biweekly">Alle 2 Wochen</option>
+                    <option data-ev-id="ev_9da0bb61e7" value="monthly">Monatlich</option>
+                    <option data-ev-id="ev_484496de3a" value="bimonthly">Alle 2 Monate</option>
+                    <option data-ev-id="ev_e498d4a8e1" value="quarterly">Quartalsweise</option>
+                    <option data-ev-id="ev_c61869ba1a" value="semiannually">Halbjährlich</option>
+                    <option data-ev-id="ev_3d8e556389" value="yearly">Jährlich</option>
                   </select>
-                  <select data-ev-id="ev_786cead83b"
+                </div>
+
+                {/* Week of Period - only show for non-weekly intervals */}
+                {newRuleIntervalType !== 'weekly' && newRuleIntervalType !== 'biweekly' &&
+            <div data-ev-id="ev_127bcdd2d7">
+                    <label data-ev-id="ev_637a3564d3" className="block text-sm font-medium mb-1">Welcher Mittwoch im Zeitraum?</label>
+                    <select data-ev-id="ev_3d55557276"
+              value={newRuleWeekOfPeriod}
+              onChange={(e) => setNewRuleWeekOfPeriod(parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5)}
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background">
+
+                      <option data-ev-id="ev_b877a1d14f" value={1}>1. Mittwoch</option>
+                      <option data-ev-id="ev_05a119ca45" value={2}>2. Mittwoch</option>
+                      <option data-ev-id="ev_9a58a35fd9" value={3}>3. Mittwoch</option>
+                      <option data-ev-id="ev_fe6ad3285b" value={4}>4. Mittwoch</option>
+                      <option data-ev-id="ev_cb2d0340c2" value={5}>5. Mittwoch (falls vorhanden)</option>
+                    </select>
+                  </div>
+            }
+
+                {/* Template Selection */}
+                <div data-ev-id="ev_872a070f2c">
+                  <label data-ev-id="ev_05ea8b553e" className="block text-sm font-medium mb-1">Vorlage zuweisen</label>
+                  <select data-ev-id="ev_1e4ca0a4f5"
               value={newRuleTemplateId}
               onChange={(e) => setNewRuleTemplateId(e.target.value)}
-              className="px-3 py-2 border border-border rounded-lg bg-background">
+              className="w-full px-3 py-2 border border-border rounded-lg bg-background">
 
-                    <option data-ev-id="ev_92291ea52d" value="">Vorlage wählen...</option>
+                    <option data-ev-id="ev_e229080d6a" value="">Vorlage wählen...</option>
                     {scenarioTemplates.map((tpl) =>
-                <option data-ev-id="ev_39a7074541" key={tpl.id} value={tpl.id}>{tpl.name}</option>
+                <option data-ev-id="ev_96513adf52" key={tpl.id} value={tpl.id}>{tpl.name}</option>
                 )}
                   </select>
                 </div>
-                <button data-ev-id="ev_fad533942f"
+
+                <button data-ev-id="ev_27944bb917"
             onClick={addRecurrenceRule}
             disabled={!newRuleTemplateId}
             className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2">
@@ -1137,7 +1193,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 </button>
               </div> :
 
-          <div data-ev-id="ev_3e2ff79a5a" className="p-4 bg-muted/30 rounded-lg text-center text-muted-foreground">
+          <div data-ev-id="ev_c174f787d7" className="p-4 bg-muted/30 rounded-lg text-center text-muted-foreground">
                 Erstelle zuerst eine Szenarien-Vorlage.
               </div>
           }
@@ -1285,12 +1341,8 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                   </p>
                   <p data-ev-id="ev_2560ab8846" className="text-sm text-gray-500 mt-1">Übung jeden Mittwoch, 18:20 Uhr</p>
                 </div>
-                <div data-ev-id="ev_7aec37caf0" className="text-right">
-                  <div data-ev-id="ev_9f5dfdb31a" className="w-20 h-20 bg-[#C8102E] rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                    FF LOGO
-                  </div>
-                  <div data-ev-id="ev_d99024ef2f" className="text-sm font-bold mt-2">Freiwillige Feuerwehr</div>
-                  <div data-ev-id="ev_399d6910c6" className="text-sm font-bold text-[#C8102E]">Marchtrenk</div>
+                <div data-ev-id="ev_f34e264433" className="text-right">
+                  <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="w-24 h-auto ml-auto" />
                 </div>
               </div>
 

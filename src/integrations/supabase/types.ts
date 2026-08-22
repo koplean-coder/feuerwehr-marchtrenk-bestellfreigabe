@@ -3703,32 +3703,41 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          day_of_week: number | null
           description: string | null
           id: string
+          interval_type: string | null
           interval_weeks: number
           name: string
           scenario_template_id: string | null
           updated_at: string
+          week_of_period: number | null
         }
         Insert: {
           created_at?: string
           created_by: string
+          day_of_week?: number | null
           description?: string | null
           id?: string
+          interval_type?: string | null
           interval_weeks?: number
           name: string
           scenario_template_id?: string | null
           updated_at?: string
+          week_of_period?: number | null
         }
         Update: {
           created_at?: string
           created_by?: string
+          day_of_week?: number | null
           description?: string | null
           id?: string
+          interval_type?: string | null
           interval_weeks?: number
           name?: string
           scenario_template_id?: string | null
           updated_at?: string
+          week_of_period?: number | null
         }
         Relationships: [
           {
