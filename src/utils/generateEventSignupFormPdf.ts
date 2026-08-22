@@ -389,6 +389,8 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
   let infoBoxHeight = 32; // Basis-Höhe für ORT + DATUM/ZEIT
   if (vehicles && adjustment) infoBoxHeight = 42;
   else if (vehicles || adjustment) infoBoxHeight = 32;
+  // Zusätzliche Höhe für Teilnehmer-Limit
+  if (participantCount && participantCount > 0) infoBoxHeight += 16;
   
   doc.setFillColor(248, 248, 248);
   doc.roundedRect(margin, infoBoxY, contentWidth, infoBoxHeight, 2, 2, 'F');
@@ -434,6 +436,28 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
     setFont(doc, 'normal');
     doc.setTextColor(40, 40, 40);
     doc.text(vehicles, col2X, vehicleY + 5);
+  }
+
+  // Max. Teilnehmer (nur wenn angegeben) - mit rotem Hintergrund und Warnung
+  if (participantCount && participantCount > 0) {
+    const maxY = infoBoxY + infoBoxHeight - 14;
+    // Roter Hintergrund-Balken
+    doc.setFillColor(200, 30, 30);
+    doc.roundedRect(margin + 3, maxY - 3, contentWidth - 6, 12, 1, 1, 'F');
+    // Achtung-Dreieck zeichnen
+    doc.setFillColor(255, 255, 255);
+    const triX = margin + 10;
+    const triY = maxY + 4;
+    doc.triangle(triX, triY - 5, triX - 3, triY + 1, triX + 3, triY + 1, 'F');
+    // Ausrufezeichen im Dreieck
+    doc.setFontSize(5);
+    doc.setTextColor(200, 30, 30);
+    doc.text('!', triX, triY - 0.5, { align: 'center' });
+    // Text
+    doc.setFontSize(9);
+    setFont(doc, 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text(`MAX. TEILNEHMER: ${participantCount}`, margin + 18, maxY + 4);
   }
 
   yPos = infoBoxY + infoBoxHeight + 6;
