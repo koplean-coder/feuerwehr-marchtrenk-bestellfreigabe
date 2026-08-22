@@ -25,6 +25,7 @@ export interface EventSignupFormData {
   diagonalHeaders?: boolean;
   signatureEnabled?: boolean;
   signatureTitle?: string;
+  participantCount?: number;
 }
 
 export async function generateEventSignupFormPdf(data: EventSignupFormData): Promise<void> {
@@ -44,7 +45,8 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
     pdfBackgroundOpacity = 1.0,
     diagonalHeaders = false,
     signatureEnabled = true,
-    signatureTitle = 'UNTERSCHRIFT'
+    signatureTitle = 'UNTERSCHRIFT',
+    participantCount
   } = data;
 
   const backgroundData = pdfBackgroundUrl ? await loadOptimizedBackground(pdfBackgroundUrl) : null;
@@ -447,9 +449,18 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
   
   yPos += deadlineHeight + 10;
 
-  // Berechne benötigte Zeilen (mindestens 30 oder Anzahl der vorerfassten Namen + 5 Leerzeilen)
-  const minEmptyRows = 30;
-  const totalRowsNeeded = Math.max(minEmptyRows, prefillNames.length + 5);
+  // Berechne benötigte Zeilen
+  // Wenn participantCount angegeben -> genau so viele Zeilen
+  // Sonst -> automatisch 2 Seiten (ca. 50-60 Zeilen)
+  let totalRowsNeeded: number;
+  if (participantCount && participantCount > 0) {
+    // Exakte Teilnehmeranzahl
+    totalRowsNeeded = Math.max(participantCount, prefillNames.length);
+  } else {
+    // Automatisch 2 Seiten - ca. 55 Zeilen (25 auf Seite 1 + 30 auf Seite 2)
+    const defaultRows = 55;
+    totalRowsNeeded = Math.max(defaultRows, prefillNames.length + 5);
+  }
   
   // Page 1 - Table
   yPos = drawTableHeader(yPos);

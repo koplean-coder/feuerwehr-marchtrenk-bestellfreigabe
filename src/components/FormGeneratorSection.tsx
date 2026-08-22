@@ -24,6 +24,7 @@ interface FormState {
   prefillNames: string[];
   signatureEnabled: boolean;
   signatureTitle: string;
+  participantCount: string;
 }
 
 const initialFormState: FormState = {
@@ -38,7 +39,8 @@ const initialFormState: FormState = {
   categories: [],
   prefillNames: [],
   signatureEnabled: true,
-  signatureTitle: 'Unterschrift'
+  signatureTitle: 'Unterschrift',
+  participantCount: ''
 };
 
 export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
@@ -74,7 +76,7 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
   };
 
   const loadTemplate = (template: EventFormTemplate) => {
-    const templateData = template as unknown as {prefill_names?: string[];signature_enabled?: boolean;signature_title?: string;};
+    const templateData = template as unknown as {prefill_names?: string[];signature_enabled?: boolean;signature_title?: string;participant_count?: number;};
     setFormData({
       eventName: template.event_name,
       description: template.description || '',
@@ -87,7 +89,8 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
       categories: template.categories || [],
       prefillNames: templateData.prefill_names || [],
       signatureEnabled: templateData.signature_enabled ?? true,
-      signatureTitle: templateData.signature_title || 'Unterschrift'
+      signatureTitle: templateData.signature_title || 'Unterschrift',
+      participantCount: templateData.participant_count?.toString() || ''
     });
     setTemplateName(template.name);
     setEditingTemplate(template);
@@ -283,7 +286,8 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
         pdfBackgroundUrl,
         diagonalHeaders,
         signatureEnabled: formData.signatureEnabled,
-        signatureTitle: formData.signatureTitle
+        signatureTitle: formData.signatureTitle,
+        participantCount: formData.participantCount ? parseInt(formData.participantCount, 10) : undefined
       };
 
       await generateEventSignupFormPdf(pdfData);
@@ -791,6 +795,28 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
                 </div>
               </div>
           }
+
+            {/* Teilnehmeranzahl */}
+            <div data-ev-id="ev_participant_count" className="bg-card border border-border rounded-xl p-6">
+              <h3 data-ev-id="ev_cebf64bcc7" className="font-semibold text-lg mb-4">Teilnehmeranzahl</h3>
+              <div data-ev-id="ev_0b816a403a" className="flex flex-col gap-2">
+                <label data-ev-id="ev_ad492a2c0c" className="block text-sm font-medium">Anzahl Zeilen im Formular</label>
+                <input data-ev-id="ev_82aa98b451"
+              type="number"
+              min="1"
+              max="200"
+              value={formData.participantCount}
+              onChange={(e) => setFormData((prev) => ({ ...prev, participantCount: e.target.value }))}
+              placeholder="Leer = automatisch 2 Seiten"
+              className="w-full px-3 py-2 border border-input rounded-lg" />
+
+                <p data-ev-id="ev_3e8e694906" className="text-sm text-muted-foreground">
+                  {formData.participantCount ?
+                `Genau ${formData.participantCount} Zeilen werden generiert` :
+                'Automatisch 2 Seiten mit ca. 55 Zeilen'}
+                </p>
+              </div>
+            </div>
 
             {/* Unterschrift-Spalte Einstellungen */}
             <div data-ev-id="ev_signature_settings" className="bg-card border border-border rounded-xl p-6">
