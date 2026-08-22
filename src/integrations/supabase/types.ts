@@ -3666,6 +3666,57 @@ export type Database = {
         }
         Relationships: []
       }
+      training_plan_role_permissions: {
+        Row: {
+          created_at: string
+          id: string
+          permission_level: string
+          role_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          permission_level?: string
+          role_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          permission_level?: string
+          role_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_plan_user_permissions: {
+        Row: {
+          created_at: string
+          granted_by: string | null
+          id: string
+          permission_level: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          permission_level?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by?: string | null
+          id?: string
+          permission_level?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       training_plans: {
         Row: {
           created_at: string
@@ -3828,6 +3879,7 @@ export type Database = {
       is_meeting_attendee: { Args: { p_meeting_id: string }; Returns: boolean }
       is_task_member: { Args: { _task_id: string }; Returns: boolean }
       is_task_owner: { Args: { _task_id: string }; Returns: boolean }
+      is_training_plan_admin: { Args: { _user_id: string }; Returns: boolean }
       user_has_meeting_invitations: { Args: never; Returns: boolean }
       user_has_step_in_task: {
         Args: { p_task_id: string; p_user_id: string }

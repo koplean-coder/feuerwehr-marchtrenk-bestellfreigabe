@@ -25,9 +25,9 @@ export interface RecurrenceRule {
   description: string | null;
   scenario_template_id: string | null;
   interval_weeks: number;
-  interval_type: 'weekly' | 'biweekly' | 'monthly' | 'bimonthly' | 'quarterly' | 'semiannually' | 'yearly';
-  week_of_period: number;
-  day_of_week: number;
+  interval_type: string | null;
+  week_of_period: number | null;
+  day_of_week: number | null;
   created_by: string;
 }
 
@@ -382,4 +382,189 @@ export function useInstructors() {
   };
 
   return { instructors, allUsers, loading, error, fetchInstructors, toggleInstructor };
+}
+
+// Types for permissions
+export type PermissionLevel = 'none' | 'read' | 'edit' | 'admin';
+
+export interface RolePermission {
+  id: string;
+  role_name: string;
+  permission_level: PermissionLevel;
+}
+
+export interface UserPermission {
+  id: string;
+  user_id: string;
+  permission_level: PermissionLevel;
+  user_name?: string;
+}
+
+// Hook for training plan permissions
+export function useTrainingPlanPermissions() {
+  const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
+  const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
+  const [currentUserPermission, setCurrentUserPermission] = useState<PermissionLevel>('none');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPermissions = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      // Get current user
+      const { data: userData } = await supabase.auth.getUser();
+      const currentUserId = userData.user?.id;
+
+      // Fetch role permissions
+      const { data: roleData, error: roleErr } = await supabase
+        .from('training_plan_role_permissions')
+        .select('*')
+        .order('role_name');
+      if (roleErr) throw roleErr;
+      setRolePermissions(roleData ?? []);
+
+      // Fetch user permissions with user names
+      const { data: userPermsData, error: userErr } = await supabase
+        .from('training_plan_user_permissions')
+        .select(`
+          *,
+          profiles:user_id (full_name)
+        `);
+      if (userErr) throw userErr;
+      setUserPermissions((userPermsData ?? []).map(p => ({
+        ...p,
+        user_name: (p.profiles as { full_name: string } | null)?.full_name ?? 'Unbekannt'
+      })));
+
+      // Determine current user's permission level
+      if (currentUserId) {
+        // Check user-specific permission first (override)
+        const userPerm = (userPermsData ?? []).find(p => p.user_id === currentUserId);
+        if (userPerm) {
+          setCurrentUserPermission(userPerm.permission_level as PermissionLevel);
+        } else {
+          // Check role-based permissions
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('functions, role')
+            .eq('id', currentUserId)
+            .single();
+          
+          if (profileData?.role === 'admin') {
+            setCurrentUserPermission('admin');
+          } else if (profileData?.functions) {
+            const userFunctions = profileData.functions as string[];
+            let highestLevel: PermissionLevel = 'none';
+            
+            for (const fn of userFunctions) {
+              const rolePerm = (roleData ?? []).find(r => 
+                r.role_name.toLowerCase() === fn.toLowerCase()
+              );
+              if (rolePerm) {
+                const levels: PermissionLevel[] = ['none', 'read', 'edit', 'admin'];
+                const currentIndex = levels.indexOf(highestLevel);
+                const newIndex = levels.indexOf(rolePerm.permission_level as PermissionLevel);
+                if (newIndex > currentIndex) {
+                  highestLevel = rolePerm.permission_level as PermissionLevel;
+                }
+              }
+            }
+            setCurrentUserPermission(highestLevel);
+          }
+        }
+      }
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPermissions();
+  }, [fetchPermissions]);
+
+  const updateRolePermission = async (roleName: string, level: PermissionLevel) => {
+    if (!supabase) return;
+    const existing = rolePermissions.find(r => r.role_name === roleName);
+    if (existing) {
+      const { error: err } = await supabase
+        .from('training_plan_role_permissions')
+        .update({ permission_level: level })
+        .eq('id', existing.id);
+      if (err) throw err;
+      setRolePermissions(prev => prev.map(r => r.id === existing.id ? { ...r, permission_level: level } : r));
+    } else {
+      const { data, error: err } = await supabase
+        .from('training_plan_role_permissions')
+        .insert({ role_name: roleName, permission_level: level })
+        .select()
+        .single();
+      if (err) throw err;
+      if (data) setRolePermissions(prev => [...prev, data]);
+    }
+  };
+
+  const setUserPermission = async (userId: string, level: PermissionLevel) => {
+    if (!supabase) return;
+    const { data: userData } = await supabase.auth.getUser();
+    const existing = userPermissions.find(u => u.user_id === userId);
+    
+    if (level === 'none' && existing) {
+      // Remove permission
+      const { error: err } = await supabase
+        .from('training_plan_user_permissions')
+        .delete()
+        .eq('id', existing.id);
+      if (err) throw err;
+      setUserPermissions(prev => prev.filter(u => u.id !== existing.id));
+    } else if (existing) {
+      // Update existing
+      const { error: err } = await supabase
+        .from('training_plan_user_permissions')
+        .update({ permission_level: level })
+        .eq('id', existing.id);
+      if (err) throw err;
+      setUserPermissions(prev => prev.map(u => u.id === existing.id ? { ...u, permission_level: level } : u));
+    } else if (level !== 'none') {
+      // Insert new
+      const { data, error: err } = await supabase
+        .from('training_plan_user_permissions')
+        .insert({ 
+          user_id: userId, 
+          permission_level: level,
+          granted_by: userData.user?.id 
+        })
+        .select(`
+          *,
+          profiles:user_id (full_name)
+        `)
+        .single();
+      if (err) throw err;
+      if (data) {
+        setUserPermissions(prev => [...prev, {
+          ...data,
+          user_name: (data.profiles as { full_name: string } | null)?.full_name ?? 'Unbekannt'
+        }]);
+      }
+    }
+  };
+
+  const canRead = currentUserPermission !== 'none';
+  const canEdit = currentUserPermission === 'edit' || currentUserPermission === 'admin';
+  const isAdmin = currentUserPermission === 'admin';
+
+  return { 
+    rolePermissions, 
+    userPermissions, 
+    currentUserPermission,
+    canRead,
+    canEdit,
+    isAdmin,
+    loading, 
+    error, 
+    fetchPermissions, 
+    updateRolePermission, 
+    setUserPermission 
+  };
 }
