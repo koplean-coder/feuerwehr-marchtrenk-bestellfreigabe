@@ -1342,7 +1342,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                   <p data-ev-id="ev_2560ab8846" className="text-sm text-gray-500 mt-1">Übung jeden Mittwoch, 18:20 Uhr</p>
                 </div>
                 <div data-ev-id="ev_f34e264433" className="text-right">
-                  <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="w-24 h-auto ml-auto" />
+                  <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="w-48 h-auto ml-auto" />
                 </div>
               </div>
 
