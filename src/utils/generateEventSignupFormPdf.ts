@@ -77,7 +77,9 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
   }
   
   const usedWidth = colName + colSignature + totalCategoryWidth;
-  const scale = usedWidth > contentWidth ? contentWidth / usedWidth : 1;
+  // Immer auf contentWidth skalieren, damit die Tabelle die volle Breite nutzt
+  // Bei signatureEnabled=false werden Name & Kategorien proportional vergrößert
+  const scale = contentWidth / usedWidth;
   const scaledColName = colName * scale;
   const scaledColSignature = colSignature * scale;
   const scaledCategoryWidths = categoryColWidths.map(w => w * scale);
