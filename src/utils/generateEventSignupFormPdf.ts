@@ -148,14 +148,9 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
           
           // Text am linken Rand der Spalte starten, diagonal nach oben-rechts
           // So wird Text nicht am rechten Tabellenrand abgeschnitten
-          doc.text(displayName, colX + 3, startY + headerHeight - 3, { angle: 45 });
-          
-          if (cat.hasAsOption) {
-            doc.setFontSize(7);
-            doc.setTextColor(200, 200, 200);
-            doc.text('+AS', colX + catWidth - 2, startY + headerHeight - 3, { angle: 45 });
-            doc.setTextColor(255, 255, 255);
-          }
+          // Bei +AS Option: Text inkl. +AS als ein String
+          const fullText = cat.hasAsOption ? `${displayName} +AS` : displayName;
+          doc.text(fullText, colX + 3, startY + headerHeight - 3, { angle: 45 });
           
           doc.setFontSize(11);
           colX += catWidth;

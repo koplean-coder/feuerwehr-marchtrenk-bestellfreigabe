@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Download, Plus, X, Save, Copy, Trash2, Edit2, FileText, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, Download, Plus, X, Save, Copy, Trash2, Edit2, FileText, Loader2, Upload, ChevronUp, ChevronDown, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useEventFormTemplates, EventFormTemplate } from '@/hooks/useEventFormTemplates';
 import { useSettings } from '@/hooks/useSettings';
@@ -61,6 +61,7 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
   const [diagonalHeaders, setDiagonalHeaders] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<EventFormTemplate | null>(null);
   const [newPrefillName, setNewPrefillName] = useState('');
+  const [editingCategoryIndex, setEditingCategoryIndex] = useState<number | null>(null);
 
   // Import Modal State
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -125,6 +126,29 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
       ...prev,
       categories: prev.categories.filter((_, i) => i !== index)
     }));
+    if (editingCategoryIndex === index) setEditingCategoryIndex(null);
+  };
+
+  const updateCategory = (index: number, updates: Partial<CategoryOption>) => {
+    setFormData((prev) => ({
+      ...prev,
+      categories: prev.categories.map((cat, i) => i === index ? { ...cat, ...updates } : cat)
+    }));
+  };
+
+  const moveCategory = (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= formData.categories.length) return;
+
+    setFormData((prev) => {
+      const newCategories = [...prev.categories];
+      [newCategories[index], newCategories[newIndex]] = [newCategories[newIndex], newCategories[index]];
+      return { ...prev, categories: newCategories };
+    });
+
+    // Update editing index if we're editing the moved category
+    if (editingCategoryIndex === index) setEditingCategoryIndex(newIndex);else
+    if (editingCategoryIndex === newIndex) setEditingCategoryIndex(index);
   };
 
   const addPrefillName = () => {
@@ -503,29 +527,107 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
 
               {/* Existing Categories */}
               {formData.categories.length > 0 &&
-            <div data-ev-id="ev_ff18fdec6b" className="space-y-2">
+            <div data-ev-id="ev_add4598a2a" className="space-y-2">
                   {formData.categories.map((cat, idx) =>
-              <div data-ev-id="ev_9c4e6882c9" key={idx} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                      <div data-ev-id="ev_07b7b52f6b" className="flex-1">
-                        <span data-ev-id="ev_6d43886d0e" className="font-medium">{cat.name}</span>
-                        {cat.shortName &&
-                  <span data-ev-id="ev_833a63e4c8" className="text-muted-foreground ml-2">({cat.shortName})</span>
-                  }
-                        {cat.hasAsOption &&
-                  <span data-ev-id="ev_0527dd861f" className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded">
-                            +AS Option
-                          </span>
-                  }
-                        {cat.requiresCheckbox === false &&
-                  <span data-ev-id="ev_6403a06622" className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
-                            Textfeld
-                          </span>
-                  }
+              <div data-ev-id="ev_0b4f65770a" key={idx} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                      {/* Move buttons */}
+                      <div data-ev-id="ev_971da78e51" className="flex flex-col gap-0.5">
+                        <button data-ev-id="ev_001d7fbdf3"
+                  onClick={() => moveCategory(idx, 'up')}
+                  disabled={idx === 0}
+                  className="p-0.5 hover:bg-muted rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Nach oben">
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button data-ev-id="ev_32f0c001fb"
+                  onClick={() => moveCategory(idx, 'down')}
+                  disabled={idx === formData.categories.length - 1}
+                  className="p-0.5 hover:bg-muted rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Nach unten">
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
                       </div>
-                      <button data-ev-id="ev_94615c95ca"
-                onClick={() => removeCategory(idx)}
-                className="p-1 hover:bg-red-100 text-red-600 rounded">
+                      
+                      {editingCategoryIndex === idx ? (
+                /* Edit Mode */
+                <div data-ev-id="ev_92378831b1" className="flex-1 flex flex-wrap items-center gap-2">
+                          <input data-ev-id="ev_a0eb03deca"
+                  type="text"
+                  value={cat.name}
+                  onChange={(e) => updateCategory(idx, { name: e.target.value })}
+                  className="flex-1 min-w-[120px] px-2 py-1 border border-border rounded bg-background text-sm"
+                  placeholder="Name" />
 
+                          <input data-ev-id="ev_cfee15d124"
+                  type="text"
+                  value={cat.shortName || ''}
+                  onChange={(e) => updateCategory(idx, { shortName: e.target.value || undefined })}
+                  className="w-20 px-2 py-1 border border-border rounded bg-background text-sm"
+                  placeholder="Kürzel" />
+
+                          <label data-ev-id="ev_063f127ca6" className="flex items-center gap-1 text-sm">
+                            <input data-ev-id="ev_b87f9d69ba"
+                    type="checkbox"
+                    checked={cat.hasAsOption}
+                    onChange={(e) => updateCategory(idx, { hasAsOption: e.target.checked })}
+                    disabled={cat.requiresCheckbox === false}
+                    className="w-4 h-4" />
+
+                            +AS
+                          </label>
+                          <label data-ev-id="ev_023bdb05d2" className="flex items-center gap-1 text-sm">
+                            <input data-ev-id="ev_2de2cad73e"
+                    type="checkbox"
+                    checked={cat.requiresCheckbox !== false}
+                    onChange={(e) => updateCategory(idx, {
+                      requiresCheckbox: e.target.checked,
+                      hasAsOption: e.target.checked ? cat.hasAsOption : false
+                    })}
+                    className="w-4 h-4" />
+
+                            Checkbox
+                          </label>
+                          <button data-ev-id="ev_16820dbeb2"
+                  onClick={() => setEditingCategoryIndex(null)}
+                  className="p-1.5 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                  title="Fertig">
+                            <Check className="w-4 h-4" />
+                          </button>
+                        </div>) : (
+
+                /* View Mode */
+                <>
+                          <div data-ev-id="ev_8b9d3b2d10"
+                  className="flex-1 cursor-pointer hover:bg-muted/50 rounded px-2 py-1 -mx-2 -my-1"
+                  onClick={() => setEditingCategoryIndex(idx)}
+                  title="Klicken zum Bearbeiten">
+                            <span data-ev-id="ev_c9872dff71" className="font-medium">{cat.name}</span>
+                            {cat.shortName &&
+                    <span data-ev-id="ev_47368472d2" className="text-muted-foreground ml-2">({cat.shortName})</span>
+                    }
+                            {cat.hasAsOption &&
+                    <span data-ev-id="ev_fa3200e4b3" className="ml-2 px-2 py-0.5 bg-orange-100 text-orange-700 text-xs rounded">
+                                +AS Option
+                              </span>
+                    }
+                            {cat.requiresCheckbox === false &&
+                    <span data-ev-id="ev_3173031b0e" className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">
+                                Textfeld
+                              </span>
+                    }
+                          </div>
+                          <button data-ev-id="ev_280c405d2d"
+                  onClick={() => setEditingCategoryIndex(idx)}
+                  className="p-1 hover:bg-muted rounded text-muted-foreground"
+                  title="Bearbeiten">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </>)
+                }
+                      <button data-ev-id="ev_698f556f53"
+                onClick={() => removeCategory(idx)}
+                className="p-1 hover:bg-red-100 text-red-600 rounded"
+                title="Löschen">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
