@@ -676,9 +676,21 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 return;
               }
 
-              // Create PDF container - A3 landscape optimized (420mm x 297mm = ~1587px x 1123px at 96dpi)
-              const pdfContainer = document.createElement('div');
-              pdfContainer.style.cssText = 'position: absolute; left: -9999px; width: 1540px; padding: 50px 60px; background: white; font-family: "Segoe UI", Arial, sans-serif;';
+              // Helper function to get category color from DB
+              const getCatColor = (catId: string) => {
+                const cat = dbCategories.find((c) => c.id === catId);
+                if (!cat) return { bg: '#f3f4f6', text: '#374151', border: '#d1d5db' };
+                // Parse hex color and create lighter background
+                const hex = cat.color.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                return {
+                  bg: `rgba(${r}, ${g}, ${b}, 0.15)`,
+                  text: cat.color,
+                  border: cat.color
+                };
+              };
 
               // Group sessions by month
               const grouped: {month: string;sessions: typeof filteredSessions;}[] = [];
@@ -693,131 +705,127 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               const startDate = filteredSessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long' });
               const endDate = filteredSessions[filteredSessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' });
 
-              pdfContainer.innerHTML = `
-                <!-- Header -->
-                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 30px; padding-bottom: 25px; border-bottom: 5px solid #C8102E;">
-                  <div>
-                    <h1 style="font-size: 56px; font-weight: 800; color: #C8102E; margin: 0; letter-spacing: -1px;">Übungsplan</h1>
-                    <p style="font-size: 22px; color: #333; margin-top: 12px; font-weight: 500;">${startDate} – ${endDate}</p>
-                  </div>
-                  <img src="${ffmLogo}" alt="Logo" style="height: 110px; width: auto;" />
-                </div>
+              // Helper to render category tags with real colors
+              const renderCategories = (categoryIds: string[]) => {
+                if (categoryIds.length === 0) return '<span style="color: #9ca3af;">—</span>';
+                return categoryIds.map((catId) => {
+                  const cat = dbCategories.find((c) => c.id === catId);
+                  if (!cat) return '';
+                  const colors = getCatColor(catId);
+                  return `<span style="display: inline-block; padding: 5px 12px; margin: 2px; border-radius: 5px; font-size: 13px; font-weight: 600; background: ${colors.bg}; color: ${colors.text}; border: 2px solid ${colors.border};">${cat.name}</span>`;
+                }).join('');
+              };
 
-                <!-- Content -->
-                ${grouped.map(({ month, sessions: monthSessions }) => `
-                  <div style="margin-bottom: 24px; break-inside: avoid;">
-                    <div style="background: linear-gradient(135deg, #C8102E 0%, #a00d24 100%); color: white; padding: 12px 20px; font-weight: 700; font-size: 16px; border-radius: 6px 6px 0 0; letter-spacing: 0.5px;">
+              // A3 landscape: 420mm x 297mm
+              const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = pdf.internal.pageSize.getHeight();
+              const margin = 12;
+              const contentWidth = pdfWidth - (margin * 2);
+              const contentHeight = pdfHeight - (margin * 2);
+              
+              // Container width in pixels (scale 2 = 2x resolution)
+              const containerWidthPx = Math.round(contentWidth * 3.78 * 2); // ~3.78 px per mm at 96dpi, x2 for scale
+              
+              let currentPage = 0;
+              let yPosition = margin;
+
+              // Render header on first page
+              const headerContainer = document.createElement('div');
+              headerContainer.style.cssText = `position: absolute; left: -9999px; width: ${containerWidthPx}px; padding: 40px 50px; background: white; font-family: "Segoe UI", Arial, sans-serif;`;
+              headerContainer.innerHTML = `
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; padding-bottom: 30px; border-bottom: 6px solid #C8102E;">
+                  <div>
+                    <h1 style="font-size: 72px; font-weight: 800; color: #C8102E; margin: 0; letter-spacing: -2px;">Übungsplan</h1>
+                    <p style="font-size: 28px; color: #333; margin-top: 16px; font-weight: 500;">${startDate} – ${endDate}</p>
+                  </div>
+                  <img src="${ffmLogo}" alt="Logo" style="height: 130px; width: auto;" />
+                </div>
+              `;
+              document.body.appendChild(headerContainer);
+              
+              const headerCanvas = await html2canvas(headerContainer, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+              const headerImgData = headerCanvas.toDataURL('image/jpeg', 0.95);
+              const headerHeight = (headerCanvas.height / headerCanvas.width) * contentWidth;
+              
+              pdf.addImage(headerImgData, 'JPEG', margin, yPosition, contentWidth, headerHeight);
+              yPosition += headerHeight + 8;
+              document.body.removeChild(headerContainer);
+
+              // Render each month table separately
+              for (const { month, sessions: monthSessions } of grouped) {
+                const monthContainer = document.createElement('div');
+                monthContainer.style.cssText = `position: absolute; left: -9999px; width: ${containerWidthPx}px; padding: 0 50px; background: white; font-family: "Segoe UI", Arial, sans-serif;`;
+                monthContainer.innerHTML = `
+                  <div style="margin-bottom: 0;">
+                    <div style="background: linear-gradient(135deg, #C8102E 0%, #9a0c22 100%); color: white; padding: 14px 24px; font-weight: 700; font-size: 22px; border-radius: 8px 8px 0 0;">
                       ${month}
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
                       <thead>
-                        <tr style="background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);">
-                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 100px; font-weight: 700; color: #495057;">Datum</th>
-                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 70px; font-weight: 700; color: #495057;">Zeit</th>
-                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; font-weight: 700; color: #495057;">Thema / Szenario</th>
-                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 220px; font-weight: 700; color: #495057;">Kategorien</th>
-                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 150px; font-weight: 700; color: #495057;">Übungsleiter</th>
-                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 180px; font-weight: 700; color: #495057;">Anmerkungen</th>
+                        <tr style="background: #f1f3f4;">
+                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 120px; font-weight: 700; color: #374151;">Datum</th>
+                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 80px; font-weight: 700; color: #374151;">Zeit</th>
+                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 280px; font-weight: 700; color: #374151;">Thema / Szenario</th>
+                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; font-weight: 700; color: #374151;">Kategorien</th>
+                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 180px; font-weight: 700; color: #374151;">Übungsleiter</th>
+                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 200px; font-weight: 700; color: #374151;">Anmerkungen</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${monthSessions.map((s, idx) => `
-                          <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8f9fa'}; transition: background 0.2s;">
-                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; font-weight: 500;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
-                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; font-weight: 500;">${s.time}</td>
-                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; white-space: pre-line; line-height: 1.5;">${s.topic || '<span style="color: #adb5bd;">—</span>'}</td>
-                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top;">
-                              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                              ${s.categoryIds.length > 0 ? s.categoryIds.map((catId) => {
-                const cat = categories.find((c) => c.id === catId);
-                return cat ? `<span style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fff3cd; color: #856404; border: 1px solid #ffc107;">${cat.name}</span>` : '';
-              }).join('') : '<span style="color: #adb5bd;">—</span>'}
+                          <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
+                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; font-weight: 600; font-size: 15px;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; font-weight: 600; font-size: 15px;">${s.time}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; white-space: pre-line; line-height: 1.4; font-size: 15px;">${s.topic || '<span style="color: #9ca3af;">—</span>'}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 12px 14px; vertical-align: middle;">
+                              <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+                                ${renderCategories(s.categoryIds)}
                               </div>
                             </td>
-                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; font-weight: 500;">${s.instructor || '<span style="color: #adb5bd;">—</span>'}</td>
-                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; color: #6c757d;">${s.notes || '<span style="color: #adb5bd;">—</span>'}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; font-weight: 500; font-size: 15px;">${s.instructor || '<span style="color: #9ca3af;">—</span>'}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; color: #6b7280; font-size: 15px;">${s.notes || '<span style="color: #9ca3af;">—</span>'}</td>
                           </tr>
                         `).join('')}
                       </tbody>
                     </table>
                   </div>
-                `).join('')}
-
-                <!-- Footer -->
-                <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #dee2e6; display: flex; justify-content: space-between; font-size: 12px; color: #6c757d;">
-                  <span style="font-weight: 500;">Freiwillige Feuerwehr Marchtrenk · Linzerstraße 43 · 4614 Marchtrenk</span>
-                  <span>Stand: ${new Date().toLocaleDateString('de-AT')}</span>
-                </div>
-              `;
-
-              document.body.appendChild(pdfContainer);
-
-              try {
-                const canvas = await html2canvas(pdfContainer, { scale: 2.5, useCORS: true, backgroundColor: '#ffffff' });
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-                // A3 landscape dimensions in mm (420 x 297)
-                const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
-                const pdfWidth = pdf.internal.pageSize.getWidth(); // 420mm
-                const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+                `;
+                document.body.appendChild(monthContainer);
                 
-                const margin = 15; // 15mm margin
-                const printableWidth = pdfWidth - (margin * 2);
-                const printableHeight = pdfHeight - (margin * 2);
-
-                // Calculate image dimensions to fill the page width
-                const imgWidth = printableWidth;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                if (imgHeight <= printableHeight) {
-                  // Fits on one page - center vertically
-                  const yOffset = margin;
-                  pdf.addImage(imgData, 'JPEG', margin, yOffset, imgWidth, imgHeight);
-                } else {
-                  // Multi-page: split the canvas into pages
-                  const pageImgHeight = printableHeight;
-                  const sourcePageHeight = (canvas.width * pageImgHeight) / imgWidth;
-                  let position = 0;
-                  let page = 0;
-                  
-                  while (position < canvas.height) {
-                    if (page > 0) {
-                      pdf.addPage();
-                    }
-                    
-                    // Create a temporary canvas for this page segment
-                    const pageCanvas = document.createElement('canvas');
-                    pageCanvas.width = canvas.width;
-                    pageCanvas.height = Math.min(sourcePageHeight, canvas.height - position);
-                    const ctx = pageCanvas.getContext('2d');
-                    if (ctx) {
-                      ctx.fillStyle = '#ffffff';
-                      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-                      ctx.drawImage(canvas, 0, position, canvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
-                    }
-                    
-                    const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
-                    const thisPageHeight = (pageCanvas.height * imgWidth) / canvas.width;
-                    pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, thisPageHeight);
-                    
-                    position += sourcePageHeight;
-                    page++;
-                  }
+                const monthCanvas = await html2canvas(monthContainer, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+                const monthImgData = monthCanvas.toDataURL('image/jpeg', 0.95);
+                const monthHeight = (monthCanvas.height / monthCanvas.width) * contentWidth;
+                
+                // Check if we need a new page
+                if (yPosition + monthHeight > contentHeight) {
+                  pdf.addPage();
+                  currentPage++;
+                  yPosition = margin;
                 }
-
-                // Generate filename
-                const periodLabel = pdfPeriod === 'all' ? 'Gesamt' : pdfPeriod === 'custom' ? `${pdfCustomStart.toLocaleDateString('de-AT')}-${pdfCustomEnd.toLocaleDateString('de-AT')}` : pdfPeriod;
-                const filename = `Uebungsplan_${periodLabel}.pdf`;
-
-                // Create blob URL for preview
-                const pdfBlob = pdf.output('blob');
-                const blobUrl = URL.createObjectURL(pdfBlob);
-                setPdfPreviewUrl(blobUrl);
-                setPdfFilename(filename);
-                setShowPdfPreview(true);
-              } finally {
-                document.body.removeChild(pdfContainer);
+                
+                pdf.addImage(monthImgData, 'JPEG', margin, yPosition, contentWidth, monthHeight);
+                yPosition += monthHeight + 10;
+                document.body.removeChild(monthContainer);
               }
+
+              // Add footer to last page
+              const footerY = pdfHeight - margin - 8;
+              pdf.setFontSize(10);
+              pdf.setTextColor(100, 100, 100);
+              pdf.text('Freiwillige Feuerwehr Marchtrenk \u00b7 Linzerstra\u00dfe 43 \u00b7 4614 Marchtrenk', margin, footerY);
+              pdf.text(`Stand: ${new Date().toLocaleDateString('de-AT')}`, pdfWidth - margin, footerY, { align: 'right' });
+
+              // Generate filename
+              const periodLabel = pdfPeriod === 'all' ? 'Gesamt' : pdfPeriod === 'custom' ? `${pdfCustomStart.toLocaleDateString('de-AT')}-${pdfCustomEnd.toLocaleDateString('de-AT')}` : pdfPeriod;
+              const filename = `Uebungsplan_${periodLabel}.pdf`;
+
+              // Create blob URL for preview
+              const pdfBlob = pdf.output('blob');
+              const blobUrl = URL.createObjectURL(pdfBlob);
+              setPdfPreviewUrl(blobUrl);
+              setPdfFilename(filename);
+              setShowPdfPreview(true);
 
               setIsGeneratingPdf(false);
               setShowPdfDialog(false);
