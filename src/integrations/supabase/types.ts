@@ -2551,6 +2551,7 @@ export type Database = {
           id: string
           is_absent: boolean | null
           is_active: boolean
+          is_instructor: boolean | null
           menu_favorites: string[] | null
           role: Database["public"]["Enums"]["user_role"]
           substitute_id: string | null
@@ -2570,6 +2571,7 @@ export type Database = {
           id: string
           is_absent?: boolean | null
           is_active?: boolean
+          is_instructor?: boolean | null
           menu_favorites?: string[] | null
           role?: Database["public"]["Enums"]["user_role"]
           substitute_id?: string | null
@@ -2589,6 +2591,7 @@ export type Database = {
           id?: string
           is_absent?: boolean | null
           is_active?: boolean
+          is_instructor?: boolean | null
           menu_favorites?: string[] | null
           role?: Database["public"]["Enums"]["user_role"]
           substitute_id?: string | null
@@ -3635,6 +3638,140 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      training_categories: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_plans: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          period: string
+          sessions: Json
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          period?: string
+          sessions?: Json
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          period?: string
+          sessions?: Json
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      training_recurrence_rules: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          interval_weeks: number
+          name: string
+          scenario_template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          interval_weeks?: number
+          name: string
+          scenario_template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          interval_weeks?: number
+          name?: string
+          scenario_template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_recurrence_rules_scenario_template_id_fkey"
+            columns: ["scenario_template_id"]
+            isOneToOne: false
+            referencedRelation: "training_scenario_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_scenario_templates: {
+        Row: {
+          category_ids: string[] | null
+          created_at: string
+          created_by: string
+          default_instructor: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category_ids?: string[] | null
+          created_at?: string
+          created_by: string
+          default_instructor?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category_ids?: string[] | null
+          created_at?: string
+          created_by?: string
+          default_instructor?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_presence: {
         Row: {

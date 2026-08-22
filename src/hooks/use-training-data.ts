@@ -1,0 +1,372 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/helpers';
+
+// Types
+export interface TrainingCategory {
+  id: string;
+  name: string;
+  color: string;
+  sort_order: number;
+}
+
+export interface ScenarioTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  category_ids: string[];
+  default_instructor: string | null;
+  created_by: string;
+}
+
+export interface RecurrenceRule {
+  id: string;
+  name: string;
+  description: string | null;
+  scenario_template_id: string | null;
+  interval_weeks: number;
+  created_by: string;
+}
+
+export interface TrainingPlan {
+  id: string;
+  name: string;
+  year: number;
+  period: string;
+  sessions: TrainingSession[];
+  created_by: string;
+  created_at: string;
+  creator_name?: string;
+}
+
+export interface TrainingSession {
+  id: string;
+  date: string;
+  time: string;
+  topic: string;
+  categoryIds: string[];
+  instructor: string;
+  notes: string;
+  isHoliday: boolean;
+}
+
+export interface Instructor {
+  id: string;
+  full_name: string;
+  is_instructor: boolean;
+}
+
+// Hook for categories
+export function useTrainingCategories() {
+  const [categories, setCategories] = useState<TrainingCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCategories = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error: err } = await supabase
+        .from('training_categories')
+        .select('*')
+        .order('sort_order');
+      if (err) throw err;
+      setCategories(data ?? []);
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const addCategory = async (name: string, color: string) => {
+    if (!supabase) return;
+    const maxOrder = Math.max(0, ...categories.map(c => c.sort_order));
+    const { data, error: err } = await supabase
+      .from('training_categories')
+      .insert({ name, color, sort_order: maxOrder + 1 })
+      .select()
+      .single();
+    if (err) throw err;
+    if (data) setCategories(prev => [...prev, data]);
+    return data;
+  };
+
+  const updateCategory = async (id: string, updates: Partial<TrainingCategory>) => {
+    if (!supabase) return;
+    const { error: err } = await supabase
+      .from('training_categories')
+      .update(updates)
+      .eq('id', id);
+    if (err) throw err;
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const deleteCategory = async (id: string) => {
+    if (!supabase) return;
+    const { error: err } = await supabase
+      .from('training_categories')
+      .delete()
+      .eq('id', id);
+    if (err) throw err;
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
+  return { categories, loading, error, fetchCategories, addCategory, updateCategory, deleteCategory };
+}
+
+// Hook for scenario templates
+export function useScenarioTemplates() {
+  const [templates, setTemplates] = useState<ScenarioTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTemplates = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error: err } = await supabase
+        .from('training_scenario_templates')
+        .select('*')
+        .order('name');
+      if (err) throw err;
+      setTemplates((data ?? []).map(t => ({
+        ...t,
+        category_ids: t.category_ids ?? []
+      })));
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, [fetchTemplates]);
+
+  const addTemplate = async (template: { name: string; description?: string; category_ids: string[]; default_instructor?: string }) => {
+    if (!supabase) return;
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+    
+    const { data, error: err } = await supabase
+      .from('training_scenario_templates')
+      .insert({
+        name: template.name,
+        description: template.description ?? null,
+        category_ids: template.category_ids,
+        default_instructor: template.default_instructor ?? null,
+        created_by: userData.user.id
+      })
+      .select()
+      .single();
+    if (err) throw err;
+    if (data) setTemplates(prev => [...prev, { ...data, category_ids: data.category_ids ?? [] }]);
+    return data;
+  };
+
+  const deleteTemplate = async (id: string) => {
+    if (!supabase) return;
+    const { error: err } = await supabase
+      .from('training_scenario_templates')
+      .delete()
+      .eq('id', id);
+    if (err) throw err;
+    setTemplates(prev => prev.filter(t => t.id !== id));
+  };
+
+  return { templates, loading, error, fetchTemplates, addTemplate, deleteTemplate };
+}
+
+// Hook for recurrence rules
+export function useRecurrenceRules() {
+  const [rules, setRules] = useState<RecurrenceRule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchRules = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error: err } = await supabase
+        .from('training_recurrence_rules')
+        .select('*')
+        .order('name');
+      if (err) throw err;
+      setRules(data ?? []);
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRules();
+  }, [fetchRules]);
+
+  const addRule = async (rule: { name: string; description?: string; scenario_template_id?: string; interval_weeks: number }) => {
+    if (!supabase) return;
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+    
+    const { data, error: err } = await supabase
+      .from('training_recurrence_rules')
+      .insert({
+        name: rule.name,
+        description: rule.description ?? null,
+        scenario_template_id: rule.scenario_template_id ?? null,
+        interval_weeks: rule.interval_weeks,
+        created_by: userData.user.id
+      })
+      .select()
+      .single();
+    if (err) throw err;
+    if (data) setRules(prev => [...prev, data]);
+    return data;
+  };
+
+  const deleteRule = async (id: string) => {
+    if (!supabase) return;
+    const { error: err } = await supabase
+      .from('training_recurrence_rules')
+      .delete()
+      .eq('id', id);
+    if (err) throw err;
+    setRules(prev => prev.filter(r => r.id !== id));
+  };
+
+  return { rules, loading, error, fetchRules, addRule, deleteRule };
+}
+
+// Hook for training plans
+export function useTrainingPlans() {
+  const [plans, setPlans] = useState<TrainingPlan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchPlans = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error: err } = await supabase
+        .from('training_plans')
+        .select(`
+          *,
+          profiles:created_by (full_name)
+        `)
+        .order('created_at', { ascending: false });
+      if (err) throw err;
+      setPlans((data ?? []).map(p => ({
+        ...p,
+        sessions: (p.sessions as TrainingSession[]) ?? [],
+        creator_name: (p.profiles as { full_name: string } | null)?.full_name ?? 'Unbekannt'
+      })));
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
+
+  const savePlan = async (plan: { name: string; year: number; period: string; sessions: TrainingSession[] }) => {
+    if (!supabase) return;
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) return;
+    
+    const { data, error: err } = await supabase
+      .from('training_plans')
+      .insert({
+        name: plan.name,
+        year: plan.year,
+        period: plan.period,
+        sessions: plan.sessions as unknown as Record<string, unknown>,
+        created_by: userData.user.id
+      })
+      .select(`
+        *,
+        profiles:created_by (full_name)
+      `)
+      .single();
+    if (err) throw err;
+    if (data) {
+      const newPlan: TrainingPlan = {
+        ...data,
+        sessions: (data.sessions as TrainingSession[]) ?? [],
+        creator_name: (data.profiles as { full_name: string } | null)?.full_name ?? 'Unbekannt'
+      };
+      setPlans(prev => [newPlan, ...prev]);
+    }
+    return data;
+  };
+
+  const deletePlan = async (id: string) => {
+    if (!supabase) return;
+    const { error: err } = await supabase
+      .from('training_plans')
+      .delete()
+      .eq('id', id);
+    if (err) throw err;
+    setPlans(prev => prev.filter(p => p.id !== id));
+  };
+
+  return { plans, loading, error, fetchPlans, savePlan, deletePlan };
+}
+
+// Hook for instructors (users with is_instructor = true)
+export function useInstructors() {
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
+  const [allUsers, setAllUsers] = useState<Instructor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchInstructors = useCallback(async () => {
+    if (!supabase) return;
+    try {
+      const { data, error: err } = await supabase
+        .from('profiles')
+        .select('id, full_name, is_instructor')
+        .eq('is_active', true)
+        .order('full_name');
+      if (err) throw err;
+      const users = (data ?? []).map(u => ({
+        id: u.id,
+        full_name: u.full_name,
+        is_instructor: u.is_instructor ?? false
+      }));
+      setAllUsers(users);
+      setInstructors(users.filter(u => u.is_instructor));
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInstructors();
+  }, [fetchInstructors]);
+
+  const toggleInstructor = async (userId: string, isInstructor: boolean) => {
+    if (!supabase) return;
+    const { error: err } = await supabase
+      .from('profiles')
+      .update({ is_instructor: isInstructor })
+      .eq('id', userId);
+    if (err) throw err;
+    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, is_instructor: isInstructor } : u));
+    if (isInstructor) {
+      const user = allUsers.find(u => u.id === userId);
+      if (user) setInstructors(prev => [...prev, { ...user, is_instructor: true }].sort((a, b) => a.full_name.localeCompare(b.full_name)));
+    } else {
+      setInstructors(prev => prev.filter(i => i.id !== userId));
+    }
+  };
+
+  return { instructors, allUsers, loading, error, fetchInstructors, toggleInstructor };
+}

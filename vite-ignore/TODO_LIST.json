@@ -1,31 +1,37 @@
 {
-  "summary": "Tags & Anhänge für Todo-Tasks implementieren",
+  "summary": "Übungsplan mit DB-Integration erweitern",
   "todos": [
     {
       "id": 1,
-      "description": "Hook für Tags erstellen (useTodoTags)",
-      "files": [
-        "src/hooks/useTodoTags.ts"
-      ],
+      "description": "DB-Tabellen erstellen (training_plans, scenario_templates, recurrence_rules, categories, instructors)",
+      "files": [],
       "status": "complete"
     },
     {
       "id": 2,
-      "description": "Tags UI in TodoTaskDetail einbauen",
-      "files": [
-        "src/components/todo/TodoTaskDetail.tsx"
-      ],
+      "description": "Hooks für DB-Zugriff erstellen",
+      "files": [],
       "status": "complete"
     },
     {
       "id": 3,
-      "description": "Datei-Anhänge UI in TodoTaskDetail einbauen",
-      "files": [
-        "src/components/todo/TodoTaskDetail.tsx"
-      ],
+      "description": "TrainingPlanSection mit DB-Hooks verbinden + Jahr auf aktuell setzen",
+      "files": [],
+      "status": "complete"
+    },
+    {
+      "id": 4,
+      "description": "Übungsleiter aus profiles laden mit Checkbox-Auswahl",
+      "files": [],
+      "status": "complete"
+    },
+    {
+      "id": 5,
+      "description": "Gespeicherte Pläne anzeigen und laden",
+      "files": [],
       "status": "complete"
     }
   ],
-  "createdAt": "2026-08-21T23:26:45.350Z",
-  "updatedAt": "2026-08-21T23:31:43.710Z"
+  "createdAt": "2026-08-22T12:07:59.254Z",
+  "updatedAt": "2026-08-22T12:13:39.305Z"
 }

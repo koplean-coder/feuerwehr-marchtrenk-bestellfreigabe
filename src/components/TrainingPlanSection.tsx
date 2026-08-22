@@ -1,5 +1,13 @@
-import { useState, useMemo } from 'react';
-import { ArrowLeft, Plus, X, Download, Calendar, FileText, ChevronLeft, ChevronRight, Settings, Save, Trash2, Copy, RotateCcw, Users } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowLeft, Plus, X, Download, Calendar, FileText, ChevronLeft, ChevronRight, Settings, Save, Trash2, Copy, RotateCcw, Users, FolderOpen, Check } from 'lucide-react';
+import {
+  useTrainingCategories,
+  useScenarioTemplates,
+  useRecurrenceRules,
+  useTrainingPlans,
+  useInstructors,
+  type TrainingSession as DbTrainingSession } from
+'@/hooks/use-training-data';
 
 interface TrainingPlanSectionProps {
   onBack: () => void;
@@ -20,7 +28,7 @@ interface ScenarioTemplate {
 
 interface RecurrenceRule {
   id: string;
-  weekOfMonth: 1 | 2 | 3 | 4 | 5; // 1st, 2nd, 3rd, 4th, last Wednesday
+  weekOfMonth: 1 | 2 | 3 | 4 | 5;
   scenarioTemplateId: string;
 }
 
@@ -35,56 +43,35 @@ interface TrainingSession {
   isHoliday: boolean;
 }
 
-const DEFAULT_CATEGORIES: Category[] = [
-{ id: 'brand', name: 'Brandeinsatz', color: 'bg-red-100 text-red-700 border-red-300' },
-{ id: 'technisch', name: 'Technisch', color: 'bg-blue-100 text-blue-700 border-blue-300' },
-{ id: 'erste-hilfe', name: 'Erste Hilfe', color: 'bg-green-100 text-green-700 border-green-300' },
-{ id: 'theorie', name: 'Theorie', color: 'bg-purple-100 text-purple-700 border-purple-300' },
-{ id: 'gemeinschaft', name: 'Gemeinschaft', color: 'bg-orange-100 text-orange-700 border-orange-300' },
-{ id: 'atemschutz', name: 'Atemschutz', color: 'bg-yellow-100 text-yellow-700 border-yellow-300' }];
+// Tailwind color classes mapped from hex
+const COLOR_MAP: Record<string, string> = {
+  '#EF4444': 'bg-red-100 text-red-700 border-red-300',
+  '#3B82F6': 'bg-blue-100 text-blue-700 border-blue-300',
+  '#22C55E': 'bg-green-100 text-green-700 border-green-300',
+  '#F97316': 'bg-orange-100 text-orange-700 border-orange-300',
+  '#8B5CF6': 'bg-purple-100 text-purple-700 border-purple-300',
+  '#EC4899': 'bg-pink-100 text-pink-700 border-pink-300',
+  '#06B6D4': 'bg-cyan-100 text-cyan-700 border-cyan-300',
+  '#6366F1': 'bg-indigo-100 text-indigo-700 border-indigo-300',
+  '#FBBF24': 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  '#10B981': 'bg-emerald-100 text-emerald-700 border-emerald-300'
+};
 
+const HEX_COLORS = Object.keys(COLOR_MAP);
 
-const COLOR_OPTIONS = [
-'bg-red-100 text-red-700 border-red-300',
-'bg-blue-100 text-blue-700 border-blue-300',
-'bg-green-100 text-green-700 border-green-300',
-'bg-purple-100 text-purple-700 border-purple-300',
-'bg-orange-100 text-orange-700 border-orange-300',
-'bg-yellow-100 text-yellow-700 border-yellow-300',
-'bg-pink-100 text-pink-700 border-pink-300',
-'bg-cyan-100 text-cyan-700 border-cyan-300',
-'bg-emerald-100 text-emerald-700 border-emerald-300',
-'bg-indigo-100 text-indigo-700 border-indigo-300'];
+function hexToTailwind(hex: string): string {
+  return COLOR_MAP[hex] || 'bg-gray-100 text-gray-700 border-gray-300';
+}
 
-
-// Default-Übungsleiter
-const DEFAULT_INSTRUCTORS = [
-'Mustermann Max',
-'Huber Franz',
-'Gruber Thomas',
-'Maier Stefan',
-'Berger Michael',
-'Wagner Peter'];
-
-
-
-// Österreichische Feiertage 2024-2026
+// Österreichische Feiertage 2024-2030
 const AUSTRIAN_HOLIDAYS: Record<number, string[]> = {
-  2024: [
-  '2024-01-01', '2024-01-06', '2024-04-01', '2024-05-01', '2024-05-09',
-  '2024-05-20', '2024-05-30', '2024-08-15', '2024-10-26', '2024-11-01',
-  '2024-12-08', '2024-12-25', '2024-12-26'],
-
-  2025: [
-  '2025-01-01', '2025-01-06', '2025-04-21', '2025-05-01', '2025-05-29',
-  '2025-06-09', '2025-06-19', '2025-08-15', '2025-10-26', '2025-11-01',
-  '2025-12-08', '2025-12-25', '2025-12-26'],
-
-  2026: [
-  '2026-01-01', '2026-01-06', '2026-04-06', '2026-05-01', '2026-05-14',
-  '2026-05-25', '2026-06-04', '2026-08-15', '2026-10-26', '2026-11-01',
-  '2026-12-08', '2026-12-25', '2026-12-26']
-
+  2024: ['2024-01-01', '2024-01-06', '2024-04-01', '2024-05-01', '2024-05-09', '2024-05-20', '2024-05-30', '2024-08-15', '2024-10-26', '2024-11-01', '2024-12-08', '2024-12-25', '2024-12-26'],
+  2025: ['2025-01-01', '2025-01-06', '2025-04-21', '2025-05-01', '2025-05-29', '2025-06-09', '2025-06-19', '2025-08-15', '2025-10-26', '2025-11-01', '2025-12-08', '2025-12-25', '2025-12-26'],
+  2026: ['2026-01-01', '2026-01-06', '2026-04-06', '2026-05-01', '2026-05-14', '2026-05-25', '2026-06-04', '2026-08-15', '2026-10-26', '2026-11-01', '2026-12-08', '2026-12-25', '2026-12-26'],
+  2027: ['2027-01-01', '2027-01-06', '2027-03-29', '2027-05-01', '2027-05-06', '2027-05-17', '2027-05-27', '2027-08-15', '2027-10-26', '2027-11-01', '2027-12-08', '2027-12-25', '2027-12-26'],
+  2028: ['2028-01-01', '2028-01-06', '2028-04-17', '2028-05-01', '2028-05-25', '2028-06-05', '2028-06-15', '2028-08-15', '2028-10-26', '2028-11-01', '2028-12-08', '2028-12-25', '2028-12-26'],
+  2029: ['2029-01-01', '2029-01-06', '2029-04-02', '2029-05-01', '2029-05-10', '2029-05-21', '2029-05-31', '2029-08-15', '2029-10-26', '2029-11-01', '2029-12-08', '2029-12-25', '2029-12-26'],
+  2030: ['2030-01-01', '2030-01-06', '2030-04-22', '2030-05-01', '2030-05-30', '2030-06-10', '2030-06-20', '2030-08-15', '2030-10-26', '2030-11-01', '2030-12-08', '2030-12-25', '2030-12-26']
 };
 
 type PeriodType = 'H1' | 'H2' | 'Q1' | 'Q2' | 'Q3' | 'Q4';
@@ -129,24 +116,54 @@ function getMonthName(date: Date): string {
 }
 
 export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
+  // Current year as default
+  const currentYear = new Date().getFullYear();
+
   // Period selection
-  const [selectedYear, setSelectedYear] = useState(2025);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('Q1');
 
-  // Data
-  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
-  const [instructors, setInstructors] = useState<string[]>(DEFAULT_INSTRUCTORS);
-  const [scenarioTemplates, setScenarioTemplates] = useState<ScenarioTemplate[]>([]);
-  const [recurrenceRules, setRecurrenceRules] = useState<RecurrenceRule[]>([]);
+  // DB hooks
+  const { categories: dbCategories, loading: catLoading, addCategory: dbAddCategory, updateCategory: dbUpdateCategory, deleteCategory: dbDeleteCategory } = useTrainingCategories();
+  const { templates: dbTemplates, loading: tplLoading, addTemplate: dbAddTemplate, deleteTemplate: dbDeleteTemplate } = useScenarioTemplates();
+  const { rules: dbRules, loading: rulesLoading, addRule: dbAddRule, deleteRule: dbDeleteRule } = useRecurrenceRules();
+  const { plans: dbPlans, loading: plansLoading, savePlan: dbSavePlan, deletePlan: dbDeletePlan, fetchPlans } = useTrainingPlans();
+  const { instructors: dbInstructors, allUsers, loading: instructorsLoading, toggleInstructor } = useInstructors();
+
+  // Map DB data to local format
+  const categories: Category[] = useMemo(() =>
+  dbCategories.map((c) => ({ id: c.id, name: c.name, color: hexToTailwind(c.color) })),
+  [dbCategories]
+  );
+
+  const scenarioTemplates: ScenarioTemplate[] = useMemo(() =>
+  dbTemplates.map((t) => ({
+    id: t.id,
+    name: t.name,
+    categoryIds: t.category_ids,
+    defaultInstructor: t.default_instructor ?? undefined
+  })),
+  [dbTemplates]
+  );
+
+  const recurrenceRules: RecurrenceRule[] = useMemo(() =>
+  dbRules.map((r) => ({
+    id: r.id,
+    weekOfMonth: r.interval_weeks as 1 | 2 | 3 | 4 | 5,
+    scenarioTemplateId: r.scenario_template_id ?? ''
+  })).filter((r) => r.scenarioTemplateId),
+  [dbRules]
+  );
+
+  const instructorNames = useMemo(() => dbInstructors.map((i) => i.full_name), [dbInstructors]);
+
+  // Local session state
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
 
   // UI State
-  const [activeTab, setActiveTab] = useState<'plan' | 'templates' | 'settings' | 'instructors'>('plan');
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [activeTab, setActiveTab] = useState<'plan' | 'templates' | 'settings' | 'instructors' | 'saved'>('plan');
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryColor, setNewCategoryColor] = useState(COLOR_OPTIONS[0]);
-  const [newInstructorName, setNewInstructorName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState(HEX_COLORS[0]);
 
   // Template editing
   const [newTemplateName, setNewTemplateName] = useState('');
@@ -157,15 +174,19 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   const [newRuleWeek, setNewRuleWeek] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [newRuleTemplateId, setNewRuleTemplateId] = useState('');
 
+  // Save plan state
+  const [planName, setPlanName] = useState('');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   // Calculate date range and wednesdays
   const dateRange = useMemo(() => getDateRangeForPeriod(selectedYear, selectedPeriod), [selectedYear, selectedPeriod]);
   const wednesdays = useMemo(() => getWednesdaysInRange(dateRange.start, dateRange.end), [dateRange]);
 
-  // Group sessions by month for display
+  // Group sessions by month
   const sessionsByMonth = useMemo(() => {
     const grouped: {month: string;sessions: TrainingSession[];}[] = [];
     let currentMonth = '';
-
     sessions.forEach((session) => {
       const month = getMonthName(session.date);
       if (month !== currentMonth) {
@@ -175,17 +196,15 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
         grouped[grouped.length - 1].sessions.push(session);
       }
     });
-
     return grouped;
   }, [sessions]);
 
-  // Initialize sessions with recurrence rules applied
+  // Initialize sessions with recurrence rules
   const initializeSessions = () => {
     const newSessions: TrainingSession[] = wednesdays.map((date) => {
       const weekNum = getWeekOfMonth(date);
       const rule = recurrenceRules.find((r) => r.weekOfMonth === weekNum);
       const template = rule ? scenarioTemplates.find((t) => t.id === rule.scenarioTemplateId) : null;
-
       return {
         id: date.toISOString(),
         date,
@@ -210,9 +229,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
       const has = s.categoryIds.includes(categoryId);
       return {
         ...s,
-        categoryIds: has ?
-        s.categoryIds.filter((c) => c !== categoryId) :
-        [...s.categoryIds, categoryId]
+        categoryIds: has ? s.categoryIds.filter((c) => c !== categoryId) : [...s.categoryIds, categoryId]
       };
     }));
   };
@@ -221,60 +238,58 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
     setSessions((prev) => prev.filter((s) => s.id !== id));
   };
 
-  // Instructor management
-  const addInstructor = () => {
-    if (!newInstructorName.trim()) return;
-    if (instructors.includes(newInstructorName.trim())) return;
-    setInstructors((prev) => [...prev, newInstructorName.trim()]);
-    setNewInstructorName('');
-  };
-
-  const deleteInstructor = (name: string) => {
-    setInstructors((prev) => prev.filter((i) => i !== name));
-  };
-
   // Category management
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCategoryName.trim()) return;
-    const newCat: Category = {
-      id: `cat-${Date.now()}`,
-      name: newCategoryName.trim(),
-      color: newCategoryColor
-    };
-    setCategories((prev) => [...prev, newCat]);
-    setNewCategoryName('');
-    setNewCategoryColor(COLOR_OPTIONS[0]);
+    try {
+      await dbAddCategory(newCategoryName.trim(), newCategoryColor);
+      setNewCategoryName('');
+      setNewCategoryColor(HEX_COLORS[0]);
+    } catch (e) {
+      console.error('Failed to add category:', e);
+    }
   };
 
-  const updateCategory = (id: string, updates: Partial<Category>) => {
-    setCategories((prev) => prev.map((c) => c.id === id ? { ...c, ...updates } : c));
+  const updateCategory = async (id: string, color: string) => {
+    try {
+      await dbUpdateCategory(id, { color });
+    } catch (e) {
+      console.error('Failed to update category:', e);
+    }
   };
 
-  const deleteCategory = (id: string) => {
-    setCategories((prev) => prev.filter((c) => c.id !== id));
-    // Remove from sessions and templates
-    setSessions((prev) => prev.map((s) => ({ ...s, categoryIds: s.categoryIds.filter((c) => c !== id) })));
-    setScenarioTemplates((prev) => prev.map((t) => ({ ...t, categoryIds: t.categoryIds.filter((c) => c !== id) })));
+  const deleteCategory = async (id: string) => {
+    try {
+      await dbDeleteCategory(id);
+      setSessions((prev) => prev.map((s) => ({ ...s, categoryIds: s.categoryIds.filter((c) => c !== id) })));
+    } catch (e) {
+      console.error('Failed to delete category:', e);
+    }
   };
 
-  // Scenario template management
-  const addScenarioTemplate = () => {
+  // Template management
+  const addScenarioTemplate = async () => {
     if (!newTemplateName.trim()) return;
-    const newTemplate: ScenarioTemplate = {
-      id: `tpl-${Date.now()}`,
-      name: newTemplateName.trim(),
-      categoryIds: newTemplateCategoryIds,
-      defaultInstructor: newTemplateInstructor || undefined
-    };
-    setScenarioTemplates((prev) => [...prev, newTemplate]);
-    setNewTemplateName('');
-    setNewTemplateCategoryIds([]);
-    setNewTemplateInstructor('');
+    try {
+      await dbAddTemplate({
+        name: newTemplateName.trim(),
+        category_ids: newTemplateCategoryIds,
+        default_instructor: newTemplateInstructor || undefined
+      });
+      setNewTemplateName('');
+      setNewTemplateCategoryIds([]);
+      setNewTemplateInstructor('');
+    } catch (e) {
+      console.error('Failed to add template:', e);
+    }
   };
 
-  const deleteScenarioTemplate = (id: string) => {
-    setScenarioTemplates((prev) => prev.filter((t) => t.id !== id));
-    setRecurrenceRules((prev) => prev.filter((r) => r.scenarioTemplateId !== id));
+  const deleteScenarioTemplate = async (id: string) => {
+    try {
+      await dbDeleteTemplate(id);
+    } catch (e) {
+      console.error('Failed to delete template:', e);
+    }
   };
 
   const applyTemplateToSession = (sessionId: string, template: ScenarioTemplate) => {
@@ -286,145 +301,236 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   };
 
   // Recurrence rules
-  const addRecurrenceRule = () => {
+  const addRecurrenceRule = async () => {
     if (!newRuleTemplateId) return;
-    // Remove existing rule for same week
-    const filtered = recurrenceRules.filter((r) => r.weekOfMonth !== newRuleWeek);
-    setRecurrenceRules([...filtered, {
-      id: `rule-${Date.now()}`,
-      weekOfMonth: newRuleWeek,
-      scenarioTemplateId: newRuleTemplateId
-    }]);
+    try {
+      await dbAddRule({
+        name: `${newRuleWeek}. Mittwoch`,
+        interval_weeks: newRuleWeek,
+        scenario_template_id: newRuleTemplateId
+      });
+    } catch (e) {
+      console.error('Failed to add rule:', e);
+    }
   };
 
-  const deleteRecurrenceRule = (id: string) => {
-    setRecurrenceRules((prev) => prev.filter((r) => r.id !== id));
+  const deleteRecurrenceRule = async (id: string) => {
+    try {
+      await dbDeleteRule(id);
+    } catch (e) {
+      console.error('Failed to delete rule:', e);
+    }
+  };
+
+  // Save plan
+  const savePlan = async () => {
+    if (!planName.trim() || sessions.length === 0) return;
+    setSaving(true);
+    try {
+      const sessionsForDb: DbTrainingSession[] = sessions.map((s) => ({
+        id: s.id,
+        date: s.date.toISOString(),
+        time: s.time,
+        topic: s.topic,
+        categoryIds: s.categoryIds,
+        instructor: s.instructor,
+        notes: s.notes,
+        isHoliday: s.isHoliday
+      }));
+      await dbSavePlan({
+        name: planName.trim(),
+        year: selectedYear,
+        period: selectedPeriod,
+        sessions: sessionsForDb
+      });
+      setPlanName('');
+      setShowSaveDialog(false);
+    } catch (e) {
+      console.error('Failed to save plan:', e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Load saved plan
+  const loadPlan = (plan: typeof dbPlans[0]) => {
+    const loadedSessions: TrainingSession[] = plan.sessions.map((s) => ({
+      ...s,
+      date: new Date(s.date)
+    }));
+    setSessions(loadedSessions);
+    setSelectedYear(plan.year);
+    setSelectedPeriod(plan.period as PeriodType);
+    setActiveTab('plan');
   };
 
   const getCategoryById = (id: string) => categories.find((c) => c.id === id);
+  const getDbCategoryById = (id: string) => dbCategories.find((c) => c.id === id);
+
+  const loading = catLoading || tplLoading || rulesLoading || instructorsLoading;
+
+  if (loading) {
+    return (
+      <div data-ev-id="ev_fe761164b1" className="flex items-center justify-center h-64">
+        <div data-ev-id="ev_4ed72fe3e3" className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>);
+
+  }
 
   return (
-    <div data-ev-id="ev_62dac0eb66" className="space-y-6">
+    <div data-ev-id="ev_c9375e9a92" className="space-y-6">
       {/* Header */}
-      <div data-ev-id="ev_7747045590" className="flex items-center justify-between">
-        <div data-ev-id="ev_b379e845e6" className="flex items-center gap-4">
-          <button data-ev-id="ev_176b6f4056" onClick={onBack} className="p-2 hover:bg-muted rounded-lg transition-colors">
+      <div data-ev-id="ev_96e1db1443" className="flex items-center justify-between">
+        <div data-ev-id="ev_12d211717e" className="flex items-center gap-4">
+          <button data-ev-id="ev_d999c25751" onClick={onBack} className="p-2 hover:bg-muted rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div data-ev-id="ev_bc0125f795">
-            <h1 data-ev-id="ev_2f22a3df2f" className="text-2xl font-bold text-foreground">Übungsplan Generator</h1>
-            <p data-ev-id="ev_b2f0bffe70" className="text-muted-foreground">A3 Übungsplan für die Feuerwehr erstellen</p>
+          <div data-ev-id="ev_49ebf34ddf">
+            <h1 data-ev-id="ev_0dbebb4210" className="text-2xl font-bold text-foreground">Übungsplan Generator</h1>
+            <p data-ev-id="ev_a239011ac1" className="text-muted-foreground">A3 Übungsplan für die Feuerwehr erstellen</p>
           </div>
         </div>
-        {sessions.length > 0 &&
-        <button data-ev-id="ev_78d76fc5d1"
-        onClick={() => alert('PDF Export kommt als nächstes!')}
-        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            PDF Exportieren (A3)
-          </button>
-        }
+        <div data-ev-id="ev_ded24b5113" className="flex gap-2">
+          {sessions.length > 0 &&
+          <>
+              <button data-ev-id="ev_d66b8eb6ef"
+            onClick={() => setShowSaveDialog(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+
+                <Save className="w-4 h-4" />
+                Speichern
+              </button>
+              <button data-ev-id="ev_618903f6bd"
+            onClick={() => alert('PDF Export kommt als nächstes!')}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
+
+                <Download className="w-4 h-4" />
+                PDF Exportieren (A3)
+              </button>
+            </>
+          }
+        </div>
       </div>
+
+      {/* Save Dialog */}
+      {showSaveDialog &&
+      <div data-ev-id="ev_94a48bc8d1" className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div data-ev-id="ev_ecc13dd937" className="bg-card border border-border rounded-xl p-6 w-full max-w-md">
+            <h3 data-ev-id="ev_85b71be092" className="text-lg font-semibold mb-4">Übungsplan speichern</h3>
+            <input data-ev-id="ev_6c17424884"
+          type="text"
+          value={planName}
+          onChange={(e) => setPlanName(e.target.value)}
+          placeholder="Name des Plans (z.B. Übungsplan Q1 2025)"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background mb-4" />
+
+            <div data-ev-id="ev_e14d7d947d" className="flex gap-2 justify-end">
+              <button data-ev-id="ev_e245c28515"
+            onClick={() => setShowSaveDialog(false)}
+            className="px-4 py-2 border border-border rounded-lg hover:bg-muted">
+
+                Abbrechen
+              </button>
+              <button data-ev-id="ev_44cf86aeb6"
+            onClick={savePlan}
+            disabled={!planName.trim() || saving}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2">
+
+                {saving ? 'Speichern...' : 'Speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       {/* Tabs */}
-      <div data-ev-id="ev_7e9ce8eb01" className="flex gap-2 border-b border-border">
-        <button data-ev-id="ev_a834a00357"
-        onClick={() => setActiveTab('plan')}
-        className={`px-4 py-2 font-medium border-b-2 -mb-px transition-colors ${
-        activeTab === 'plan' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`
+      <div data-ev-id="ev_94eba8cd2f" className="flex gap-2 border-b border-border overflow-x-auto">
+        {[
+        { id: 'plan', icon: Calendar, label: 'Übungsplan' },
+        { id: 'saved', icon: FolderOpen, label: 'Gespeicherte Pläne' },
+        { id: 'templates', icon: Copy, label: 'Vorlagen & Regeln' },
+        { id: 'settings', icon: Settings, label: 'Kategorien' },
+        { id: 'instructors', icon: Users, label: 'Übungsleiter' }].
+        map((tab) =>
+        <button data-ev-id="ev_517f65a863"
+        key={tab.id}
+        onClick={() => setActiveTab(tab.id as typeof activeTab)}
+        className={`px-4 py-2 font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
+        activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`
         }>
-          <Calendar className="w-4 h-4 inline mr-2" />
-          Übungsplan
-        </button>
-        <button data-ev-id="ev_023d21342a"
-        onClick={() => setActiveTab('templates')}
-        className={`px-4 py-2 font-medium border-b-2 -mb-px transition-colors ${
-        activeTab === 'templates' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`
-        }>
-          <Copy className="w-4 h-4 inline mr-2" />
-          Vorlagen & Regeln
-        </button>
-        <button data-ev-id="ev_36d23d684d"
-        onClick={() => setActiveTab('settings')}
-        className={`px-4 py-2 font-medium border-b-2 -mb-px transition-colors ${
-        activeTab === 'settings' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`
-        }>
-          <Settings className="w-4 h-4 inline mr-2" />
-          Kategorien
-        </button>
-        <button data-ev-id="ev_5ed3e3d461"
-        onClick={() => setActiveTab('instructors')}
-        className={`px-4 py-2 font-medium border-b-2 -mb-px transition-colors ${
-        activeTab === 'instructors' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`
-        }>
-          <Users className="w-4 h-4 inline mr-2" />
-          Übungsleiter
-        </button>
+
+            <tab.icon className="w-4 h-4 inline mr-2" />
+            {tab.label}
+          </button>
+        )}
       </div>
 
-      {/* Tab Content */}
+      {/* Plan Tab */}
       {activeTab === 'plan' &&
-      <div data-ev-id="ev_69a5cb0e1e" className="space-y-6">
+      <div data-ev-id="ev_81aa411549" className="space-y-6">
           {/* Period Selection */}
-          <div data-ev-id="ev_fa9f533d3b" className="bg-card border border-border rounded-xl p-6">
-            <div data-ev-id="ev_02d3c71389" className="flex flex-wrap items-center gap-4">
-              <div data-ev-id="ev_5b012759bf" className="flex items-center gap-2">
-                <button data-ev-id="ev_303a58b11b" onClick={() => setSelectedYear((y) => y - 1)} className="p-2 hover:bg-muted rounded-lg">
+          <div data-ev-id="ev_0ab8a74816" className="bg-card border border-border rounded-xl p-6">
+            <div data-ev-id="ev_e06aa929ed" className="flex flex-wrap items-center gap-4">
+              <div data-ev-id="ev_5717b02958" className="flex items-center gap-2">
+                <button data-ev-id="ev_77f0cf7b1e" onClick={() => setSelectedYear((y) => y - 1)} className="p-2 hover:bg-muted rounded-lg">
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span data-ev-id="ev_baf468dde2" className="text-xl font-bold min-w-[80px] text-center">{selectedYear}</span>
-                <button data-ev-id="ev_e5d80b9a1e" onClick={() => setSelectedYear((y) => y + 1)} className="p-2 hover:bg-muted rounded-lg">
+                <span data-ev-id="ev_53ec98d4b1" className="text-xl font-bold min-w-[80px] text-center">{selectedYear}</span>
+                <button data-ev-id="ev_fd045f5f2b" onClick={() => setSelectedYear((y) => y + 1)} className="p-2 hover:bg-muted rounded-lg">
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
-              <div data-ev-id="ev_522b61c7ce" className="flex gap-1 bg-muted p-1 rounded-lg">
+              <div data-ev-id="ev_a075128ff2" className="flex gap-1 bg-muted p-1 rounded-lg">
                 {(['Q1', 'Q2', 'Q3', 'Q4'] as PeriodType[]).map((p) =>
-              <button data-ev-id="ev_e1cf7dc2ce"
+              <button data-ev-id="ev_11331da984"
               key={p}
               onClick={() => setSelectedPeriod(p)}
               className={`px-3 py-1.5 rounded-md font-medium text-sm transition-colors ${
               selectedPeriod === p ? 'bg-primary text-primary-foreground' : 'hover:bg-background'}`
               }>
+
                     {p}
                   </button>
               )}
               </div>
               
-              <div data-ev-id="ev_2794811d1d" className="flex gap-1 bg-muted p-1 rounded-lg">
+              <div data-ev-id="ev_ea0be6f102" className="flex gap-1 bg-muted p-1 rounded-lg">
                 {(['H1', 'H2'] as PeriodType[]).map((p) =>
-              <button data-ev-id="ev_c1091b3bd7"
+              <button data-ev-id="ev_670793a071"
               key={p}
               onClick={() => setSelectedPeriod(p)}
               className={`px-3 py-1.5 rounded-md font-medium text-sm transition-colors ${
               selectedPeriod === p ? 'bg-primary text-primary-foreground' : 'hover:bg-background'}`
               }>
+
                     {p === 'H1' ? '1. Halbjahr' : '2. Halbjahr'}
                   </button>
               )}
               </div>
 
-              <button data-ev-id="ev_2f002c9fbf"
+              <button data-ev-id="ev_4e4266d162"
             onClick={initializeSessions}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 ml-auto">
+
                 <RotateCcw className="w-4 h-4" />
                 {sessions.length > 0 ? 'Neu generieren' : 'Termine generieren'}
               </button>
             </div>
 
-            <div data-ev-id="ev_c5413c8ec1" className="mt-4 flex gap-4 text-sm">
-              <span data-ev-id="ev_6a2a17bcde"><strong data-ev-id="ev_dd6cecfff6">{wednesdays.length}</strong> Mittwoche</span>
-              <span data-ev-id="ev_0825d42270" className="text-orange-600"><strong data-ev-id="ev_4e4a792cd3">{wednesdays.filter((d) => isHoliday(d)).length}</strong> Feiertage</span>
+            <div data-ev-id="ev_a0146afb36" className="mt-4 flex gap-4 text-sm">
+              <span data-ev-id="ev_58c349628d"><strong data-ev-id="ev_b53b30c315">{wednesdays.length}</strong> Mittwoche</span>
+              <span data-ev-id="ev_503454de59" className="text-orange-600"><strong data-ev-id="ev_c1a19aac01">{wednesdays.filter((d) => isHoliday(d)).length}</strong> Feiertage</span>
               {recurrenceRules.length > 0 &&
-            <span data-ev-id="ev_8d1fce5322" className="text-green-600"><strong data-ev-id="ev_582ed624aa">{recurrenceRules.length}</strong> Wiederholungsregeln aktiv</span>
+            <span data-ev-id="ev_881fc1dfd8" className="text-green-600"><strong data-ev-id="ev_41d1b02b12">{recurrenceRules.length}</strong> Wiederholungsregeln aktiv</span>
             }
             </div>
           </div>
 
           {/* Category Legend */}
-          <div data-ev-id="ev_bb9707529b" className="flex flex-wrap gap-2">
+          <div data-ev-id="ev_72f481a1cf" className="flex flex-wrap gap-2">
             {categories.map((cat) =>
-          <span data-ev-id="ev_a110750e17" key={cat.id} className={`px-3 py-1 rounded-full text-sm font-medium border ${cat.color}`}>
+          <span data-ev-id="ev_503ba29805" key={cat.id} className={`px-3 py-1 rounded-full text-sm font-medium border ${cat.color}`}>
                 {cat.name}
               </span>
           )}
@@ -432,58 +538,55 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
 
           {/* Sessions Table */}
           {sessions.length > 0 ?
-        <div data-ev-id="ev_bc8c060181" className="space-y-6">
+        <div data-ev-id="ev_767da81681" className="space-y-6">
               {sessionsByMonth.map(({ month, sessions: monthSessions }) =>
-          <div data-ev-id="ev_dd0945a101" key={month} className="bg-card border border-border rounded-xl overflow-hidden">
-                  {/* Month Header */}
-                  <div data-ev-id="ev_8c9624ec32" className="bg-[#C8102E] text-white px-4 py-2 font-bold text-lg">
+          <div data-ev-id="ev_d2edcd9198" key={month} className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div data-ev-id="ev_f6536a4dd8" className="bg-[#C8102E] text-white px-4 py-2 font-bold text-lg">
                     {month} {selectedYear}
                   </div>
                   
-                  <div data-ev-id="ev_f251e7a587" className="overflow-x-auto">
-                    <table data-ev-id="ev_280f2b1aaa" className="w-full">
-                      <thead data-ev-id="ev_e0617d1079">
-                        <tr data-ev-id="ev_611cf0dc04" className="bg-gray-100 text-sm">
-                          <th data-ev-id="ev_5133f88906" className="px-3 py-2 text-left font-semibold w-[90px]">Datum</th>
-                          <th data-ev-id="ev_3bd838b999" className="px-2 py-2 text-left font-semibold w-[65px]">Uhrzeit</th>
-                          <th data-ev-id="ev_b3c4ed1cb2" className="px-2 py-2 text-left font-semibold">Übungsthema</th>
-                          <th data-ev-id="ev_9a2ca8bd15" className="px-2 py-2 text-left font-semibold w-[180px]">Kategorien</th>
-                          <th data-ev-id="ev_64a59c24e0" className="px-2 py-2 text-left font-semibold w-[150px]">Übungsleiter</th>
-                          <th data-ev-id="ev_9d4dfb24a1" className="px-2 py-2 text-left font-semibold w-[100px]">Anmerkungen</th>
-                          <th data-ev-id="ev_bde837891b" className="px-2 py-2 text-left font-semibold w-[90px]">Vorlage</th>
-                          <th data-ev-id="ev_94193a77a7" className="px-2 py-2 text-center font-semibold w-[40px]"></th>
+                  <div data-ev-id="ev_01d33c66ed" className="overflow-x-auto">
+                    <table data-ev-id="ev_490ed04263" className="w-full">
+                      <thead data-ev-id="ev_2e502117de">
+                        <tr data-ev-id="ev_2da10f53b2" className="bg-gray-100 text-sm">
+                          <th data-ev-id="ev_dddc83d05b" className="px-3 py-2 text-left font-semibold w-[90px]">Datum</th>
+                          <th data-ev-id="ev_5f42137efb" className="px-2 py-2 text-left font-semibold w-[65px]">Uhrzeit</th>
+                          <th data-ev-id="ev_53ded59bef" className="px-2 py-2 text-left font-semibold">Übungsthema</th>
+                          <th data-ev-id="ev_19113849b4" className="px-2 py-2 text-left font-semibold w-[180px]">Kategorien</th>
+                          <th data-ev-id="ev_e4e249fa4a" className="px-2 py-2 text-left font-semibold w-[150px]">Übungsleiter</th>
+                          <th data-ev-id="ev_f2a54c5be1" className="px-2 py-2 text-left font-semibold w-[100px]">Anmerkungen</th>
+                          <th data-ev-id="ev_80bd8fd05e" className="px-2 py-2 text-left font-semibold w-[90px]">Vorlage</th>
+                          <th data-ev-id="ev_8374afb55e" className="px-2 py-2 text-center font-semibold w-[40px]"></th>
                         </tr>
                       </thead>
-                      <tbody data-ev-id="ev_4ae88cf19a">
+                      <tbody data-ev-id="ev_a7317e3b1a">
                         {monthSessions.map((session, idx) =>
-                  <tr data-ev-id="ev_e3b1f0f512"
+                  <tr data-ev-id="ev_0c83914dbd"
                   key={session.id}
-                  className={`border-t border-border ${
-                  session.isHoliday ? 'bg-orange-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`
-                  }
-                  style={{ height: '72px' }} // 3 lines height
-                  >
-                            <td data-ev-id="ev_917f76aaaa" className="px-4 py-2 align-top">
-                              <div data-ev-id="ev_6b94a89050" className="font-medium">
+                  className={`border-t border-border ${session.isHoliday ? 'bg-orange-50' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                  style={{ height: '72px' }}>
+
+                            <td data-ev-id="ev_367852b113" className="px-4 py-2 align-top">
+                              <div data-ev-id="ev_3dccd43629" className="font-medium">
                                 {session.date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit' })}
                               </div>
-                              <div data-ev-id="ev_4fdc69e265" className="text-xs text-muted-foreground">
+                              <div data-ev-id="ev_63b381ff60" className="text-xs text-muted-foreground">
                                 {session.date.toLocaleDateString('de-AT', { weekday: 'short' })}
                               </div>
                               {session.isHoliday &&
-                      <span data-ev-id="ev_6efebf7377" className="text-xs text-orange-600 font-medium">Feiertag</span>
+                      <span data-ev-id="ev_d38d09dcc1" className="text-xs text-orange-600 font-medium">Feiertag</span>
                       }
                             </td>
-                            <td data-ev-id="ev_4c0ded7e1e" className="px-4 py-2 align-top">
-                              <input data-ev-id="ev_fe4225b320"
+                            <td data-ev-id="ev_f4a5b62bbc" className="px-4 py-2 align-top">
+                              <input data-ev-id="ev_0e0910fb1d"
                       type="time"
                       value={session.time}
                       onChange={(e) => updateSession(session.id, { time: e.target.value })}
                       className="px-2 py-1 border border-border rounded bg-background w-full text-sm" />
 
                             </td>
-                            <td data-ev-id="ev_1a7d7407aa" className="px-4 py-2 align-top">
-                              <textarea data-ev-id="ev_911a34b98b"
+                            <td data-ev-id="ev_80aaa2bcae" className="px-4 py-2 align-top">
+                              <textarea data-ev-id="ev_3dd20b85aa"
                       value={session.topic}
                       onChange={(e) => updateSession(session.id, { topic: e.target.value })}
                       placeholder={"z.B. Löschangriff\nTHL PKW Bergung"}
@@ -491,42 +594,41 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                       className="px-2 py-1 border border-border rounded bg-background w-full text-sm resize-none leading-snug" />
 
                             </td>
-                            <td data-ev-id="ev_70cfde5a71" className="px-4 py-2 align-top">
-                              <div data-ev-id="ev_10c87431df" className="flex flex-wrap gap-1">
+                            <td data-ev-id="ev_ca3111485f" className="px-4 py-2 align-top">
+                              <div data-ev-id="ev_0d4805142d" className="flex flex-wrap gap-1">
                                 {categories.map((cat) => {
                           const isSelected = session.categoryIds.includes(cat.id);
                           return (
-                            <button data-ev-id="ev_e51d1819b3"
+                            <button data-ev-id="ev_3f1fbee55a"
                             key={cat.id}
                             onClick={() => toggleSessionCategory(session.id, cat.id)}
                             className={`px-2 py-0.5 rounded text-xs font-medium border transition-all ${
                             isSelected ? cat.color : 'bg-gray-100 text-gray-400 border-gray-200 opacity-50'}`
                             }>
+
                                       {cat.name}
                                     </button>);
 
                         })}
                               </div>
                             </td>
-                            <td data-ev-id="ev_0f5d2c282c" className="px-4 py-2 align-top">
-                              <div data-ev-id="ev_9f82c7e206" className="relative">
-                                <input data-ev-id="ev_156e56f311"
-                        type="text"
-                        list={`instructors-${session.id}`}
-                        value={session.instructor}
-                        onChange={(e) => updateSession(session.id, { instructor: e.target.value })}
-                        placeholder="Name wählen/eingeben"
-                        className="px-2 py-1 border border-border rounded bg-background w-full text-sm" />
+                            <td data-ev-id="ev_9a3429f307" className="px-4 py-2 align-top">
+                              <input data-ev-id="ev_b9036c3b95"
+                      type="text"
+                      list={`instructors-${session.id}`}
+                      value={session.instructor}
+                      onChange={(e) => updateSession(session.id, { instructor: e.target.value })}
+                      placeholder="Name wählen/eingeben"
+                      className="px-2 py-1 border border-border rounded bg-background w-full text-sm" />
 
-                                <datalist data-ev-id="ev_32b329d6a6" id={`instructors-${session.id}`}>
-                                  {instructors.map((name) =>
-                          <option data-ev-id="ev_35085f66b2" key={name} value={name} />
-                          )}
-                                </datalist>
-                              </div>
+                              <datalist data-ev-id="ev_5aa7cfb385" id={`instructors-${session.id}`}>
+                                {instructorNames.map((name) =>
+                        <option data-ev-id="ev_f2f0f51475" key={name} value={name} />
+                        )}
+                              </datalist>
                             </td>
-                            <td data-ev-id="ev_d384c02ff9" className="px-4 py-2 align-top">
-                              <input data-ev-id="ev_68c5e7e648"
+                            <td data-ev-id="ev_260164a127" className="px-4 py-2 align-top">
+                              <input data-ev-id="ev_25dbb6e6bc"
                       type="text"
                       value={session.notes}
                       onChange={(e) => updateSession(session.id, { notes: e.target.value })}
@@ -534,9 +636,9 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                       className="px-2 py-1 border border-border rounded bg-background w-full text-sm" />
 
                             </td>
-                            <td data-ev-id="ev_0e05104671" className="px-2 py-2 align-top">
+                            <td data-ev-id="ev_b89905fb3d" className="px-2 py-2 align-top">
                               {scenarioTemplates.length > 0 ?
-                      <select data-ev-id="ev_afbfee6a98"
+                      <select data-ev-id="ev_39a795caad"
                       onChange={(e) => {
                         const tpl = scenarioTemplates.find((t) => t.id === e.target.value);
                         if (tpl) {
@@ -546,20 +648,22 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                       }}
                       defaultValue=""
                       className="px-2 py-1 border border-border rounded bg-background w-full text-sm">
-                                  <option data-ev-id="ev_6d923cf69a" value="">Vorlage...</option>
+
+                                  <option data-ev-id="ev_234f16d213" value="">Vorlage...</option>
                                   {scenarioTemplates.map((tpl) =>
-                        <option data-ev-id="ev_6a9a4583a3" key={tpl.id} value={tpl.id}>{tpl.name}</option>
+                        <option data-ev-id="ev_0992d10bd5" key={tpl.id} value={tpl.id}>{tpl.name}</option>
                         )}
                                 </select> :
 
-                      <span data-ev-id="ev_60a50c45a9" className="text-xs text-muted-foreground">-</span>
+                      <span data-ev-id="ev_2cd1c6129c" className="text-xs text-muted-foreground">-</span>
                       }
                             </td>
-                            <td data-ev-id="ev_fb8f10debb" className="px-2 py-2 align-top text-center">
-                              <button data-ev-id="ev_459b7ed69a"
+                            <td data-ev-id="ev_497016e029" className="px-2 py-2 align-top text-center">
+                              <button data-ev-id="ev_b48889a91a"
                       onClick={() => deleteSession(session.id)}
                       className="p-1 hover:bg-red-100 text-red-500 rounded transition-colors"
                       title="Termin löschen">
+
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </td>
@@ -572,14 +676,14 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           )}
             </div> :
 
-        <div data-ev-id="ev_1a5c32510d" className="bg-card border border-border rounded-xl p-12 text-center">
+        <div data-ev-id="ev_61f4fabbec" className="bg-card border border-border rounded-xl p-12 text-center">
               <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 data-ev-id="ev_013e52b068" className="text-lg font-semibold mb-2">Noch keine Termine</h3>
-              <p data-ev-id="ev_13a101adca" className="text-muted-foreground mb-4">
+              <h3 data-ev-id="ev_c39b79efac" className="text-lg font-semibold mb-2">Noch keine Termine</h3>
+              <p data-ev-id="ev_8a000d8bca" className="text-muted-foreground mb-4">
                 Wähle einen Zeitraum und klicke auf "Termine generieren".
               </p>
               {scenarioTemplates.length === 0 &&
-          <p data-ev-id="ev_03e3c5ccad" className="text-sm text-muted-foreground">
+          <p data-ev-id="ev_c9c412904b" className="text-sm text-muted-foreground">
                   Tipp: Erstelle zuerst Vorlagen und Wiederholungsregeln im Tab "Vorlagen & Regeln".
                 </p>
           }
@@ -588,45 +692,98 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
         </div>
       }
 
+      {/* Saved Plans Tab */}
+      {activeTab === 'saved' &&
+      <div data-ev-id="ev_7d7392feb9" className="bg-card border border-border rounded-xl p-6">
+          <h3 data-ev-id="ev_acbd8f9cb9" className="text-lg font-semibold mb-4 flex items-center gap-2">
+            <FolderOpen className="w-5 h-5" />
+            Gespeicherte Übungspläne
+          </h3>
+          
+          {plansLoading ?
+        <div data-ev-id="ev_f91c8af034" className="flex justify-center py-8">
+              <div data-ev-id="ev_2264ffa066" className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+            </div> :
+        dbPlans.length > 0 ?
+        <div data-ev-id="ev_a71227b762" className="space-y-3">
+              {dbPlans.map((plan) =>
+          <div data-ev-id="ev_aa7a7fe558" key={plan.id} className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                  <div data-ev-id="ev_ed268728d0" className="flex-1">
+                    <div data-ev-id="ev_c971a6b844" className="font-medium text-lg">{plan.name}</div>
+                    <div data-ev-id="ev_0c47ab09e5" className="text-sm text-muted-foreground flex gap-4">
+                      <span data-ev-id="ev_b7bbaa35b9">{plan.year} - {plan.period}</span>
+                      <span data-ev-id="ev_36b47caefa">{plan.sessions.length} Termine</span>
+                      <span data-ev-id="ev_87c1b9b37f">Erstellt von {plan.creator_name}</span>
+                      <span data-ev-id="ev_4228581ba9">{new Date(plan.created_at).toLocaleDateString('de-AT')}</span>
+                    </div>
+                  </div>
+                  <button data-ev-id="ev_bee7ef22d6"
+            onClick={() => loadPlan(plan)}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
+
+                    <FolderOpen className="w-4 h-4" />
+                    Laden
+                  </button>
+                  <button data-ev-id="ev_b8bcfd498f"
+            onClick={() => dbDeletePlan(plan.id)}
+            className="p-2 hover:bg-red-100 text-red-600 rounded-lg"
+            title="Plan löschen">
+
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+          )}
+            </div> :
+
+        <div data-ev-id="ev_b63ef32440" className="text-center py-12 text-muted-foreground">
+              <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p data-ev-id="ev_e609c335f1">Noch keine Pläne gespeichert.</p>
+              <p data-ev-id="ev_c9be516697" className="text-sm mt-2">Erstelle einen Plan und speichere ihn zum späteren Abrufen.</p>
+            </div>
+        }
+        </div>
+      }
+
+      {/* Templates Tab */}
       {activeTab === 'templates' &&
-      <div data-ev-id="ev_30ef2dddd2" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div data-ev-id="ev_41a7c8a0d2" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Scenario Templates */}
-          <div data-ev-id="ev_f1a8cc39db" className="bg-card border border-border rounded-xl p-6">
-            <h3 data-ev-id="ev_104f7c62ad" className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <div data-ev-id="ev_f69223a9da" className="bg-card border border-border rounded-xl p-6">
+            <h3 data-ev-id="ev_7607d00e0c" className="text-lg font-semibold mb-4 flex items-center gap-2">
               <FileText className="w-5 h-5" />
               Szenarien-Vorlagen
             </h3>
-            <p data-ev-id="ev_2e4c6cbf05" className="text-sm text-muted-foreground mb-4">
+            <p data-ev-id="ev_bb8a7a7533" className="text-sm text-muted-foreground mb-4">
               Häufige Übungen als Vorlage speichern für schnelles Einfügen.
             </p>
 
-            {/* Existing Templates */}
             {scenarioTemplates.length > 0 &&
-          <div data-ev-id="ev_13bd413209" className="space-y-2 mb-4">
+          <div data-ev-id="ev_778b2636e0" className="space-y-2 mb-4">
                 {scenarioTemplates.map((tpl) =>
-            <div data-ev-id="ev_e9bdb505c7" key={tpl.id} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                    <div data-ev-id="ev_bfa883fd2d" className="flex-1">
-                      <div data-ev-id="ev_a7ff1cfefb" className="font-medium">{tpl.name}</div>
-                      <div data-ev-id="ev_3b7c65f9a6" className="flex flex-wrap gap-1 mt-1">
+            <div data-ev-id="ev_bcca8d85ba" key={tpl.id} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                    <div data-ev-id="ev_f405f72929" className="flex-1">
+                      <div data-ev-id="ev_25e8035d39" className="font-medium">{tpl.name}</div>
+                      <div data-ev-id="ev_293e7c25e9" className="flex flex-wrap gap-1 mt-1">
                         {tpl.categoryIds.map((catId) => {
                     const cat = getCategoryById(catId);
                     return cat ?
-                    <span data-ev-id="ev_3fb7b9db0d" key={catId} className={`px-2 py-0.5 rounded text-xs ${cat.color}`}>
+                    <span data-ev-id="ev_ba6b2d9d56" key={catId} className={`px-2 py-0.5 rounded text-xs ${cat.color}`}>
                               {cat.name}
                             </span> :
                     null;
                   })}
                       </div>
                       {tpl.defaultInstructor &&
-                <div data-ev-id="ev_ee006c6cb3" className="text-xs text-muted-foreground mt-1">
+                <div data-ev-id="ev_81a45b83ba" className="text-xs text-muted-foreground mt-1">
                           <Users className="w-3 h-3 inline mr-1" />
                           {tpl.defaultInstructor}
                         </div>
                 }
                     </div>
-                    <button data-ev-id="ev_0972b85ef2"
+                    <button data-ev-id="ev_e1f8a60e57"
               onClick={() => deleteScenarioTemplate(tpl.id)}
               className="p-1 hover:bg-red-100 text-red-600 rounded">
+
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -635,17 +792,17 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           }
 
             {/* Add Template Form */}
-            <div data-ev-id="ev_e0854744de" className="space-y-3 p-4 bg-muted/30 rounded-lg">
-              <input data-ev-id="ev_791f039385"
+            <div data-ev-id="ev_9830fce269" className="space-y-3 p-4 bg-muted/30 rounded-lg">
+              <input data-ev-id="ev_e0749de41e"
             type="text"
             value={newTemplateName}
             onChange={(e) => setNewTemplateName(e.target.value)}
             placeholder="Vorlagenname (z.B. Löschgruppenaufbau)"
             className="w-full px-3 py-2 border border-border rounded-lg bg-background" />
 
-              <div data-ev-id="ev_27ff03109a" className="flex flex-wrap gap-1">
+              <div data-ev-id="ev_e5f40d1c42" className="flex flex-wrap gap-1">
                 {categories.map((cat) =>
-              <button data-ev-id="ev_5858dd2bba"
+              <button data-ev-id="ev_51112ad00d"
               key={cat.id}
               onClick={() => setNewTemplateCategoryIds((prev) =>
               prev.includes(cat.id) ? prev.filter((c) => c !== cat.id) : [...prev, cat.id]
@@ -653,23 +810,26 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               className={`px-2 py-1 rounded text-xs font-medium border transition-all ${
               newTemplateCategoryIds.includes(cat.id) ? cat.color : 'bg-gray-100 text-gray-400 border-gray-200'}`
               }>
+
                     {cat.name}
                   </button>
               )}
               </div>
-              <select data-ev-id="ev_866ce3d28c"
+              <select data-ev-id="ev_9256542d8a"
             value={newTemplateInstructor}
             onChange={(e) => setNewTemplateInstructor(e.target.value)}
             className="w-full px-3 py-2 border border-border rounded-lg bg-background">
-                <option data-ev-id="ev_a73b2e5bf7" value="">Standard-Übungsleiter (optional)</option>
-                {instructors.map((name) =>
-              <option data-ev-id="ev_d46504d51c" key={name} value={name}>{name}</option>
+
+                <option data-ev-id="ev_5c82d3903e" value="">Standard-Übungsleiter (optional)</option>
+                {instructorNames.map((name) =>
+              <option data-ev-id="ev_652ab4c28d" key={name} value={name}>{name}</option>
               )}
               </select>
-              <button data-ev-id="ev_c7480a38ef"
+              <button data-ev-id="ev_4d2c014512"
             onClick={addScenarioTemplate}
             disabled={!newTemplateName.trim()}
             className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2">
+
                 <Plus className="w-4 h-4" />
                 Vorlage speichern
               </button>
@@ -677,30 +837,30 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           </div>
 
           {/* Recurrence Rules */}
-          <div data-ev-id="ev_3be9c2ede7" className="bg-card border border-border rounded-xl p-6">
-            <h3 data-ev-id="ev_6fb8e22f3e" className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <div data-ev-id="ev_e11c0adebb" className="bg-card border border-border rounded-xl p-6">
+            <h3 data-ev-id="ev_9ab1cc508e" className="text-lg font-semibold mb-4 flex items-center gap-2">
               <RotateCcw className="w-5 h-5" />
               Wiederholungsregeln
             </h3>
-            <p data-ev-id="ev_00376488b9" className="text-sm text-muted-foreground mb-4">
+            <p data-ev-id="ev_1f759527cd" className="text-sm text-muted-foreground mb-4">
               Automatische Zuweisung von Vorlagen basierend auf dem Mittwoch im Monat.
             </p>
 
-            {/* Existing Rules */}
             {recurrenceRules.length > 0 &&
-          <div data-ev-id="ev_89122eefcf" className="space-y-2 mb-4">
+          <div data-ev-id="ev_f355599447" className="space-y-2 mb-4">
                 {recurrenceRules.map((rule) => {
               const tpl = scenarioTemplates.find((t) => t.id === rule.scenarioTemplateId);
               return (
-                <div data-ev-id="ev_158cca88d5" key={rule.id} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                      <div data-ev-id="ev_3730272c83" className="flex-1">
-                        <span data-ev-id="ev_9f7667d8d0" className="font-medium">{rule.weekOfMonth}. Mittwoch</span>
-                        <span data-ev-id="ev_71c603ff29" className="text-muted-foreground mx-2">→</span>
-                        <span data-ev-id="ev_a2c62ed085" className="text-primary font-medium">{tpl?.name || 'Unbekannt'}</span>
+                <div data-ev-id="ev_45d6e82fa8" key={rule.id} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                      <div data-ev-id="ev_7e8248fffa" className="flex-1">
+                        <span data-ev-id="ev_3e9dd8e608" className="font-medium">{rule.weekOfMonth}. Mittwoch</span>
+                        <span data-ev-id="ev_562eb88f73" className="text-muted-foreground mx-2">→</span>
+                        <span data-ev-id="ev_7aaaf13847" className="text-primary font-medium">{tpl?.name || 'Unbekannt'}</span>
                       </div>
-                      <button data-ev-id="ev_0f57cac7b7"
+                      <button data-ev-id="ev_b765b2e32d"
                   onClick={() => deleteRecurrenceRule(rule.id)}
                   className="p-1 hover:bg-red-100 text-red-600 rounded">
+
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>);
@@ -709,40 +869,42 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               </div>
           }
 
-            {/* Add Rule Form */}
             {scenarioTemplates.length > 0 ?
-          <div data-ev-id="ev_7a9fac9b0a" className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                <div data-ev-id="ev_12b6bc1855" className="grid grid-cols-2 gap-3">
-                  <select data-ev-id="ev_fa0cc0d917"
+          <div data-ev-id="ev_d4228b33de" className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                <div data-ev-id="ev_6029e73f86" className="grid grid-cols-2 gap-3">
+                  <select data-ev-id="ev_1397d390b9"
               value={newRuleWeek}
               onChange={(e) => setNewRuleWeek(parseInt(e.target.value) as 1 | 2 | 3 | 4 | 5)}
               className="px-3 py-2 border border-border rounded-lg bg-background">
-                    <option data-ev-id="ev_6cec39ef0a" value={1}>1. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_18d6228b71" value={2}>2. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_399e99a546" value={3}>3. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_1087fc56d6" value={4}>4. Mittwoch im Monat</option>
-                    <option data-ev-id="ev_5ede26198b" value={5}>5. Mittwoch im Monat</option>
+
+                    <option data-ev-id="ev_9c4b1b212a" value={1}>1. Mittwoch im Monat</option>
+                    <option data-ev-id="ev_e888a82591" value={2}>2. Mittwoch im Monat</option>
+                    <option data-ev-id="ev_b41ef8eb5f" value={3}>3. Mittwoch im Monat</option>
+                    <option data-ev-id="ev_1897ff6e03" value={4}>4. Mittwoch im Monat</option>
+                    <option data-ev-id="ev_e42b439a64" value={5}>5. Mittwoch im Monat</option>
                   </select>
-                  <select data-ev-id="ev_d583e4e8b5"
+                  <select data-ev-id="ev_786cead83b"
               value={newRuleTemplateId}
               onChange={(e) => setNewRuleTemplateId(e.target.value)}
               className="px-3 py-2 border border-border rounded-lg bg-background">
-                    <option data-ev-id="ev_fc2644a467" value="">Vorlage wählen...</option>
+
+                    <option data-ev-id="ev_92291ea52d" value="">Vorlage wählen...</option>
                     {scenarioTemplates.map((tpl) =>
-                <option data-ev-id="ev_593cf4294a" key={tpl.id} value={tpl.id}>{tpl.name}</option>
+                <option data-ev-id="ev_39a7074541" key={tpl.id} value={tpl.id}>{tpl.name}</option>
                 )}
                   </select>
                 </div>
-                <button data-ev-id="ev_7adfcbe40c"
+                <button data-ev-id="ev_fad533942f"
             onClick={addRecurrenceRule}
             disabled={!newRuleTemplateId}
             className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2">
+
                   <Plus className="w-4 h-4" />
                   Regel hinzufügen
                 </button>
               </div> :
 
-          <div data-ev-id="ev_49d34dc812" className="p-4 bg-muted/30 rounded-lg text-center text-muted-foreground">
+          <div data-ev-id="ev_3e2ff79a5a" className="p-4 bg-muted/30 rounded-lg text-center text-muted-foreground">
                 Erstelle zuerst eine Szenarien-Vorlage.
               </div>
           }
@@ -750,35 +912,38 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
         </div>
       }
 
+      {/* Categories Tab */}
       {activeTab === 'settings' &&
-      <div data-ev-id="ev_ebad48787f" className="bg-card border border-border rounded-xl p-6">
-          <h3 data-ev-id="ev_62110ab8ef" className="text-lg font-semibold mb-4">Kategorien verwalten</h3>
-          <p data-ev-id="ev_ef3b1c3f60" className="text-sm text-muted-foreground mb-4">
+      <div data-ev-id="ev_3cf71e02b2" className="bg-card border border-border rounded-xl p-6">
+          <h3 data-ev-id="ev_3ebd6c2110" className="text-lg font-semibold mb-4">Kategorien verwalten</h3>
+          <p data-ev-id="ev_b4d2fb9e8e" className="text-sm text-muted-foreground mb-4">
             Kategorien für Übungstypen definieren. Jede Übung kann mehrere Kategorien haben.
           </p>
 
           {/* Existing Categories */}
-          <div data-ev-id="ev_4e0576916b" className="space-y-2 mb-6">
-            {categories.map((cat) =>
-          <div data-ev-id="ev_6e60772823" key={cat.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                <span data-ev-id="ev_4daf14553a" className={`px-3 py-1 rounded-full text-sm font-medium border ${cat.color}`}>
+          <div data-ev-id="ev_c0869daf68" className="space-y-2 mb-6">
+            {dbCategories.map((cat) =>
+          <div data-ev-id="ev_89ed1573c3" key={cat.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <span data-ev-id="ev_e868c5cff7" className={`px-3 py-1 rounded-full text-sm font-medium border ${hexToTailwind(cat.color)}`}>
                   {cat.name}
                 </span>
-                <div data-ev-id="ev_ead83c3172" className="flex-1" />
-                <div data-ev-id="ev_2da0e2da77" className="flex gap-1">
-                  {COLOR_OPTIONS.map((color) =>
-              <button data-ev-id="ev_3e502ea37a"
+                <div data-ev-id="ev_d02a8d0090" className="flex-1" />
+                <div data-ev-id="ev_30be3e87f7" className="flex gap-1">
+                  {HEX_COLORS.map((color) =>
+              <button data-ev-id="ev_65b8071fc3"
               key={color}
-              onClick={() => updateCategory(cat.id, { color })}
-              className={`w-6 h-6 rounded-full border-2 ${color.split(' ')[0]} ${
+              onClick={() => updateCategory(cat.id, color)}
+              className={`w-6 h-6 rounded-full border-2 ${
               cat.color === color ? 'ring-2 ring-primary ring-offset-2' : ''}`
-              } />
+              }
+              style={{ backgroundColor: color }} />
 
               )}
                 </div>
-                <button data-ev-id="ev_f6fe7af327"
+                <button data-ev-id="ev_5c4ba17367"
             onClick={() => deleteCategory(cat.id)}
             className="p-1 hover:bg-red-100 text-red-600 rounded ml-2">
+
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -786,10 +951,10 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           </div>
 
           {/* Add Category */}
-          <div data-ev-id="ev_92dd6c53e4" className="flex gap-3 items-end p-4 bg-muted/30 rounded-lg">
-            <div data-ev-id="ev_25cfa1a22e" className="flex-1">
-              <label data-ev-id="ev_3732157785" className="block text-sm font-medium mb-1">Neue Kategorie</label>
-              <input data-ev-id="ev_fc4ba9b505"
+          <div data-ev-id="ev_da97e22f21" className="flex gap-3 items-end p-4 bg-muted/30 rounded-lg">
+            <div data-ev-id="ev_8e251200fa" className="flex-1">
+              <label data-ev-id="ev_317df9acaa" className="block text-sm font-medium mb-1">Neue Kategorie</label>
+              <input data-ev-id="ev_6cd2aeaf30"
             type="text"
             value={newCategoryName}
             onChange={(e) => setNewCategoryName(e.target.value)}
@@ -797,24 +962,26 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
             className="w-full px-3 py-2 border border-border rounded-lg bg-background" />
 
             </div>
-            <div data-ev-id="ev_7a67af7b2b">
-              <label data-ev-id="ev_c6ba1d54e9" className="block text-sm font-medium mb-1">Farbe</label>
-              <div data-ev-id="ev_778b2636e0" className="flex gap-1">
-                {COLOR_OPTIONS.slice(0, 5).map((color) =>
-              <button data-ev-id="ev_2415911be5"
+            <div data-ev-id="ev_8dd5b302fc">
+              <label data-ev-id="ev_6f2c0e3676" className="block text-sm font-medium mb-1">Farbe</label>
+              <div data-ev-id="ev_a582f973a1" className="flex gap-1">
+                {HEX_COLORS.slice(0, 5).map((color) =>
+              <button data-ev-id="ev_06f0e7a64a"
               key={color}
               onClick={() => setNewCategoryColor(color)}
-              className={`w-8 h-8 rounded-full border-2 ${color.split(' ')[0]} ${
+              className={`w-8 h-8 rounded-full border-2 ${
               newCategoryColor === color ? 'ring-2 ring-primary ring-offset-2' : ''}`
-              } />
+              }
+              style={{ backgroundColor: color }} />
 
               )}
               </div>
             </div>
-            <button data-ev-id="ev_f0eb94415d"
+            <button data-ev-id="ev_207f359355"
           onClick={addCategory}
           disabled={!newCategoryName.trim()}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
+
               <Plus className="w-4 h-4" />
               Hinzufügen
             </button>
@@ -822,112 +989,107 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
         </div>
       }
 
+      {/* Instructors Tab */}
       {activeTab === 'instructors' &&
-      <div data-ev-id="ev_972576b74d" className="bg-card border border-border rounded-xl p-6">
-          <h3 data-ev-id="ev_ab2c4472bd" className="text-lg font-semibold mb-4">Übungsleiter verwalten</h3>
-          <p data-ev-id="ev_267dd8ba3f" className="text-sm text-muted-foreground mb-4">
-            Übungsleiter für die Dropdown-Auswahl im Übungsplan definieren.
+      <div data-ev-id="ev_e867390327" className="bg-card border border-border rounded-xl p-6">
+          <h3 data-ev-id="ev_f7d0401a0c" className="text-lg font-semibold mb-4">Übungsleiter verwalten</h3>
+          <p data-ev-id="ev_82d3f0dd86" className="text-sm text-muted-foreground mb-4">
+            Wähle aus den App-Benutzern aus, wer als Übungsleiter zur Verfügung steht.
           </p>
 
-          {/* Existing Instructors */}
-          <div data-ev-id="ev_69a0c595de" className="space-y-2 mb-6">
-            {instructors.map((name) =>
-          <div data-ev-id="ev_b5d6397e73" key={name} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+          {/* All Users with Checkbox */}
+          <div data-ev-id="ev_74a6522bb7" className="space-y-2">
+            {allUsers.map((user) =>
+          <div data-ev-id="ev_5711f81571"
+          key={user.id}
+          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
+          user.is_instructor ? 'bg-green-50 border border-green-200' : 'bg-muted/50 hover:bg-muted'}`
+          }
+          onClick={() => toggleInstructor(user.id, !user.is_instructor)}>
+
+                <div data-ev-id="ev_62533ae7ab" className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+            user.is_instructor ? 'bg-green-600 border-green-600' : 'border-gray-300'}`
+            }>
+                  {user.is_instructor && <Check className="w-3 h-3 text-white" />}
+                </div>
                 <Users className="w-5 h-5 text-muted-foreground" />
-                <span data-ev-id="ev_1c0733ad3f" className="flex-1 font-medium">{name}</span>
-                <button data-ev-id="ev_164b25041a"
-            onClick={() => deleteInstructor(name)}
-            className="p-1 hover:bg-red-100 text-red-600 rounded">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <span data-ev-id="ev_0789130138" className="flex-1 font-medium">{user.full_name}</span>
+                {user.is_instructor &&
+            <span data-ev-id="ev_d1e536fbb1" className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                    Übungsleiter
+                  </span>
+            }
               </div>
           )}
-            {instructors.length === 0 &&
-          <p data-ev-id="ev_8040cb3cd1" className="text-muted-foreground text-center py-4">Noch keine Übungsleiter angelegt.</p>
+            {allUsers.length === 0 &&
+          <p data-ev-id="ev_56922d17fc" className="text-muted-foreground text-center py-4">Keine Benutzer gefunden.</p>
           }
           </div>
 
-          {/* Add Instructor */}
-          <div data-ev-id="ev_eb55f7f801" className="flex gap-3 items-end p-4 bg-muted/30 rounded-lg">
-            <div data-ev-id="ev_05dd918163" className="flex-1">
-              <label data-ev-id="ev_453a986291" className="block text-sm font-medium mb-1">Neuer Übungsleiter</label>
-              <input data-ev-id="ev_b4e3d66251"
-            type="text"
-            value={newInstructorName}
-            onChange={(e) => setNewInstructorName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addInstructor()}
-            placeholder="z.B. Mustermann Max"
-            className="w-full px-3 py-2 border border-border rounded-lg bg-background" />
-            </div>
-            <button data-ev-id="ev_267ce04a27"
-          onClick={addInstructor}
-          disabled={!newInstructorName.trim()}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Hinzufügen
-            </button>
+          <div data-ev-id="ev_f961acf566" className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+            <strong data-ev-id="ev_7020a4bbff">{dbInstructors.length}</strong> von {allUsers.length} Benutzern sind als Übungsleiter markiert.
           </div>
         </div>
       }
 
       {/* PDF Preview */}
       {sessions.length > 0 && activeTab === 'plan' &&
-      <div data-ev-id="ev_cfd7ad8d3f" className="bg-card border border-border rounded-xl p-6">
-          <h3 data-ev-id="ev_5189142dbc" className="text-lg font-semibold mb-4 flex items-center gap-2">
+      <div data-ev-id="ev_3784ad4190" className="bg-card border border-border rounded-xl p-6">
+          <h3 data-ev-id="ev_d48bea41ff" className="text-lg font-semibold mb-4 flex items-center gap-2">
             <FileText className="w-5 h-5" />
             PDF Vorschau (A3 Querformat)
           </h3>
 
-          <div data-ev-id="ev_26a839b793" className="border-2 border-dashed border-border rounded-lg p-4 bg-white overflow-auto">
-            <div data-ev-id="ev_3fa84f84e1" className="min-w-[900px]" style={{ aspectRatio: '1.414/1' }}>
+          <div data-ev-id="ev_e92066105c" className="border-2 border-dashed border-border rounded-lg p-4 bg-white overflow-auto">
+            <div data-ev-id="ev_a7f7a3e6c6" className="min-w-[900px]" style={{ aspectRatio: '1.414/1' }}>
               {/* Header with Logo */}
-              <div data-ev-id="ev_bdf3f37d3a" className="flex items-start justify-between mb-4 pb-4 border-b-4 border-[#C8102E]">
-                <div data-ev-id="ev_19211b4c62">
-                  <h2 data-ev-id="ev_d4551620fa" className="text-2xl font-bold text-[#C8102E]">ÜBUNGSPLAN {selectedYear}</h2>
-                  <p data-ev-id="ev_0cc3254fa4" className="text-lg font-medium text-gray-600">
+              <div data-ev-id="ev_e8fb3659a5" className="flex items-start justify-between mb-4 pb-4 border-b-4 border-[#C8102E]">
+                <div data-ev-id="ev_e24f9fb4a9">
+                  <h2 data-ev-id="ev_49dfd3fc5a" className="text-2xl font-bold text-[#C8102E]">ÜBUNGSPLAN {selectedYear}</h2>
+                  <p data-ev-id="ev_9f701e00b6" className="text-lg font-medium text-gray-600">
                     {selectedPeriod.startsWith('Q') ? `${selectedPeriod.replace('Q', '')}. Quartal` :
                   selectedPeriod === 'H1' ? 'Jänner - Juni' : 'Juli - Dezember'}
                   </p>
-                  <p data-ev-id="ev_897cc29e6c" className="text-sm text-gray-500 mt-1">Übung jeden Mittwoch, 18:20 Uhr</p>
+                  <p data-ev-id="ev_2560ab8846" className="text-sm text-gray-500 mt-1">Übung jeden Mittwoch, 18:20 Uhr</p>
                 </div>
-                <div data-ev-id="ev_7544577c00" className="text-right">
-                  <div data-ev-id="ev_de44d6b6c4" className="w-20 h-20 bg-[#C8102E] rounded-lg flex items-center justify-center text-white font-bold text-xs">
+                <div data-ev-id="ev_7aec37caf0" className="text-right">
+                  <div data-ev-id="ev_9f5dfdb31a" className="w-20 h-20 bg-[#C8102E] rounded-lg flex items-center justify-center text-white font-bold text-xs">
                     FF LOGO
                   </div>
-                  <div data-ev-id="ev_550d8cce5b" className="text-sm font-bold mt-2">Freiwillige Feuerwehr</div>
-                  <div data-ev-id="ev_b62d51562a" className="text-sm font-bold text-[#C8102E]">Marchtrenk</div>
+                  <div data-ev-id="ev_d99024ef2f" className="text-sm font-bold mt-2">Freiwillige Feuerwehr</div>
+                  <div data-ev-id="ev_399d6910c6" className="text-sm font-bold text-[#C8102E]">Marchtrenk</div>
                 </div>
               </div>
 
-              {/* Mini Table Preview with Month Separators */}
+              {/* Mini Table Preview */}
               {sessionsByMonth.slice(0, 3).map(({ month, sessions: monthSessions }) =>
-            <div data-ev-id="ev_c6288702ea" key={month} className="mb-3">
-                  <div data-ev-id="ev_cc30b9c7e0" className="bg-[#C8102E] text-white px-2 py-1 text-xs font-bold rounded-t">
+            <div data-ev-id="ev_a65944ab8a" key={month} className="mb-3">
+                  <div data-ev-id="ev_baf3499184" className="bg-[#C8102E] text-white px-2 py-1 text-xs font-bold rounded-t">
                     {month}
                   </div>
-                  <table data-ev-id="ev_57412d3f82" className="w-full text-[10px] border-collapse">
-                    <tbody data-ev-id="ev_3fbc24c0b5">
+                  <table data-ev-id="ev_365036f164" className="w-full text-[10px] border-collapse">
+                    <tbody data-ev-id="ev_9478bf45b5">
                       {monthSessions.slice(0, 2).map((session, idx) =>
-                  <tr data-ev-id="ev_4d4d332dd3" key={session.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          <td data-ev-id="ev_15d0e795a2" className="border border-gray-200 px-2 py-2 w-[60px]" style={{ height: '36px' }}>
+                  <tr data-ev-id="ev_5f894b6b8b" key={session.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td data-ev-id="ev_6ebfeeb7c0" className="border border-gray-200 px-2 py-2 w-[60px]" style={{ height: '36px' }}>
                             {session.date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit' })}
                           </td>
-                          <td data-ev-id="ev_7faecf45a9" className="border border-gray-200 px-2 py-2 w-[40px]">{session.time}</td>
-                          <td data-ev-id="ev_ffa1119213" className="border border-gray-200 px-2 py-2">{session.topic || '-'}</td>
-                          <td data-ev-id="ev_2b16a931e1" className="border border-gray-200 px-2 py-2 w-[120px]">
-                            <div data-ev-id="ev_c36e2e7f56" className="flex flex-col gap-0.5">
+                          <td data-ev-id="ev_66bd05d01a" className="border border-gray-200 px-2 py-2 w-[40px]">{session.time}</td>
+                          <td data-ev-id="ev_11d8a53d86" className="border border-gray-200 px-2 py-2">{session.topic || '-'}</td>
+                          <td data-ev-id="ev_0ecaf32930" className="border border-gray-200 px-2 py-2 w-[120px]">
+                            <div data-ev-id="ev_56ec5cc9b8" className="flex flex-col gap-0.5">
                               {session.categoryIds.map((catId) => {
                           const cat = getCategoryById(catId);
                           return cat ?
-                          <span data-ev-id="ev_4bc7d6e92f" key={catId} className={`px-1 rounded text-[8px] ${cat.color}`}>
+                          <span data-ev-id="ev_a70cf4fd26" key={catId} className={`px-1 rounded text-[8px] ${cat.color}`}>
                                     {cat.name}
                                   </span> :
                           null;
                         })}
                             </div>
                           </td>
-                          <td data-ev-id="ev_e2ca1ee225" className="border border-gray-200 px-2 py-2 w-[80px]">{session.instructor || '-'}</td>
-                          <td data-ev-id="ev_25850256a3" className="border border-gray-200 px-2 py-2 w-[80px]">{session.notes || '-'}</td>
+                          <td data-ev-id="ev_eb59d07417" className="border border-gray-200 px-2 py-2 w-[80px]">{session.instructor || '-'}</td>
+                          <td data-ev-id="ev_1014692e81" className="border border-gray-200 px-2 py-2 w-[80px]">{session.notes || '-'}</td>
                         </tr>
                   )}
                     </tbody>
@@ -935,19 +1097,19 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 </div>
             )}
               
-              <p data-ev-id="ev_b2713620f3" className="text-center text-gray-400 text-xs">
+              <p data-ev-id="ev_be77a0cffd" className="text-center text-gray-400 text-xs">
                 ... Vorschau gekürzt ({sessions.length} Termine gesamt)
               </p>
 
               {/* Footer */}
-              <div data-ev-id="ev_d32ea611da" className="mt-4 pt-2 border-t border-gray-200 flex justify-between text-[10px] text-gray-500">
-                <span data-ev-id="ev_b8988f7299">Freiwillige Feuerwehr Marchtrenk · Linzerstraße 43 · 4614 Marchtrenk</span>
-                <span data-ev-id="ev_c27c31d4a5">Stand: {new Date().toLocaleDateString('de-AT')}</span>
+              <div data-ev-id="ev_c7c3b80389" className="mt-4 pt-2 border-t border-gray-200 flex justify-between text-[10px] text-gray-500">
+                <span data-ev-id="ev_8a101b5b45">Freiwillige Feuerwehr Marchtrenk · Linzerstraße 43 · 4614 Marchtrenk</span>
+                <span data-ev-id="ev_b98ab8880e">Stand: {new Date().toLocaleDateString('de-AT')}</span>
               </div>
             </div>
           </div>
           
-          <p data-ev-id="ev_b7bde0e673" className="text-xs text-muted-foreground mt-2">
+          <p data-ev-id="ev_6e7f80e8a6" className="text-xs text-muted-foreground mt-2">
             * Schriftgröße wird im PDF automatisch angepasst, damit alle Termine auf eine A3-Seite passen.
           </p>
         </div>
