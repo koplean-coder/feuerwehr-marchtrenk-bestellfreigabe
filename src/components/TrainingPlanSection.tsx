@@ -707,12 +707,12 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
 
               // Helper to render category tags with real colors
               const renderCategories = (categoryIds: string[]) => {
-                if (categoryIds.length === 0) return '<span style="color: #9ca3af;">—</span>';
+                if (categoryIds.length === 0) return '<span style="color: #9ca3af; font-size: 18px;">—</span>';
                 return categoryIds.map((catId) => {
                   const cat = dbCategories.find((c) => c.id === catId);
                   if (!cat) return '';
                   const colors = getCatColor(catId);
-                  return `<span style="display: inline-block; padding: 5px 12px; margin: 2px; border-radius: 5px; font-size: 13px; font-weight: 600; background: ${colors.bg}; color: ${colors.text}; border: 2px solid ${colors.border};">${cat.name}</span>`;
+                  return `<span style="display: inline-block; padding: 6px 14px; margin: 3px; border-radius: 6px; font-size: 16px; font-weight: 600; background: ${colors.bg}; color: ${colors.text}; border: 2px solid ${colors.border};">${cat.name}</span>`;
                 }).join('');
               };
 
@@ -758,33 +758,33 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 monthContainer.style.cssText = `position: absolute; left: -9999px; width: ${containerWidthPx}px; padding: 0 50px; background: white; font-family: "Segoe UI", Arial, sans-serif;`;
                 monthContainer.innerHTML = `
                   <div style="margin-bottom: 0;">
-                    <div style="background: linear-gradient(135deg, #C8102E 0%, #9a0c22 100%); color: white; padding: 14px 24px; font-weight: 700; font-size: 22px; border-radius: 8px 8px 0 0;">
+                    <div style="background: linear-gradient(135deg, #C8102E 0%, #9a0c22 100%); color: white; padding: 16px 28px; font-weight: 700; font-size: 26px; border-radius: 8px 8px 0 0;">
                       ${month}
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 18px;">
                       <thead>
                         <tr style="background: #f1f3f4;">
-                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 120px; font-weight: 700; color: #374151;">Datum</th>
-                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 80px; font-weight: 700; color: #374151;">Zeit</th>
-                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 280px; font-weight: 700; color: #374151;">Thema / Szenario</th>
-                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; font-weight: 700; color: #374151;">Kategorien</th>
-                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 180px; font-weight: 700; color: #374151;">Übungsleiter</th>
-                          <th style="border: 1px solid #d1d5db; padding: 14px 16px; text-align: left; width: 200px; font-weight: 700; color: #374151;">Anmerkungen</th>
+                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 130px; font-weight: 700; color: #374151; font-size: 18px;">Datum</th>
+                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 90px; font-weight: 700; color: #374151; font-size: 18px;">Zeit</th>
+                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; font-weight: 700; color: #374151; font-size: 18px;">Thema / Szenario</th>
+                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 380px; font-weight: 700; color: #374151; font-size: 18px;">Kategorien</th>
+                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 200px; font-weight: 700; color: #374151; font-size: 18px;">Übungsleiter</th>
+                          <th style="border: 1px solid #d1d5db; padding: 16px 18px; text-align: left; width: 220px; font-weight: 700; color: #374151; font-size: 18px;">Anmerkungen</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${monthSessions.map((s, idx) => `
                           <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
-                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; font-weight: 600; font-size: 15px;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; font-weight: 600; font-size: 15px;">${s.time}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; white-space: pre-line; line-height: 1.4; font-size: 15px;">${s.topic || '<span style="color: #9ca3af;">—</span>'}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 12px 14px; vertical-align: middle;">
-                              <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">
+                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.time}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; white-space: pre-line; line-height: 1.4; font-size: 18px;">${s.topic || '<span style="color: #9ca3af;">—</span>'}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle;">
+                              <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
                                 ${renderCategories(s.categoryIds)}
                               </div>
                             </td>
-                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; font-weight: 500; font-size: 15px;">${s.instructor || '<span style="color: #9ca3af;">—</span>'}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; color: #6b7280; font-size: 15px;">${s.notes || '<span style="color: #9ca3af;">—</span>'}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 500; font-size: 18px;">${s.instructor || '<span style="color: #9ca3af;">—</span>'}</td>
+                            <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; color: #6b7280; font-size: 18px;">${s.notes || '<span style="color: #9ca3af;">—</span>'}</td>
                           </tr>
                         `).join('')}
                       </tbody>
