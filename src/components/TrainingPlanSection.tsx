@@ -676,9 +676,9 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 return;
               }
 
-              // Create PDF container
+              // Create PDF container - A3 landscape optimized (420mm x 297mm = ~1587px x 1123px at 96dpi)
               const pdfContainer = document.createElement('div');
-              pdfContainer.style.cssText = 'position: absolute; left: -9999px; width: 1190px; padding: 40px; background: white; font-family: Arial, sans-serif;';
+              pdfContainer.style.cssText = 'position: absolute; left: -9999px; width: 1540px; padding: 50px 60px; background: white; font-family: "Segoe UI", Arial, sans-serif;';
 
               // Group sessions by month
               const grouped: {month: string;sessions: typeof filteredSessions;}[] = [];
@@ -689,56 +689,63 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                 grouped.push({ month: monthName, sessions: [s] });
               });
 
-              // Date range for header (without year in start, with year in end)
+              // Date range for header
               const startDate = filteredSessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long' });
               const endDate = filteredSessions[filteredSessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' });
 
               pdfContainer.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 4px solid #C8102E;">
+                <!-- Header -->
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 30px; padding-bottom: 25px; border-bottom: 5px solid #C8102E;">
                   <div>
-                    <h1 style="font-size: 44px; font-weight: bold; color: #C8102E; margin: 0;">Übungsplan</h1>
-                    <p style="font-size: 18px; color: #444; margin-top: 12px; font-weight: 500;">${startDate} – ${endDate}</p>
+                    <h1 style="font-size: 56px; font-weight: 800; color: #C8102E; margin: 0; letter-spacing: -1px;">Übungsplan</h1>
+                    <p style="font-size: 22px; color: #333; margin-top: 12px; font-weight: 500;">${startDate} – ${endDate}</p>
                   </div>
-                  <img src="${ffmLogo}" alt="Logo" style="height: 100px; width: auto;" />
+                  <img src="${ffmLogo}" alt="Logo" style="height: 110px; width: auto;" />
                 </div>
+
+                <!-- Content -->
                 ${grouped.map(({ month, sessions: monthSessions }) => `
-                  <div style="margin-bottom: 16px;">
-                    <div style="background: #C8102E; color: white; padding: 8px 12px; font-weight: bold; font-size: 14px; border-radius: 4px 4px 0 0;">
+                  <div style="margin-bottom: 24px; break-inside: avoid;">
+                    <div style="background: linear-gradient(135deg, #C8102E 0%, #a00d24 100%); color: white; padding: 12px 20px; font-weight: 700; font-size: 16px; border-radius: 6px 6px 0 0; letter-spacing: 0.5px;">
                       ${month}
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                       <thead>
-                        <tr style="background: #f3f4f6;">
-                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 70px;">Datum</th>
-                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 50px;">Zeit</th>
-                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Thema/Szenario</th>
-                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 140px;">Kategorien</th>
-                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 100px;">Übungsleiter</th>
-                          <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 120px;">Anmerkungen</th>
+                        <tr style="background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);">
+                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 100px; font-weight: 700; color: #495057;">Datum</th>
+                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 70px; font-weight: 700; color: #495057;">Zeit</th>
+                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; font-weight: 700; color: #495057;">Thema / Szenario</th>
+                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 220px; font-weight: 700; color: #495057;">Kategorien</th>
+                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 150px; font-weight: 700; color: #495057;">Übungsleiter</th>
+                          <th style="border: 1px solid #dee2e6; padding: 12px 14px; text-align: left; width: 180px; font-weight: 700; color: #495057;">Anmerkungen</th>
                         </tr>
                       </thead>
                       <tbody>
                         ${monthSessions.map((s, idx) => `
-                          <tr style="background: ${idx % 2 === 0 ? '#fff' : '#f9fafb'};">
-                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.time}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top; white-space: pre-line;">${s.topic || '-'}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">
-                              ${s.categoryIds.map((catId) => {
+                          <tr style="background: ${idx % 2 === 0 ? '#ffffff' : '#f8f9fa'}; transition: background 0.2s;">
+                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; font-weight: 500;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
+                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; font-weight: 500;">${s.time}</td>
+                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; white-space: pre-line; line-height: 1.5;">${s.topic || '<span style="color: #adb5bd;">—</span>'}</td>
+                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top;">
+                              <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                              ${s.categoryIds.length > 0 ? s.categoryIds.map((catId) => {
                 const cat = categories.find((c) => c.id === catId);
-                return cat ? `<span style="display: inline-block; padding: 2px 6px; margin: 1px; border-radius: 4px; font-size: 10px; background: #fef3c7; color: #92400e;">${cat.name}</span>` : '';
-              }).join('')}
+                return cat ? `<span style="display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; background: #fff3cd; color: #856404; border: 1px solid #ffc107;">${cat.name}</span>` : '';
+              }).join('') : '<span style="color: #adb5bd;">—</span>'}
+                              </div>
                             </td>
-                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.instructor || '-'}</td>
-                            <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.notes || '-'}</td>
+                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; font-weight: 500;">${s.instructor || '<span style="color: #adb5bd;">—</span>'}</td>
+                            <td style="border: 1px solid #dee2e6; padding: 12px 14px; vertical-align: top; color: #6c757d;">${s.notes || '<span style="color: #adb5bd;">—</span>'}</td>
                           </tr>
                         `).join('')}
                       </tbody>
                     </table>
                   </div>
                 `).join('')}
-                <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; font-size: 10px; color: #666;">
-                  <span>Freiwillige Feuerwehr Marchtrenk · Linzerstraße 43 · 4614 Marchtrenk</span>
+
+                <!-- Footer -->
+                <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #dee2e6; display: flex; justify-content: space-between; font-size: 12px; color: #6c757d;">
+                  <span style="font-weight: 500;">Freiwillige Feuerwehr Marchtrenk · Linzerstraße 43 · 4614 Marchtrenk</span>
                   <span>Stand: ${new Date().toLocaleDateString('de-AT')}</span>
                 </div>
               `;
@@ -746,24 +753,56 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               document.body.appendChild(pdfContainer);
 
               try {
-                const canvas = await html2canvas(pdfContainer, { scale: 2, useCORS: true });
-                const imgData = canvas.toDataURL('image/png');
+                const canvas = await html2canvas(pdfContainer, { scale: 2.5, useCORS: true, backgroundColor: '#ffffff' });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
-                // A3 landscape dimensions in mm
+                // A3 landscape dimensions in mm (420 x 297)
                 const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const pdfWidth = pdf.internal.pageSize.getWidth(); // 420mm
+                const pdfHeight = pdf.internal.pageSize.getHeight(); // 297mm
+                
+                const margin = 15; // 15mm margin
+                const printableWidth = pdfWidth - (margin * 2);
+                const printableHeight = pdfHeight - (margin * 2);
 
-                const imgWidth = pdfWidth - 20;
-                const imgHeight = canvas.height * imgWidth / canvas.width;
+                // Calculate image dimensions to fill the page width
+                const imgWidth = printableWidth;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-                if (imgHeight <= pdfHeight - 20) {
-                  pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+                if (imgHeight <= printableHeight) {
+                  // Fits on one page - center vertically
+                  const yOffset = margin;
+                  pdf.addImage(imgData, 'JPEG', margin, yOffset, imgWidth, imgHeight);
                 } else {
-                  // Scale to fit height if needed
-                  const scaledHeight = pdfHeight - 20;
-                  const scaledWidth = canvas.width * scaledHeight / canvas.height;
-                  pdf.addImage(imgData, 'PNG', 10, 10, scaledWidth, scaledHeight);
+                  // Multi-page: split the canvas into pages
+                  const pageImgHeight = printableHeight;
+                  const sourcePageHeight = (canvas.width * pageImgHeight) / imgWidth;
+                  let position = 0;
+                  let page = 0;
+                  
+                  while (position < canvas.height) {
+                    if (page > 0) {
+                      pdf.addPage();
+                    }
+                    
+                    // Create a temporary canvas for this page segment
+                    const pageCanvas = document.createElement('canvas');
+                    pageCanvas.width = canvas.width;
+                    pageCanvas.height = Math.min(sourcePageHeight, canvas.height - position);
+                    const ctx = pageCanvas.getContext('2d');
+                    if (ctx) {
+                      ctx.fillStyle = '#ffffff';
+                      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+                      ctx.drawImage(canvas, 0, position, canvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
+                    }
+                    
+                    const pageImgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+                    const thisPageHeight = (pageCanvas.height * imgWidth) / canvas.width;
+                    pdf.addImage(pageImgData, 'JPEG', margin, margin, imgWidth, thisPageHeight);
+                    
+                    position += sourcePageHeight;
+                    page++;
+                  }
                 }
 
                 // Generate filename
@@ -808,13 +847,16 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               <span data-ev-id="ev_67fadd8eed" className="text-sm text-gray-400">({pdfFilename})</span>
             </div>
             <div data-ev-id="ev_pdf_preview_actions" className="flex items-center gap-3">
-              <a data-ev-id="ev_4758c5b9b7"
-            href={pdfPreviewUrl}
-            download={pdfFilename}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors">
+              <button
+                data-ev-id="ev_4758c5b9b7"
+                onClick={() => {
+                  // Open PDF in new tab for download
+                  window.open(pdfPreviewUrl, '_blank');
+                }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors">
                 <Download className="w-4 h-4" />
-                Herunterladen
-              </a>
+                In neuem Tab öffnen
+              </button>
               <button data-ev-id="ev_7f09d4fe38"
             onClick={() => {
               URL.revokeObjectURL(pdfPreviewUrl);
