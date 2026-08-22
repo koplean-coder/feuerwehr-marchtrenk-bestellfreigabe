@@ -402,18 +402,26 @@ export default function Index() {
   useEffect(() => {
     async function loadConversationStatuses() {
       if (!supabase) return;
-      const { data } = await supabase.from('conversations').select('*');
-      if (data) {
-        const statusMap = new Map<string, {is_closed: boolean;closed_at: string | null;closed_by: string | null;created_by: string;}>();
-        data.forEach((conv) => {
-          statusMap.set(conv.conversation_key, {
-            is_closed: conv.is_closed ?? false,
-            closed_at: conv.closed_at,
-            closed_by: conv.closed_by,
-            created_by: conv.created_by
+      try {
+        const { data, error } = await supabase.from('conversations').select('*');
+        if (error) {
+          console.warn('[Index] Could not load conversations:', error.message);
+          return;
+        }
+        if (data) {
+          const statusMap = new Map<string, {is_closed: boolean;closed_at: string | null;closed_by: string | null;created_by: string;}>();
+          data.forEach((conv) => {
+            statusMap.set(conv.conversation_key, {
+              is_closed: conv.is_closed ?? false,
+              closed_at: conv.closed_at,
+              closed_by: conv.closed_by,
+              created_by: conv.created_by
+            });
           });
-        });
-        setConversationStatuses(statusMap);
+          setConversationStatuses(statusMap);
+        }
+      } catch (err) {
+        console.warn('[Index] Failed to load conversations');
       }
     }
     loadConversationStatuses();
