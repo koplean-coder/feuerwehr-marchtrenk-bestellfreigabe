@@ -712,7 +712,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                   const cat = dbCategories.find((c) => c.id === catId);
                   if (!cat) return '';
                   const colors = getCatColor(catId);
-                  return `<span style="display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; padding: 4px 10px; margin: 2px 3px 2px 0; border-radius: 999px; font-size: 11.5px; font-weight: 600; line-height: 1; background: ${colors.bg}; color: ${colors.text}; border: 1px solid ${colors.border};">${cat.name}</span>`;
+                  return `<span style="display: inline-block; box-sizing: border-box; height: 22px; line-height: 22px; padding: 0 10px; margin: 2px 3px 2px 0; border-radius: 999px; font-size: 11.5px; font-weight: 600; vertical-align: middle; background: ${colors.bg}; color: ${colors.text}; border: 1px solid ${colors.border};">${cat.name}</span>`;
                 }).join('');
               };
 
