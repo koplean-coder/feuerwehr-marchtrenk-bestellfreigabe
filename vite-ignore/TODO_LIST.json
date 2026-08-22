@@ -1,37 +1,37 @@
 {
-  "summary": "Übungsplan mit DB-Integration erweitern",
+  "summary": "Übungsplan: PDF-Vorschau, UI-Verbesserungen",
   "todos": [
     {
       "id": 1,
-      "description": "DB-Tabellen erstellen (training_plans, scenario_templates, recurrence_rules, categories, instructors)",
-      "files": [],
+      "description": "PDF-Vorschau-Dialog mit Download-Button implementieren",
+      "files": [
+        "src/components/TrainingPlanSection.tsx"
+      ],
       "status": "complete"
     },
     {
       "id": 2,
-      "description": "Hooks für DB-Zugriff erstellen",
-      "files": [],
+      "description": "PDF-Kopfzeile anpassen (Titel größer, Datum optimieren)",
+      "files": [
+        "src/components/TrainingPlanSection.tsx"
+      ],
       "status": "complete"
     },
     {
       "id": 3,
-      "description": "TrainingPlanSection mit DB-Hooks verbinden + Jahr auf aktuell setzen",
-      "files": [],
+      "description": "Kategorien-Dropdown Breite verbessern",
+      "files": [
+        "src/components/TrainingPlanSection.tsx"
+      ],
       "status": "complete"
     },
     {
       "id": 4,
-      "description": "Übungsleiter aus profiles laden mit Checkbox-Auswahl",
-      "files": [],
-      "status": "complete"
-    },
-    {
-      "id": 5,
-      "description": "Gespeicherte Pläne anzeigen und laden",
+      "description": "Validierung und Test",
       "files": [],
       "status": "complete"
     }
   ],
-  "createdAt": "2026-08-22T12:07:59.254Z",
-  "updatedAt": "2026-08-22T12:13:39.305Z"
+  "createdAt": "2026-08-22T13:35:16.468Z",
+  "updatedAt": "2026-08-22T13:38:17.360Z"
 }

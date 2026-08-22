@@ -209,6 +209,12 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
   const [pdfCustomStart, setPdfCustomStart] = useState<Date>(new Date(currentYear, 0, 1));
   const [pdfCustomEnd, setPdfCustomEnd] = useState<Date>(new Date(currentYear, 11, 31));
 
+  // PDF Preview state
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string>('');
+  const [pdfFilename, setPdfFilename] = useState<string>('');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
   // Calculate date range and wednesdays
   const dateRange = useMemo(() =>
   getDateRangeForPeriod(selectedYear, selectedPeriod, customStartDate, customEndDate),
@@ -652,45 +658,48 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               </button>
               <button data-ev-id="ev_195a80c6e4"
             onClick={async () => {
+              setIsGeneratingPdf(true);
+
               // Filter sessions based on selected period
               let filteredSessions = sessions;
-              if (pdfPeriod === 'Q1') filteredSessions = sessions.filter((s) => s.date.getMonth() <= 2);
-              else if (pdfPeriod === 'Q2') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 3 && s.date.getMonth() <= 5);
-              else if (pdfPeriod === 'Q3') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 6 && s.date.getMonth() <= 8);
-              else if (pdfPeriod === 'Q4') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 9);
-              else if (pdfPeriod === 'H1') filteredSessions = sessions.filter((s) => s.date.getMonth() <= 5);
-              else if (pdfPeriod === 'H2') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 6);
-              else if (pdfPeriod === 'custom') filteredSessions = sessions.filter((s) => s.date >= pdfCustomStart && s.date <= pdfCustomEnd);
-              
+              if (pdfPeriod === 'Q1') filteredSessions = sessions.filter((s) => s.date.getMonth() <= 2);else
+              if (pdfPeriod === 'Q2') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 3 && s.date.getMonth() <= 5);else
+              if (pdfPeriod === 'Q3') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 6 && s.date.getMonth() <= 8);else
+              if (pdfPeriod === 'Q4') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 9);else
+              if (pdfPeriod === 'H1') filteredSessions = sessions.filter((s) => s.date.getMonth() <= 5);else
+              if (pdfPeriod === 'H2') filteredSessions = sessions.filter((s) => s.date.getMonth() >= 6);else
+              if (pdfPeriod === 'custom') filteredSessions = sessions.filter((s) => s.date >= pdfCustomStart && s.date <= pdfCustomEnd);
+
               if (filteredSessions.length === 0) {
                 alert('Keine Termine im gewählten Zeitraum!');
+                setIsGeneratingPdf(false);
                 return;
               }
-              
+
               // Create PDF container
               const pdfContainer = document.createElement('div');
               pdfContainer.style.cssText = 'position: absolute; left: -9999px; width: 1190px; padding: 40px; background: white; font-family: Arial, sans-serif;';
-              
+
               // Group sessions by month
-              const grouped: { month: string; sessions: typeof filteredSessions }[] = [];
+              const grouped: {month: string;sessions: typeof filteredSessions;}[] = [];
               filteredSessions.forEach((s) => {
                 const monthName = s.date.toLocaleDateString('de-AT', { month: 'long', year: 'numeric' });
                 const existing = grouped.find((g) => g.month === monthName);
-                if (existing) existing.sessions.push(s);
-                else grouped.push({ month: monthName, sessions: [s] });
+                if (existing) existing.sessions.push(s);else
+                grouped.push({ month: monthName, sessions: [s] });
               });
-              
-              // Date range for header
+
+              // Date range for header (without year in start, with year in end)
               const startDate = filteredSessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long' });
               const endDate = filteredSessions[filteredSessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' });
-              
+
               pdfContainer.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 4px solid #C8102E;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 4px solid #C8102E;">
                   <div>
-                    <h1 style="font-size: 32px; font-weight: bold; color: #C8102E; margin: 0;">Übungsplan</h1>
-                    <p style="font-size: 16px; color: #666; margin-top: 8px;">${startDate} - ${endDate}</p>
+                    <h1 style="font-size: 44px; font-weight: bold; color: #C8102E; margin: 0;">Übungsplan</h1>
+                    <p style="font-size: 18px; color: #444; margin-top: 12px; font-weight: 500;">${startDate} – ${endDate}</p>
                   </div>
-                  <img src="${ffmLogo}" alt="Logo" style="height: 80px; width: auto;" />
+                  <img src="${ffmLogo}" alt="Logo" style="height: 100px; width: auto;" />
                 </div>
                 ${grouped.map(({ month, sessions: monthSessions }) => `
                   <div style="margin-bottom: 16px;">
@@ -716,9 +725,9 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                             <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top; white-space: pre-line;">${s.topic || '-'}</td>
                             <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">
                               ${s.categoryIds.map((catId) => {
-                                const cat = categories.find((c) => c.id === catId);
-                                return cat ? `<span style="display: inline-block; padding: 2px 6px; margin: 1px; border-radius: 4px; font-size: 10px; background: #fef3c7; color: #92400e;">${cat.name}</span>` : '';
-                              }).join('')}
+                const cat = categories.find((c) => c.id === catId);
+                return cat ? `<span style="display: inline-block; padding: 2px 6px; margin: 1px; border-radius: 4px; font-size: 10px; background: #fef3c7; color: #92400e;">${cat.name}</span>` : '';
+              }).join('')}
                             </td>
                             <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.instructor || '-'}</td>
                             <td style="border: 1px solid #ddd; padding: 8px; vertical-align: top;">${s.notes || '-'}</td>
@@ -733,45 +742,98 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                   <span>Stand: ${new Date().toLocaleDateString('de-AT')}</span>
                 </div>
               `;
-              
+
               document.body.appendChild(pdfContainer);
-              
+
               try {
                 const canvas = await html2canvas(pdfContainer, { scale: 2, useCORS: true });
                 const imgData = canvas.toDataURL('image/png');
-                
+
                 // A3 landscape dimensions in mm
                 const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
                 const pdfWidth = pdf.internal.pageSize.getWidth();
                 const pdfHeight = pdf.internal.pageSize.getHeight();
-                
+
                 const imgWidth = pdfWidth - 20;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+
                 if (imgHeight <= pdfHeight - 20) {
                   pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
                 } else {
                   // Scale to fit height if needed
                   const scaledHeight = pdfHeight - 20;
-                  const scaledWidth = (canvas.width * scaledHeight) / canvas.height;
+                  const scaledWidth = canvas.width * scaledHeight / canvas.height;
                   pdf.addImage(imgData, 'PNG', 10, 10, scaledWidth, scaledHeight);
                 }
-                
+
                 // Generate filename
                 const periodLabel = pdfPeriod === 'all' ? 'Gesamt' : pdfPeriod === 'custom' ? `${pdfCustomStart.toLocaleDateString('de-AT')}-${pdfCustomEnd.toLocaleDateString('de-AT')}` : pdfPeriod;
-                pdf.save(`Uebungsplan_${currentYear}_${periodLabel}.pdf`);
+                const filename = `Uebungsplan_${periodLabel}.pdf`;
+
+                // Create blob URL for preview
+                const pdfBlob = pdf.output('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                setPdfPreviewUrl(blobUrl);
+                setPdfFilename(filename);
+                setShowPdfPreview(true);
               } finally {
                 document.body.removeChild(pdfContainer);
               }
-              
+
+              setIsGeneratingPdf(false);
               setShowPdfDialog(false);
             }}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2">
+            disabled={isGeneratingPdf}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50">
 
-                <Download className="w-4 h-4" />
-                PDF erstellen
+                {isGeneratingPdf ?
+              <><span data-ev-id="ev_9482692110" className="animate-spin">⏳</span> Wird erstellt...</> :
+
+              <><FileText className="w-4 h-4" /> Vorschau erstellen</>
+              }
               </button>
             </div>
+          </div>
+        </div>
+      }
+
+      {/* PDF Preview Dialog */}
+      {showPdfPreview && pdfPreviewUrl &&
+      <div data-ev-id="ev_pdf_preview_overlay" className="fixed inset-0 bg-black/80 flex flex-col z-[60]">
+          {/* Header */}
+          <div data-ev-id="ev_pdf_preview_header" className="flex items-center justify-between px-6 py-4 bg-gray-900 text-white">
+            <div data-ev-id="ev_pdf_preview_title" className="flex items-center gap-3">
+              <FileText className="w-6 h-6" />
+              <span data-ev-id="ev_b5008ca66e" className="text-lg font-semibold">PDF Vorschau</span>
+              <span data-ev-id="ev_67fadd8eed" className="text-sm text-gray-400">({pdfFilename})</span>
+            </div>
+            <div data-ev-id="ev_pdf_preview_actions" className="flex items-center gap-3">
+              <a data-ev-id="ev_4758c5b9b7"
+            href={pdfPreviewUrl}
+            download={pdfFilename}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors">
+                <Download className="w-4 h-4" />
+                Herunterladen
+              </a>
+              <button data-ev-id="ev_7f09d4fe38"
+            onClick={() => {
+              URL.revokeObjectURL(pdfPreviewUrl);
+              setPdfPreviewUrl('');
+              setShowPdfPreview(false);
+            }}
+            className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 flex items-center gap-2 transition-colors">
+                <X className="w-4 h-4" />
+                Schließen
+              </button>
+            </div>
+          </div>
+          {/* PDF Viewer */}
+          <div data-ev-id="ev_pdf_viewer" className="flex-1 p-4 overflow-auto">
+            <iframe data-ev-id="ev_2e242c339a"
+          src={pdfPreviewUrl}
+          className="w-full h-full min-h-[600px] rounded-lg border border-gray-600"
+          title="PDF Vorschau" />
+
           </div>
         </div>
       }
@@ -1028,7 +1090,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                                 </button>
                                 <div data-ev-id="ev_79beb57f52"
                         id={`cat-dropdown-${session.id}`}
-                        className="hidden absolute z-50 mt-1 w-64 bg-white border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto">
+                        className="hidden absolute z-50 mt-1 min-w-[200px] max-w-[300px] bg-white border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto">
 
                                   {categories.map((cat) => {
                             const isSelected = session.categoryIds.includes(cat.id);
@@ -1516,14 +1578,14 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
               {/* Header with Title and Logo */}
               <div data-ev-id="ev_e8fb3659a5" className="flex items-center justify-between mb-4 pb-4 border-b-4 border-[#C8102E]">
                 <div data-ev-id="ev_pdf_title_wrapper">
-                  <h1 data-ev-id="ev_pdf_title" className="text-4xl font-bold text-[#C8102E]">
+                  <h1 data-ev-id="ev_pdf_title" className="text-5xl font-bold text-[#C8102E]">
                     Übungsplan
                   </h1>
-                  <p data-ev-id="ev_pdf_date_range" className="text-base text-gray-600 mt-2">
-                    {sessions.length > 0 ? `${sessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long' })} - ${sessions[sessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' })}` : ''}
+                  <p data-ev-id="ev_pdf_date_range" className="text-lg text-gray-700 mt-3 font-medium">
+                    {sessions.length > 0 ? `${sessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long' })} – ${sessions[sessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: 'long', year: 'numeric' })}` : ''}
                   </p>
                 </div>
-                <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-24 w-auto" />
+                <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-28 w-auto" />
               </div>
 
               {/* Mini Table Preview */}
