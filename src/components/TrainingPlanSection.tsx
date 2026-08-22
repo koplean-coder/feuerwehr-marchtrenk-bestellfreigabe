@@ -464,7 +464,6 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
           </button>
           <div data-ev-id="ev_49ebf34ddf">
             <h1 data-ev-id="ev_0dbebb4210" className="text-2xl font-bold text-foreground">Übungsplan Generator</h1>
-            <p data-ev-id="ev_a239011ac1" className="text-muted-foreground">A3 Übungsplan für die Feuerwehr erstellen</p>
           </div>
         </div>
         <div data-ev-id="ev_ded24b5113" className="flex gap-2">
@@ -917,7 +916,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                                 </button>
                                 <div data-ev-id="ev_79beb57f52"
                         id={`cat-dropdown-${session.id}`}
-                        className="hidden absolute z-50 mt-1 w-full bg-white border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-auto">
+                        className="hidden absolute z-50 mt-1 min-w-[200px] w-max bg-white border border-border rounded-lg shadow-lg py-1 max-h-48 overflow-y-auto">
 
                                   {categories.map((cat) => {
                             const isSelected = session.categoryIds.includes(cat.id);
@@ -1404,9 +1403,14 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
             <div data-ev-id="ev_a7f7a3e6c6" className="min-w-[900px]" style={{ aspectRatio: '1.414/1' }}>
               {/* Header with Title and Logo */}
               <div data-ev-id="ev_e8fb3659a5" className="flex items-center justify-between mb-4 pb-4 border-b-4 border-[#C8102E]">
-                <h1 data-ev-id="ev_pdf_title" className="text-2xl font-bold text-[#C8102E]">
-                  Übungsplan {selectedYear}
-                </h1>
+                <div data-ev-id="ev_pdf_title_wrapper">
+                  <h1 data-ev-id="ev_pdf_title" className="text-3xl font-bold text-[#C8102E]">
+                    Übungsplan
+                  </h1>
+                  <p data-ev-id="ev_pdf_date_range" className="text-sm text-gray-600 mt-1">
+                    {sessions.length > 0 ? `${sessions[0].date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })} - ${sessions[sessions.length - 1].date.toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' })}` : ''}
+                  </p>
+                </div>
                 <img data-ev-id="ev_37ea19c2e6" src={ffmLogo} alt="FF Marchtrenk Logo" className="h-24 w-auto" />
               </div>
 
