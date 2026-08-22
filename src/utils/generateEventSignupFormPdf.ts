@@ -423,6 +423,14 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
     setFont(doc, 'normal');
     doc.setTextColor(40, 40, 40);
     doc.text(adjustment, col2X, infoY + 5);
+    // Hinweis zur Adjustierung (kleiner, grau)
+    if (adjustmentNote) {
+      doc.setFontSize(7);
+      setFont(doc, 'normal');
+      doc.setTextColor(120, 120, 120);
+      doc.text(`(${adjustmentNote})`, col2X, infoY + 9);
+      doc.setFontSize(9);
+    }
   }
 
   // Fahrzeuge (optional)
