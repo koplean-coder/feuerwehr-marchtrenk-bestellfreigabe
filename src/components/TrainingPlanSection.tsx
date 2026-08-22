@@ -707,12 +707,12 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
 
               // Helper to render category tags with real colors
               const renderCategories = (categoryIds: string[]) => {
-                if (categoryIds.length === 0) return '<span style="color: #9ca3af; font-size: 18px;">—</span>';
+                if (categoryIds.length === 0) return '<span style="color: #9ca3af; font-size: 18px; vertical-align: middle;">—</span>';
                 return categoryIds.map((catId) => {
                   const cat = dbCategories.find((c) => c.id === catId);
                   if (!cat) return '';
                   const colors = getCatColor(catId);
-                  return `<span style="display: inline-block; padding: 6px 14px; margin: 3px; border-radius: 6px; font-size: 16px; font-weight: 600; background: ${colors.bg}; color: ${colors.text}; border: 2px solid ${colors.border};">${cat.name}</span>`;
+                  return `<span style="display: inline-block; vertical-align: middle; padding: 6px 14px; margin: 3px 4px; border-radius: 6px; font-size: 16px; font-weight: 600; line-height: 1.2; background: ${colors.bg}; color: ${colors.text}; border: 2px solid ${colors.border};">${cat.name}</span>`;
                 }).join('');
               };
 
@@ -778,11 +778,7 @@ export function TrainingPlanSection({ onBack }: TrainingPlanSectionProps) {
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.date.toLocaleDateString('de-AT', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 600; font-size: 18px;">${s.time}</td>
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; white-space: pre-line; line-height: 1.4; font-size: 18px;">${s.topic || '<span style="color: #9ca3af;">—</span>'}</td>
-                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle;">
-                              <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                                ${renderCategories(s.categoryIds)}
-                              </div>
-                            </td>
+                            <td style="border: 1px solid #d1d5db; padding: 14px 16px; vertical-align: middle; text-align: left;">${renderCategories(s.categoryIds)}</td>
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; font-weight: 500; font-size: 18px;">${s.instructor || '<span style="color: #9ca3af;">—</span>'}</td>
                             <td style="border: 1px solid #d1d5db; padding: 16px 18px; vertical-align: middle; color: #6b7280; font-size: 18px;">${s.notes || '<span style="color: #9ca3af;">—</span>'}</td>
                           </tr>
