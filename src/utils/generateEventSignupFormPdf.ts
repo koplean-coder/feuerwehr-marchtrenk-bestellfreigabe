@@ -146,8 +146,9 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
           }
           doc.setFontSize(fontSize);
           
-          // Text ohne Umbruch, aber mit angepasster Schriftgröße
-          doc.text(displayName, colX + catWidth / 2, startY + headerHeight - 3, { angle: 45 });
+          // Text am linken Rand der Spalte starten, diagonal nach oben-rechts
+          // So wird Text nicht am rechten Tabellenrand abgeschnitten
+          doc.text(displayName, colX + 3, startY + headerHeight - 3, { angle: 45 });
           
           if (cat.hasAsOption) {
             doc.setFontSize(7);
