@@ -90,7 +90,7 @@ export default function Tasks() {
       const { data: sharedTasks } = await supabase
         .from('todo_task_shares')
         .select('task_id')
-        .eq('shared_with_id', profile.id);
+        .eq('user_id', profile.id);
       
       const sharedTaskIds = (sharedTasks || []).map(s => s.task_id);
       

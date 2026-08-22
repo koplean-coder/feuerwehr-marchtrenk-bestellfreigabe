@@ -90,7 +90,7 @@ export function useTodoTasks(filters: TaskFilters = {}) {
       const { data: sharedTasks } = await supabase
         .from('todo_task_shares')
         .select('task_id')
-        .eq('shared_with_id', user.id);
+        .eq('user_id', user.id);
       
       const sharedTaskIds = (sharedTasks || []).map(s => s.task_id);
       
