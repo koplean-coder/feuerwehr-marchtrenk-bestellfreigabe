@@ -15,7 +15,7 @@
       "files": [
         "src/components/todo/TodoTaskDetail.tsx"
       ],
-      "status": "active"
+      "status": "complete"
     },
     {
       "id": 3,
@@ -23,9 +23,9 @@
       "files": [
         "src/components/todo/TodoTaskDetail.tsx"
       ],
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "createdAt": "2026-08-21T23:26:45.350Z",
-  "updatedAt": "2026-08-21T23:27:35.956Z"
+  "updatedAt": "2026-08-21T23:31:43.710Z"
 }
