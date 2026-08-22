@@ -23,6 +23,8 @@ export interface EventSignupFormData {
   pdfBackgroundUrl?: string;
   pdfBackgroundOpacity?: number;
   diagonalHeaders?: boolean;
+  signatureEnabled?: boolean;
+  signatureTitle?: string;
 }
 
 export async function generateEventSignupFormPdf(data: EventSignupFormData): Promise<void> {
@@ -40,7 +42,9 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
     creatorName,
     pdfBackgroundUrl = '',
     pdfBackgroundOpacity = 1.0,
-    diagonalHeaders = false
+    diagonalHeaders = false,
+    signatureEnabled = true,
+    signatureTitle = 'UNTERSCHRIFT'
   } = data;
 
   const backgroundData = pdfBackgroundUrl ? await loadOptimizedBackground(pdfBackgroundUrl) : null;
@@ -56,8 +60,8 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
   const hasCategories = categories && categories.length > 0;
 
   // Column calculations - ohne Nr-Spalte, mehr Platz fuer Namen
-  const colName = 55;
-  const colSignature = 40;
+  const colName = signatureEnabled ? 55 : 70;
+  const colSignature = signatureEnabled ? 40 : 0;
   
   const categoryColWidths: number[] = [];
   let totalCategoryWidth = 0;
@@ -154,9 +158,11 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
       }
       
       // Unterschrift - horizontal zentriert in der tatsächlichen Spaltenbreite bis zum Tabellenrand
-      doc.setFontSize(9); // Gleiche Größe wie NAME
-      const actualSignatureWidth = margin + contentWidth - colX;
-      doc.text('UNTERSCHRIFT', colX + actualSignatureWidth / 2, startY + headerHeight - 3, { align: 'center' });
+      if (signatureEnabled) {
+        doc.setFontSize(9); // Gleiche Größe wie NAME
+        const actualSignatureWidth = margin + contentWidth - colX;
+        doc.text(signatureTitle.toUpperCase(), colX + actualSignatureWidth / 2, startY + headerHeight - 3, { align: 'center' });
+      }
     } else {
       doc.setFontSize(8);
       
@@ -207,7 +213,9 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
       }
       
       // Unterschrift
-      doc.text('UNTERSCHRIFT', colX + 2, startY + 6.5);
+      if (signatureEnabled) {
+        doc.text(signatureTitle.toUpperCase(), colX + 2, startY + 6.5);
+      }
     }
     
     return startY + headerHeight;

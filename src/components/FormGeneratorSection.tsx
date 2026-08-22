@@ -22,6 +22,8 @@ interface FormState {
   registrationDeadline: string;
   categories: CategoryOption[];
   prefillNames: string[];
+  signatureEnabled: boolean;
+  signatureTitle: string;
 }
 
 const initialFormState: FormState = {
@@ -34,7 +36,9 @@ const initialFormState: FormState = {
   adjustmentNote: 'muss getragen werden, wenn vorhanden',
   registrationDeadline: '',
   categories: [],
-  prefillNames: []
+  prefillNames: [],
+  signatureEnabled: true,
+  signatureTitle: 'Unterschrift'
 };
 
 export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
@@ -70,6 +74,7 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
   };
 
   const loadTemplate = (template: EventFormTemplate) => {
+    const templateData = template as unknown as {prefill_names?: string[];signature_enabled?: boolean;signature_title?: string;};
     setFormData({
       eventName: template.event_name,
       description: template.description || '',
@@ -80,7 +85,9 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
       adjustmentNote: template.adjustment_note || '',
       registrationDeadline: template.registration_deadline,
       categories: template.categories || [],
-      prefillNames: (template as unknown as {prefill_names?: string[];}).prefill_names || []
+      prefillNames: templateData.prefill_names || [],
+      signatureEnabled: templateData.signature_enabled ?? true,
+      signatureTitle: templateData.signature_title || 'Unterschrift'
     });
     setTemplateName(template.name);
     setEditingTemplate(template);
@@ -274,7 +281,9 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
         prefillNames: formData.prefillNames.length > 0 ? formData.prefillNames : undefined,
         creatorName: profile?.full_name || 'Unbekannt',
         pdfBackgroundUrl,
-        diagonalHeaders
+        diagonalHeaders,
+        signatureEnabled: formData.signatureEnabled,
+        signatureTitle: formData.signatureTitle
       };
 
       await generateEventSignupFormPdf(pdfData);
@@ -685,7 +694,7 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
                                 {cat.hasAsOption && <span data-ev-id="ev_79751f20c4" className="block text-[6px] text-gray-400">+AS</span>}
                               </div>
                         )}
-                            <div data-ev-id="ev_b4fb5a2458" className="px-2 py-1 text-center" style={{ minWidth: '60px' }}>UNTERSCHRIFT</div>
+                            {formData.signatureEnabled && <div data-ev-id="ev_b4fb5a2458" className="px-2 py-1 text-center" style={{ minWidth: '60px' }}>{formData.signatureTitle.toUpperCase()}</div>}
                           </div>
                         </div>
                         <div data-ev-id="ev_e3b38ce56a" className="mt-1 border border-gray-200 rounded">
@@ -730,9 +739,9 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
                                 </span>
                               </div>
                         )}
-                            <div data-ev-id="ev_1d18e381ea" className="px-1 pb-1 flex items-end justify-center" style={{ minWidth: '60px' }}>
-                              <span data-ev-id="ev_40ec760a1e">UNTERSCHRIFT</span>
-                            </div>
+                            {formData.signatureEnabled && <div data-ev-id="ev_1d18e381ea" className="px-1 pb-1 flex items-end justify-center" style={{ minWidth: '60px' }}>
+                              <span data-ev-id="ev_40ec760a1e">{formData.signatureTitle.toUpperCase()}</span>
+                            </div>}
                           </div>
                         </div>
                         <div data-ev-id="ev_229dc29430" className="mt-1 border border-gray-200 rounded">
@@ -774,14 +783,45 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
                     }
                         </div>
                   )}
-                      <div data-ev-id="ev_24452a9db6" className={`px-2 ${diagonalHeaders ? 'pb-1' : 'py-1'} ${diagonalHeaders ? 'flex items-end justify-center' : 'text-center'}`} style={{ minWidth: '65px' }}>
-                        UNTERSCHRIFT
-                      </div>
+                      {formData.signatureEnabled && <div data-ev-id="ev_24452a9db6" className={`px-2 ${diagonalHeaders ? 'pb-1' : 'py-1'} ${diagonalHeaders ? 'flex items-end justify-center' : 'text-center'}`} style={{ minWidth: '65px' }}>
+                        {formData.signatureTitle.toUpperCase()}
+                      </div>}
                     </div>
                   </div>
                 </div>
               </div>
           }
+
+            {/* Unterschrift-Spalte Einstellungen */}
+            <div data-ev-id="ev_signature_settings" className="bg-card border border-border rounded-xl p-6">
+              <h3 data-ev-id="ev_signature_title" className="font-semibold text-lg mb-4">Unterschrift-Spalte</h3>
+              <div data-ev-id="ev_signature_options" className="flex flex-col gap-4">
+                <label data-ev-id="ev_signature_toggle" className="flex items-center gap-3 cursor-pointer">
+                  <input data-ev-id="ev_f56bc595d5"
+                type="checkbox"
+                checked={formData.signatureEnabled}
+                onChange={(e) => setFormData((prev) => ({ ...prev, signatureEnabled: e.target.checked }))}
+                className="w-5 h-5" />
+
+                  <div data-ev-id="ev_609dec7d33">
+                    <span data-ev-id="ev_78d80b5215" className="font-medium">Unterschrift-Spalte anzeigen</span>
+                    <p data-ev-id="ev_758b1a5dce" className="text-sm text-muted-foreground">Deaktivieren für reine Namenslisten ohne Unterschriftsfeld</p>
+                  </div>
+                </label>
+                {formData.signatureEnabled &&
+              <div data-ev-id="ev_signature_title_input">
+                    <label data-ev-id="ev_6c203bd875" className="block text-sm font-medium mb-1">Spalten-Titel</label>
+                    <input data-ev-id="ev_276a518e74"
+                type="text"
+                value={formData.signatureTitle}
+                onChange={(e) => setFormData((prev) => ({ ...prev, signatureTitle: e.target.value }))}
+                placeholder="z.B. Unterschrift, Signatur, Bestätigung"
+                className="w-full px-3 py-2 border border-input rounded-lg" />
+
+                  </div>
+              }
+              </div>
+            </div>
 
             {/* Save as Template & Generate */}
             <div data-ev-id="ev_93b5b9113b" className="bg-card border border-border rounded-xl p-6 space-y-4">
