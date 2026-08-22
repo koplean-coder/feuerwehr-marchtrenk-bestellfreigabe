@@ -26,6 +26,7 @@ export interface EventSignupFormData {
   signatureEnabled?: boolean;
   signatureTitle?: string;
   participantCount?: number;
+  showParticipantCountOnPdf?: boolean;
 }
 
 export async function generateEventSignupFormPdf(data: EventSignupFormData): Promise<void> {
@@ -46,7 +47,8 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
     diagonalHeaders = false,
     signatureEnabled = true,
     signatureTitle = 'UNTERSCHRIFT',
-    participantCount
+    participantCount,
+    showParticipantCountOnPdf = false
   } = data;
 
   const backgroundData = pdfBackgroundUrl ? await loadOptimizedBackground(pdfBackgroundUrl) : null;
@@ -387,8 +389,8 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
   let infoBoxHeight = 32; // Basis-Höhe für ORT + DATUM/ZEIT
   if (vehicles && adjustment) infoBoxHeight = 42;
   else if (vehicles || adjustment) infoBoxHeight = 32;
-  // Zusätzliche Höhe für Teilnehmer-Limit
-  if (participantCount && participantCount > 0) infoBoxHeight += 16;
+  // Zusätzliche Höhe für Teilnehmer-Limit (nur wenn angezeigt)
+  if (participantCount && participantCount > 0 && showParticipantCountOnPdf) infoBoxHeight += 16;
   
   doc.setFillColor(248, 248, 248);
   doc.roundedRect(margin, infoBoxY, contentWidth, infoBoxHeight, 2, 2, 'F');
@@ -444,8 +446,8 @@ export async function generateEventSignupFormPdf(data: EventSignupFormData): Pro
     doc.text(vehicles, col2X, vehicleY + 5);
   }
 
-  // Max. Teilnehmer (nur wenn angegeben) - mit rotem Hintergrund und Warnung
-  if (participantCount && participantCount > 0) {
+  // Max. Teilnehmer (nur wenn angegeben UND anzeigen aktiviert) - mit rotem Hintergrund und Warnung
+  if (participantCount && participantCount > 0 && showParticipantCountOnPdf) {
     const maxY = infoBoxY + infoBoxHeight - 14;
     // Roter Hintergrund-Balken
     doc.setFillColor(200, 30, 30);

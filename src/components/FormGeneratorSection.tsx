@@ -25,6 +25,7 @@ interface FormState {
   signatureEnabled: boolean;
   signatureTitle: string;
   participantCount: string;
+  showParticipantCountOnPdf: boolean;
 }
 
 const initialFormState: FormState = {
@@ -40,7 +41,8 @@ const initialFormState: FormState = {
   prefillNames: [],
   signatureEnabled: true,
   signatureTitle: 'Unterschrift',
-  participantCount: ''
+  participantCount: '30',
+  showParticipantCountOnPdf: false
 };
 
 export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
@@ -77,7 +79,7 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
   };
 
   const loadTemplate = (template: EventFormTemplate) => {
-    const templateData = template as unknown as {prefill_names?: string[];signature_enabled?: boolean;signature_title?: string;participant_count?: number;};
+    const templateData = template as unknown as {prefill_names?: string[];signature_enabled?: boolean;signature_title?: string;participant_count?: number;show_participant_count_on_pdf?: boolean;};
     setFormData({
       eventName: template.event_name,
       description: template.description || '',
@@ -91,7 +93,8 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
       prefillNames: templateData.prefill_names || [],
       signatureEnabled: templateData.signature_enabled ?? true,
       signatureTitle: templateData.signature_title || 'Unterschrift',
-      participantCount: templateData.participant_count?.toString() || ''
+      participantCount: templateData.participant_count?.toString() || '30',
+      showParticipantCountOnPdf: templateData.show_participant_count_on_pdf ?? false
     });
     setTemplateName(template.name);
     setEditingTemplate(template);
@@ -311,7 +314,8 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
         diagonalHeaders,
         signatureEnabled: formData.signatureEnabled,
         signatureTitle: formData.signatureTitle,
-        participantCount: formData.participantCount ? parseInt(formData.participantCount, 10) : undefined
+        participantCount: formData.participantCount ? parseInt(formData.participantCount, 10) : undefined,
+        showParticipantCountOnPdf: formData.showParticipantCountOnPdf
       };
 
       await generateEventSignupFormPdf(pdfData);
@@ -901,22 +905,34 @@ export function FormGeneratorSection({ onBack }: FormGeneratorSectionProps) {
             {/* Teilnehmeranzahl */}
             <div data-ev-id="ev_participant_count" className="bg-card border border-border rounded-xl p-6">
               <h3 data-ev-id="ev_cebf64bcc7" className="font-semibold text-lg mb-4">Teilnehmeranzahl</h3>
-              <div data-ev-id="ev_0b816a403a" className="flex flex-col gap-2">
-                <label data-ev-id="ev_ad492a2c0c" className="block text-sm font-medium">Anzahl Zeilen im Formular</label>
-                <input data-ev-id="ev_82aa98b451"
-              type="number"
-              min="1"
-              max="200"
-              value={formData.participantCount}
-              onChange={(e) => setFormData((prev) => ({ ...prev, participantCount: e.target.value }))}
-              placeholder="Leer = automatisch 2 Seiten"
-              className="w-full px-3 py-2 border border-input rounded-lg" />
-
-                <p data-ev-id="ev_3e8e694906" className="text-sm text-muted-foreground">
-                  {formData.participantCount ?
-                `Genau ${formData.participantCount} Zeilen werden generiert` :
-                'Automatisch 2 Seiten mit ca. 55 Zeilen'}
-                </p>
+              <div data-ev-id="ev_0b816a403a" className="flex flex-col gap-3">
+                <div data-ev-id="ev_90640c43c6">
+                  <label data-ev-id="ev_ad492a2c0c" className="block text-sm font-medium mb-1">Anzahl Zeilen im Formular</label>
+                  <input data-ev-id="ev_82aa98b451"
+                type="number"
+                min="1"
+                max="200"
+                value={formData.participantCount}
+                onChange={(e) => setFormData((prev) => ({ ...prev, participantCount: e.target.value }))}
+                placeholder="z.B. 30"
+                className="w-full px-3 py-2 border border-input rounded-lg" />
+                  <p data-ev-id="ev_3e8e694906" className="text-sm text-muted-foreground mt-1">
+                    {formData.participantCount ?
+                  `Genau ${formData.participantCount} Zeilen werden generiert` :
+                  'Automatisch 2 Seiten mit ca. 55 Zeilen'}
+                  </p>
+                </div>
+                <label data-ev-id="ev_d50777bef0" className="flex items-center gap-3 cursor-pointer pt-2 border-t border-border">
+                  <input data-ev-id="ev_56215a71da"
+                type="checkbox"
+                checked={formData.showParticipantCountOnPdf}
+                onChange={(e) => setFormData((prev) => ({ ...prev, showParticipantCountOnPdf: e.target.checked }))}
+                className="w-5 h-5" />
+                  <div data-ev-id="ev_a7502791ba">
+                    <span data-ev-id="ev_4243747fbe" className="font-medium">Max. Teilnehmer auf PDF anzeigen</span>
+                    <p data-ev-id="ev_195f2eed72" className="text-sm text-muted-foreground">Zeigt einen roten Hinweis mit der maximalen Teilnehmerzahl</p>
+                  </div>
+                </label>
               </div>
             </div>
 
