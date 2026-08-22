@@ -21,6 +21,7 @@ export const MODULE_DEFINITIONS = {
     { key: 'benutzer', label: 'Benutzer', description: 'Benutzerverwaltung' },
     { key: 'einstellungen', label: 'Einstellungen', description: 'Systemeinstellungen' },
     { key: 'ideen_pool', label: 'Ideen-Pool', description: 'Ideensammlung' },
+    { key: 'uebungsplan', label: 'Übungsplan', description: 'Übungsplan-Generator' },
   ],
   formulare: [
     { key: 'teilnahme_veranstaltung', label: 'Teilnahme Veranstaltung', description: 'Veranstaltungsteilnahme erfassen' },
