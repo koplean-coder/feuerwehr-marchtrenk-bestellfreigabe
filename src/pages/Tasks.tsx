@@ -6,7 +6,10 @@ import { useTodoSettings } from '@/hooks/useTodoSettings';
 import { useProfiles } from '@/hooks/useProfiles';
 import { useTodoTags, type TodoTag } from '@/hooks/useTodoTags';
 import { Layout } from '@/components/Layout';
-import { TodoSidebar, TodoTaskList, TodoTaskDetail, TodoShareModal } from '@/components/todo';
+import { TodoSidebar } from '@/components/todo/TodoSidebar';
+import { TodoTaskList } from '@/components/todo/TodoTaskList';
+import { TodoTaskDetail } from '@/components/todo/TodoTaskDetail';
+import { TodoShareModal } from '@/components/todo/TodoShareModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Lock } from 'lucide-react';
 
