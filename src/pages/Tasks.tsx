@@ -13,6 +13,16 @@ import { TodoShareModal } from '@/components/todo/TodoShareModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Lock } from 'lucide-react';
 
+interface CreateTaskInput {
+  title: string;
+  notes?: string;
+  assigned_to?: string;
+  due_date?: string;
+  due_time?: string;
+  priority?: number;
+  is_important?: boolean;
+}
+
 export default function Tasks() {
   const { profile } = useAuth();
   const { canViewTodo, loading: settingsLoading } = useTodoSettings();
@@ -264,16 +274,6 @@ export default function Tasks() {
   const handleDeleteGroup = async (id: string) => {
     await deleteGroup(id);
   };
-
-  interface CreateTaskInput {
-    title: string;
-    notes?: string;
-    assigned_to?: string;
-    due_date?: string;
-    due_time?: string;
-    priority?: number;
-    is_important?: boolean;
-  }
 
   const handleCreateTask = async (input: CreateTaskInput) => {
     // Determine which list to create in
