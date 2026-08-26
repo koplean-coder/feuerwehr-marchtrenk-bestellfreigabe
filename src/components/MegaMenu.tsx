@@ -246,7 +246,6 @@ export function MegaMenu({
                     {category.items.map((item) => {
                       const isActive = location.pathname === item.path;
                       const isFavorite = favorites.includes(item.path);
-                      const isHovered = hoveredItem === item.path;
                       const Icon = item.icon;
 
                       return (
