@@ -267,15 +267,58 @@ export function useTodoTasks(filters: TaskFilters = {}) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
+    // If task is assigned, add assigned_by and assigned_at
+    const taskWithAssignment = task.assigned_to ? {
+      ...task,
+      assigned_by: user.id,
+      assigned_at: new Date().toISOString()
+    } : task;
+
     const { data, error: createError } = await supabase
       .from('todo_tasks')
-      .insert({ ...task, created_by: user.id })
+      .insert({ ...taskWithAssignment, created_by: user.id })
       .select()
       .single();
 
     if (createError) {
       setError(createError.message);
       return null;
+    }
+
+    // Send notification if task is assigned to someone else
+    if (data && task.assigned_to && task.assigned_to !== user.id) {
+      // Get creator's name
+      const { data: creatorProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+      
+      const creatorName = creatorProfile?.full_name || 'Jemand';
+      const taskTitle = data.title || 'Aufgabe';
+      
+      // In-app notification
+      await supabase.from('notifications').insert({
+        user_id: task.assigned_to,
+        title: 'Neue Aufgabe zugewiesen',
+        message: `${creatorName} hat dir "${taskTitle}" zugewiesen`,
+        type: 'task_assigned',
+        link: `/aufgaben?task=${data.id}`
+      });
+      
+      // Push notification
+      try {
+        await supabase.functions.invoke('send-push', {
+          body: {
+            userId: task.assigned_to,
+            title: '📋 Neue Aufgabe zugewiesen',
+            body: `${creatorName} hat dir "${taskTitle}" zugewiesen`,
+            url: `/aufgaben?task=${data.id}`
+          }
+        });
+      } catch (e) {
+        console.error('Push notification failed:', e);
+      }
     }
 
     await fetchTasks(true);

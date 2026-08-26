@@ -25,13 +25,19 @@ import {
 
 // Priority colors
 const PRIORITY_COLORS = [
-  '', // 0 = keine
-  'text-blue-500', // 1 = niedrig
-  'text-amber-500', // 2 = mittel
-  'text-red-500' // 3 = hoch
+'', // 0 = keine
+'text-blue-500', // 1 = niedrig
+'text-amber-500', // 2 = mittel
+'text-red-500' // 3 = hoch
 ];
 import type { TodoTaskWithSteps } from '@/hooks/useTodoTasks';
 import type { SmartListType } from '@/hooks/useTodoLists';
+
+interface Profile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
 
 interface TodoTaskListProps {
   tasks: TodoTaskWithSteps[];
@@ -40,7 +46,7 @@ interface TodoTaskListProps {
   smartListType?: SmartListType | null;
   selectedTaskId: string | null;
   onSelectTask: (taskId: string) => void;
-  onCreateTask: (title: string) => void;
+  onCreateTask: (title: string, assignedTo?: string) => void;
   onToggleComplete: (taskId: string) => void;
   onToggleImportant: (taskId: string) => void;
   onAddToMyDay: (taskId: string) => void;
@@ -51,6 +57,8 @@ interface TodoTaskListProps {
   onRestoreTask?: (taskId: string) => void;
   onPermanentDeleteTask?: (taskId: string) => void;
   onEmptyTrash?: () => void;
+  // Profiles for assignment
+  profiles?: Profile[];
 }
 
 const SMART_LIST_HEADERS: Partial<Record<SmartListType, {title: string;subtitle?: string;bgClass: string;}>> = {
@@ -81,11 +89,14 @@ export function TodoTaskList({
   onToggleMobileSidebar,
   onRestoreTask,
   onPermanentDeleteTask,
-  onEmptyTrash
+  onEmptyTrash,
+  profiles = []
 }: TodoTaskListProps) {
   const isTrashView = smartListType === 'deleted';
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [newTaskAssignedTo, setNewTaskAssignedTo] = useState<string>('');
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [showCompletedSection, setShowCompletedSection] = useState(true);
 
   // Memoize filtered tasks to avoid recalculating on every render
@@ -99,7 +110,7 @@ export function TodoTaskList({
 
   const myDayCategories = useMemo(() => {
     if (smartListType !== 'my_day') return null;
-    
+
     const overdue: TodoTaskWithSteps[] = [];
     const dueToday: TodoTaskWithSteps[] = [];
     const manuallyAdded: TodoTaskWithSteps[] = [];
@@ -137,10 +148,14 @@ export function TodoTaskList({
 
   const handleCreateTask = () => {
     if (newTaskTitle.trim()) {
-      onCreateTask(newTaskTitle.trim());
+      onCreateTask(newTaskTitle.trim(), newTaskAssignedTo || undefined);
       setNewTaskTitle('');
+      setNewTaskAssignedTo('');
+      setShowAssigneeDropdown(false);
     }
   };
+
+  const selectedAssignee = profiles.find((p) => p.id === newTaskAssignedTo);
 
   const headerInfo = smartListType ? SMART_LIST_HEADERS[smartListType] : null;
 
@@ -196,8 +211,8 @@ export function TodoTaskList({
               onRestoreTask?.(task.id);
             }}
             className="p-1.5 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400"
-            title="Wiederherstellen"
-          >
+            title="Wiederherstellen">
+
             <RotateCcw size={18} />
           </button>
           <button
@@ -209,8 +224,8 @@ export function TodoTaskList({
               }
             }}
             className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
-            title="Endgültig löschen"
-          >
+            title="Endgültig löschen">
+
             <Trash2 size={18} />
           </button>
         </div> :
@@ -384,18 +399,18 @@ export function TodoTaskList({
             </div>
             {/* Empty Trash button */}
             {isTrashView && tasks.length > 0 && onEmptyTrash &&
-            <button
-              data-ev-id="ev_empty_trash_btn"
-              onClick={() => {
-                if (confirm('Papierkorb leeren? Alle Aufgaben werden endgültig gelöscht.')) {
-                  onEmptyTrash();
-                }
-              }}
-              className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors"
-            >
+          <button
+            data-ev-id="ev_empty_trash_btn"
+            onClick={() => {
+              if (confirm('Papierkorb leeren? Alle Aufgaben werden endgültig gelöscht.')) {
+                onEmptyTrash();
+              }
+            }}
+            className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors">
+
               Papierkorb leeren
             </button>
-            }
+          }
           </div>
         </div> :
 
@@ -419,35 +434,134 @@ export function TodoTaskList({
       {/* Add Task */}
       <div data-ev-id="ev_565b743669" className="px-4 py-3 border-b border-slate-200 dark:border-slate-600">
         {isAddingTask ?
-        <div data-ev-id="ev_48d9703602" className="flex items-center gap-3">
-            <Circle size={22} className="text-slate-400 flex-shrink-0" />
-            <input data-ev-id="ev_65bf328d28"
-          type="text"
-          value={newTaskTitle}
-          onChange={(e) => setNewTaskTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') handleCreateTask();
-            if (e.key === 'Escape') {
-              setIsAddingTask(false);
-              setNewTaskTitle('');
-            }
-          }}
-          onBlur={() => {
-            if (!newTaskTitle.trim()) {
-              setIsAddingTask(false);
-            }
-          }}
-          placeholder="Aufgabe hinzufügen..."
-          className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder-slate-400"
-          autoFocus />
+        <div data-ev-id="ev_48d9703602" className="flex flex-col gap-3">
+            {/* Title Input Row */}
+            <div data-ev-id="ev_title_row" className="flex items-center gap-3">
+              <Circle size={22} className="text-slate-400 flex-shrink-0" />
+              <input data-ev-id="ev_65bf328d28"
+            type="text"
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && newTaskTitle.trim()) handleCreateTask();
+              if (e.key === 'Escape') {
+                setIsAddingTask(false);
+                setNewTaskTitle('');
+                setNewTaskAssignedTo('');
+              }
+            }}
+            placeholder="Aufgabe hinzufügen..."
+            className="flex-1 bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder-slate-400"
+            autoFocus />
+            </div>
+            
+            {/* Options Row */}
+            <div data-ev-id="ev_options_row" className="flex items-center gap-2 ml-[34px]">
+              {/* Assignee Selector */}
+              <div data-ev-id="ev_assignee_selector" className="relative">
+                <button
+                data-ev-id="ev_assignee_btn"
+                type="button"
+                onClick={() => setShowAssigneeDropdown(!showAssigneeDropdown)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                newTaskAssignedTo ?
+                'border-blue-300 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700' :
+                'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`
+                }>
 
-            <button data-ev-id="ev_39a7f84eaa"
-          onClick={handleCreateTask}
-          disabled={!newTaskTitle.trim()}
-          className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {newTaskAssignedTo ? <UserCheck size={16} /> : <UserPlus size={16} />}
+                  <span data-ev-id="ev_a84df2ccf9">{selectedAssignee ? selectedAssignee.full_name || selectedAssignee.email : 'Zuweisen'}</span>
+                  <ChevronDown size={14} className={`transition-transform ${showAssigneeDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {/* Dropdown */}
+                {showAssigneeDropdown &&
+              <>
+                    <div
+                  data-ev-id="ev_dropdown_backdrop"
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowAssigneeDropdown(false)} />
 
-              Hinzufügen
-            </button>
+                    <div
+                  data-ev-id="ev_assignee_dropdown"
+                  className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-600 z-20">
+
+                      {/* No assignment option */}
+                      <button
+                    data-ev-id="ev_no_assign"
+                    type="button"
+                    onClick={() => {
+                      setNewTaskAssignedTo('');
+                      setShowAssigneeDropdown(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                    !newTaskAssignedTo ? 'bg-slate-100 dark:bg-slate-700' : ''}`
+                    }>
+
+                        <User size={16} className="text-slate-400" />
+                        <span data-ev-id="ev_770e0adb6b" className="text-slate-500">Nicht zugewiesen</span>
+                      </button>
+                      
+                      <div data-ev-id="ev_divider" className="border-t border-slate-200 dark:border-slate-600 my-1" />
+                      
+                      {/* Profile list */}
+                      {profiles.map((p) =>
+                  <button
+                    key={p.id}
+                    data-ev-id={`ev_profile_${p.id}`}
+                    type="button"
+                    onClick={() => {
+                      setNewTaskAssignedTo(p.id);
+                      setShowAssigneeDropdown(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 ${
+                    newTaskAssignedTo === p.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`
+                    }>
+
+                          <div data-ev-id="ev_avatar" className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-xs font-medium text-blue-600 dark:text-blue-300">
+                            {(p.full_name || p.email || '?')[0].toUpperCase()}
+                          </div>
+                          <div data-ev-id="ev_profile_info" className="flex-1 text-left">
+                            <div data-ev-id="ev_3b35d289b0" className="font-medium text-slate-900 dark:text-white">
+                              {p.full_name || p.email}
+                            </div>
+                            {p.full_name && p.email &&
+                      <div data-ev-id="ev_5d81a74b2e" className="text-xs text-slate-500 truncate">{p.email}</div>
+                      }
+                          </div>
+                          {newTaskAssignedTo === p.id &&
+                    <CheckCircle2 size={16} className="text-blue-600" />
+                    }
+                        </button>
+                  )}
+                    </div>
+                  </>
+              }
+              </div>
+              
+              {/* Spacer */}
+              <div data-ev-id="ev_spacer" className="flex-1" />
+              
+              {/* Action Buttons */}
+              <button
+              data-ev-id="ev_cancel_btn"
+              type="button"
+              onClick={() => {
+                setIsAddingTask(false);
+                setNewTaskTitle('');
+                setNewTaskAssignedTo('');
+              }}
+              className="px-3 py-1.5 text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+
+                Abbrechen
+              </button>
+              <button data-ev-id="ev_39a7f84eaa"
+            onClick={handleCreateTask}
+            disabled={!newTaskTitle.trim()}
+            className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                Hinzufügen
+              </button>
+            </div>
           </div> :
 
         <button data-ev-id="ev_2a7e17fa83"

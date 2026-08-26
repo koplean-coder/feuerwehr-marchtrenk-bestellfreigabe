@@ -265,7 +265,7 @@ export default function Tasks() {
     await deleteGroup(id);
   };
 
-  const handleCreateTask = async (title: string) => {
+  const handleCreateTask = async (title: string, assignedTo?: string) => {
     // Determine which list to create in
     let listId = selectedListId;
 
@@ -296,6 +296,11 @@ export default function Tasks() {
       taskData.my_day_date = new Date().toISOString().split('T')[0];
     } else if (selectedSmartList === 'important') {
       taskData.is_important = true;
+    }
+
+    // Apply assignee if provided
+    if (assignedTo) {
+      taskData.assigned_to = assignedTo;
     }
 
     await createTask(taskData as Parameters<typeof createTask>[0]);
@@ -493,7 +498,8 @@ export default function Tasks() {
           onToggleMobileSidebar={() => setShowMobileSidebar(true)}
           onRestoreTask={handleRestoreTask}
           onPermanentDeleteTask={handlePermanentDeleteTask}
-          onEmptyTrash={handleEmptyTrash} />
+          onEmptyTrash={handleEmptyTrash}
+          profiles={profiles} />
 
 
         {/* Task Detail Panel */}
