@@ -574,7 +574,7 @@ export function Layout({ children }: LayoutProps) {
         </div>
 
         {/* Mobile Navigation - Favoriten oder Top-Items + Alle Module */}
-        <nav data-ev-id="ev_8f4063402b" className="md:hidden border-t border-white/10 px-4 py-2 flex gap-2 overflow-x-auto">
+        <nav data-ev-id="ev_8f4063402b" className="md:hidden border-t border-white/10 px-4 py-2 flex gap-2 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           {/* Favoriten-Items oder Fallback zu ersten 4 navItems */}
           {(favoriteItems.length > 0 ? favoriteItems : navItems.slice(0, 4)).map((item) => {
             const isActive = location.pathname === item.path;
@@ -582,12 +582,13 @@ export function Layout({ children }: LayoutProps) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-150 touch-manipulation ${
                 isActive ?
                 'text-primary' :
-                'text-white/70 hover:bg-white/15'}`
+                'text-white/70 active:bg-white/25'}`
                 }
                 style={{
+                  touchAction: 'manipulation',
                   background: isActive ? 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)' : 'transparent',
                   boxShadow: isActive ? '0 4px 15px rgba(255,255,255,0.3)' : 'none'
                 }}>
@@ -600,7 +601,8 @@ export function Layout({ children }: LayoutProps) {
           {/* Alle Module Button */}
           <button data-ev-id="ev_41b5ef8385"
           onClick={() => setShowMegaMenu(true)}
-          className="flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap text-white/70 hover:bg-white/15 border border-white/20">
+          className="flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium whitespace-nowrap text-white/70 active:bg-white/25 border border-white/20 touch-manipulation"
+          style={{ touchAction: 'manipulation' }}>
 
             <Grid3X3 className="w-4 h-4" />
             Alle

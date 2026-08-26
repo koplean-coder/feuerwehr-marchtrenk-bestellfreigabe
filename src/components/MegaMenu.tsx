@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Link, useLocation } from 'react-router';
-import { X, Star, Grid3X3, RotateCcw, ChevronUp, ChevronDown, GripVertical } from 'lucide-react';
+import { X, Star, Grid3X3, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface MenuItem {
@@ -42,7 +42,18 @@ export function MegaMenu({
   saving = false
 }: MegaMenuProps) {
   const location = useLocation();
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+
+  // Handle link click with immediate close - no delay
+  const handleLinkClick = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  // Handle favorite toggle without propagation issues
+  const handleFavoriteClick = useCallback((e: React.MouseEvent, path: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleFavorite(path);
+  }, [onToggleFavorite]);
 
   // Get favorite items with full details
   const favoriteItems = useMemo(() => {
@@ -96,14 +107,15 @@ export function MegaMenu({
         onClick={onClose} />
 
 
-      {/* Mega Menu Panel */}
+      {/* Mega Menu Panel - Mobile: Fullscreen, Desktop: Centered */}
       <div
         data-ev-id="ev_megamenu_panel"
-        className="fixed left-1/2 -translate-x-1/2 top-16 z-50 w-full max-w-4xl px-4">
+        className="fixed inset-0 md:inset-auto md:left-1/2 md:-translate-x-1/2 md:top-16 z-50 md:w-full md:max-w-4xl md:px-4"
+        style={{ touchAction: 'manipulation' }}>
 
-        <div data-ev-id="ev_236840fdf5" className="bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
-          {/* Header */}
-          <div data-ev-id="ev_8a824a60e2" className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+        <div data-ev-id="ev_236840fdf5" className="bg-white md:rounded-2xl shadow-2xl border-0 md:border border-gray-200 h-full md:h-auto md:max-h-[calc(100vh-6rem)] flex flex-col">
+          {/* Header - Fixed at top */}
+          <div data-ev-id="ev_8a824a60e2" className="flex-shrink-0 flex items-center justify-between px-4 md:px-6 py-3 md:py-4 border-b border-gray-100 bg-gray-50">
             <div data-ev-id="ev_d00373543d" className="flex items-center gap-3">
               <div data-ev-id="ev_1b0acea992" className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Grid3X3 className="w-5 h-5 text-primary" />
@@ -127,16 +139,17 @@ export function MegaMenu({
               }
               <button data-ev-id="ev_6af384ff65"
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              className="p-2 hover:bg-gray-200 active:bg-gray-300 rounded-xl transition-colors touch-manipulation"
+              style={{ touchAction: 'manipulation' }}>
 
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-6 h-6 md:w-5 md:h-5 text-gray-500" />
               </button>
             </div>
           </div>
 
-          {/* Main Content: Favorites + Categories */}
-          <div data-ev-id="ev_b41582fe1e" className="p-6">
-            <div data-ev-id="ev_6ac6579888" className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Scrollable Content Container */}
+          <div data-ev-id="ev_b41582fe1e" className="flex-1 overflow-y-auto overscroll-contain p-4 md:p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <div data-ev-id="ev_6ac6579888" className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
               
               {/* Left Column: Favorites with Reorder */}
               <div data-ev-id="ev_favorites_column" className="md:border-r md:border-gray-200 md:pr-6">
@@ -169,31 +182,34 @@ export function MegaMenu({
                             data-ev-id="ev_move_up"
                             onClick={() => moveFavorite(item.path, 'up')}
                             disabled={isFirst || saving}
-                            className={`p-0.5 rounded transition-colors ${
-                            isFirst ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-primary hover:bg-primary/10'}`
+                            className={`p-1 md:p-0.5 rounded transition-colors touch-manipulation ${
+                            isFirst ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-primary active:text-primary hover:bg-primary/10 active:bg-primary/10'}`
                             }
+                            style={{ touchAction: 'manipulation' }}
                             title="Nach oben">
 
-                              <ChevronUp className="w-3.5 h-3.5" />
+                              <ChevronUp className="w-4 h-4 md:w-3.5 md:h-3.5" />
                             </button>
                             <button
                             data-ev-id="ev_move_down"
                             onClick={() => moveFavorite(item.path, 'down')}
                             disabled={isLast || saving}
-                            className={`p-0.5 rounded transition-colors ${
-                            isLast ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-primary hover:bg-primary/10'}`
+                            className={`p-1 md:p-0.5 rounded transition-colors touch-manipulation ${
+                            isLast ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-primary active:text-primary hover:bg-primary/10 active:bg-primary/10'}`
                             }
+                            style={{ touchAction: 'manipulation' }}
                             title="Nach unten">
 
-                              <ChevronDown className="w-3.5 h-3.5" />
+                              <ChevronDown className="w-4 h-4 md:w-3.5 md:h-3.5" />
                             </button>
                           </div>
                           
                           {/* Favorite Item Link */}
                           <Link
                           to={item.path}
-                          onClick={onClose}
-                          className="flex-1 flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-100 text-gray-700 transition-colors">
+                          onClick={handleLinkClick}
+                          className="flex-1 flex items-center gap-2 px-3 py-3 md:px-2 md:py-2 rounded-lg hover:bg-gray-100 active:bg-gray-200 text-gray-700 transition-colors touch-manipulation"
+                          style={{ touchAction: 'manipulation' }}>
 
                             <div data-ev-id="ev_fav_icon" className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center">
                               <Icon className="w-3.5 h-3.5 text-primary" />
@@ -204,12 +220,13 @@ export function MegaMenu({
                           {/* Remove from favorites */}
                           <button
                           data-ev-id="ev_remove_fav"
-                          onClick={() => onToggleFavorite(item.path)}
+                          onClick={(e) => handleFavoriteClick(e, item.path)}
                           disabled={saving}
-                          className="p-1 rounded text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                          className="p-2 md:p-1 rounded text-gray-400 md:text-gray-300 hover:text-red-500 active:text-red-500 hover:bg-red-50 active:bg-red-50 transition-colors md:opacity-0 md:group-hover:opacity-100 touch-manipulation"
+                          style={{ touchAction: 'manipulation' }}
                           title="Aus Favoriten entfernen">
 
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-4 h-4 md:w-3.5 md:h-3.5" />
                           </button>
                         </div>);
 
@@ -219,13 +236,13 @@ export function MegaMenu({
               </div>
               
               {/* Right Side: Categories Grid (3 columns) */}
-              <div data-ev-id="ev_categories_grid" className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div data-ev-id="ev_categories_grid" className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {categorizedItems.map((category) =>
                 <div data-ev-id="ev_2d8c8152d6" key={category.id}>
-                  <h3 data-ev-id="ev_3ffb3a5513" className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                  <h3 data-ev-id="ev_3ffb3a5513" className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 md:mb-3 sticky top-0 bg-white py-1">
                     {category.label}
                   </h3>
-                  <div data-ev-id="ev_ecb16d1ed1" className="flex flex-col gap-1">
+                  <div data-ev-id="ev_ecb16d1ed1" className="flex flex-col gap-0.5 md:gap-1">
                     {category.items.map((item) => {
                       const isActive = location.pathname === item.path;
                       const isFavorite = favorites.includes(item.path);
@@ -235,18 +252,17 @@ export function MegaMenu({
                       return (
                         <div data-ev-id="ev_b1a52a17c5"
                         key={item.path}
-                        className="relative group"
-                        onMouseEnter={() => setHoveredItem(item.path)}
-                        onMouseLeave={() => setHoveredItem(null)}>
+                        className="relative group">
 
                           <Link
                             to={item.path}
-                            onClick={onClose}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                            onClick={handleLinkClick}
+                            className={`flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-xl transition-all duration-150 touch-manipulation ${
                             isActive ?
                             'bg-primary text-white shadow-lg shadow-primary/25' :
-                            'hover:bg-gray-100 text-gray-700'}`
-                            }>
+                            'hover:bg-gray-100 active:bg-gray-200 text-gray-700'}`
+                            }
+                            style={{ touchAction: 'manipulation' }}>
 
                             <div data-ev-id="ev_71dcdf50bc"
                             className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
@@ -263,23 +279,20 @@ export function MegaMenu({
                             </div>
                             <span data-ev-id="ev_4a1ccf71d5" className="font-medium flex-1">{item.label}</span>
 
-                            {/* Favorite Star */}
+                            {/* Favorite Star - Always visible on mobile */}
                             <button data-ev-id="ev_dd4b8113d0"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onToggleFavorite(item.path);
-                            }}
+                            onClick={(e) => handleFavoriteClick(e, item.path)}
                             disabled={saving}
-                            className={`p-1.5 rounded-lg transition-all duration-200 ${
+                            className={`p-2 md:p-1.5 rounded-lg transition-all duration-150 touch-manipulation ${
                             isFavorite ?
-                            'text-amber-500 hover:text-amber-600 hover:bg-amber-50' :
+                            'text-amber-500 hover:text-amber-600 active:text-amber-600 hover:bg-amber-50 active:bg-amber-50' :
                             isActive ?
-                            'text-white/50 hover:text-white hover:bg-white/10' :
-                            'text-gray-300 hover:text-amber-500 hover:bg-amber-50'} ${
-                            isHovered || isFavorite ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            'text-white/50 hover:text-white active:text-white hover:bg-white/10 active:bg-white/10' :
+                            'text-gray-300 hover:text-amber-500 active:text-amber-500 hover:bg-amber-50 active:bg-amber-50'} ${
+                            isFavorite ? 'opacity-100' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
+                            style={{ touchAction: 'manipulation' }}>
 
-                              <Star className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+                              <Star className={`w-5 h-5 md:w-4 md:h-4 ${isFavorite ? 'fill-current' : ''}`} />
                             </button>
                           </Link>
                         </div>);
@@ -292,10 +305,10 @@ export function MegaMenu({
             </div>
           </div>
 
-          {/* Footer */}
-          <div data-ev-id="ev_3c29f94066" className="px-6 py-3 bg-gray-50 border-t border-gray-100">
+          {/* Footer - Fixed at bottom */}
+          <div data-ev-id="ev_3c29f94066" className="flex-shrink-0 px-4 md:px-6 py-2 md:py-3 bg-gray-50 border-t border-gray-100">
             <p data-ev-id="ev_569ea811ca" className="text-xs text-gray-500 text-center">
-              Favoriten werden in der Hauptleiste angezeigt • Pfeile zum Sortieren • Max. 6 empfohlen
+              Favoriten werden in der Hauptleiste angezeigt • Max. 6 empfohlen
             </p>
           </div>
         </div>
