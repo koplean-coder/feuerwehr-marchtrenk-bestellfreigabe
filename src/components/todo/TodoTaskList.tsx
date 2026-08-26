@@ -16,8 +16,9 @@ import {
   Flag,
   RotateCcw,
   Trash2,
-  SquarePen } from
-'lucide-react';
+  SquarePen,
+  GripVertical
+} from 'lucide-react';
 import { CreateTaskModal } from './CreateTaskModal';
 
 // Priority colors
