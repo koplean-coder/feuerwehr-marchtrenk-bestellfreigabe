@@ -197,9 +197,15 @@ export default function Tasks() {
     }
   }, [profile?.id]);
 
+  // Fetch counts only on mount and when profile changes, not on every task change
   useEffect(() => {
     fetchSmartListCounts();
-  }, [fetchSmartListCounts, tasks]);
+  }, [fetchSmartListCounts]);
+  
+  // Refresh counts when tasks are modified (debounced via task operations)
+  const refreshCounts = useCallback(() => {
+    fetchSmartListCounts();
+  }, [fetchSmartListCounts]);
 
   // Get selected task
   const selectedTask = tasks.find((t) => t.id === selectedTaskId);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Plus,
   Circle,
@@ -88,20 +88,25 @@ export function TodoTaskList({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [showCompletedSection, setShowCompletedSection] = useState(true);
 
-  const incompleteTasks = tasks.filter((t) => !t.is_completed);
-  const completedTasks = tasks.filter((t) => t.is_completed);
+  // Memoize filtered tasks to avoid recalculating on every render
+  const { incompleteTasks, completedTasks } = useMemo(() => ({
+    incompleteTasks: tasks.filter((t) => !t.is_completed),
+    completedTasks: tasks.filter((t) => t.is_completed)
+  }), [tasks]);
 
-  // Categorize tasks for "Mein Tag"
-  const today = new Date().toISOString().split('T')[0];
+  // Categorize tasks for "Mein Tag" - memoized
+  const today = useMemo(() => new Date().toISOString().split('T')[0], []);
 
-  const categorizeMyDayTasks = (taskList: TodoTaskWithSteps[]) => {
+  const myDayCategories = useMemo(() => {
+    if (smartListType !== 'my_day') return null;
+    
     const overdue: TodoTaskWithSteps[] = [];
     const dueToday: TodoTaskWithSteps[] = [];
     const manuallyAdded: TodoTaskWithSteps[] = [];
     const assignedNoDate: TodoTaskWithSteps[] = [];
     const processed = new Set<string>();
 
-    taskList.forEach((task) => {
+    incompleteTasks.forEach((task) => {
       // Überfällig (due_date < heute)
       if (task.due_date && task.due_date < today && !processed.has(task.id)) {
         overdue.push(task);
@@ -128,9 +133,7 @@ export function TodoTaskList({
     });
 
     return { overdue, dueToday, manuallyAdded, assignedNoDate };
-  };
-
-  const myDayCategories = smartListType === 'my_day' ? categorizeMyDayTasks(incompleteTasks) : null;
+  }, [smartListType, incompleteTasks, today]);
 
   const handleCreateTask = () => {
     if (newTaskTitle.trim()) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   X,
   Circle,
@@ -112,6 +112,20 @@ export function TodoTaskDetail({
 }: TodoTaskDetailProps) {
   // Use assignableProfiles for assignment dropdown, fallback to all profiles
   const profilesForAssignment = assignableProfiles ?? profiles;
+  
+  // Create a Map for O(1) profile lookups instead of O(n) find() calls
+  const profilesMap = useMemo(() => {
+    const map = new Map<string, typeof profiles[0]>();
+    profiles.forEach(p => map.set(p.id, p));
+    return map;
+  }, [profiles]);
+  
+  // Helper function for fast profile lookup
+  const getProfile = useCallback((id: string | null | undefined) => {
+    if (!id) return null;
+    return profilesMap.get(id) ?? null;
+  }, [profilesMap]);
+  
   // Permission: Can edit if user is task creator, list owner, OR assigned to the task
   const canEditTask = currentUserId && (
   task.created_by === currentUserId ||
@@ -1083,7 +1097,7 @@ export function TodoTaskDetail({
                 <div data-ev-id="ev_shares_label" className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-2">Eingeladen ({task.shares?.length})</div>
                 <div data-ev-id="ev_shares_list" className="flex flex-col gap-1">
                   {task.shares?.map((share) => {
-                    const shareProfile = profiles.find((p) => p.id === share.user_id);
+                    const shareProfile = getProfile(share.user_id);
                     return (
                       <div data-ev-id={`ev_share_item_${share.user_id}`} key={share.user_id} className="flex items-center gap-2 px-2 py-1.5 bg-slate-50 dark:bg-slate-600 rounded-lg">
                         <div data-ev-id="ev_share_avatar" className="w-6 h-6 rounded-full bg-sky-100 dark:bg-sky-900 flex items-center justify-center text-sky-600 dark:text-sky-300 text-xs font-medium">
@@ -1123,7 +1137,7 @@ export function TodoTaskDetail({
             <div data-ev-id="ev_beteiligte_list" className="flex flex-col gap-2">
               {/* Ersteller */}
               {task.created_by && (() => {
-                const creator = profiles.find((p) => p.id === task.created_by);
+                const creator = getProfile(task.created_by);
                 return creator ?
                 <div data-ev-id="ev_beteiligte_creator" className="flex items-center gap-2">
                     <div data-ev-id="ev_e540755090" className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-300 text-xs font-medium">
@@ -1137,7 +1151,7 @@ export function TodoTaskDetail({
               
               {/* Zugewiesener */}
               {task.assigned_to && task.assigned_to !== task.created_by && (() => {
-                const assignee = profiles.find((p) => p.id === task.assigned_to);
+                const assignee = getProfile(task.assigned_to);
                 return assignee ?
                 <div data-ev-id="ev_beteiligte_assignee" className="flex items-center gap-2">
                     <div data-ev-id="ev_dc60827365" className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 text-xs font-medium">
@@ -1151,7 +1165,7 @@ export function TodoTaskDetail({
               
               {/* Eingeladene */}
               {(task.shares?.length ?? 0) > 0 && task.shares?.map((share) => {
-                const sharedUser = profiles.find((p) => p.id === share.user_id);
+                const sharedUser = getProfile(share.user_id);
                 if (!sharedUser || share.user_id === task.created_by || share.user_id === task.assigned_to) return null;
                 return (
                   <div data-ev-id={`ev_beteiligte_shared_${share.user_id}`} key={share.user_id} className="flex items-center gap-2">

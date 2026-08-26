@@ -573,10 +573,10 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
-        {/* Mobile Navigation - Favoriten + Alle Module */}
+        {/* Mobile Navigation - Favoriten oder Top-Items + Alle Module */}
         <nav data-ev-id="ev_8f4063402b" className="md:hidden border-t border-white/10 px-4 py-2 flex gap-2 overflow-x-auto">
-          {/* Favoriten-Items */}
-          {favoriteItems.map((item) => {
+          {/* Favoriten-Items oder Fallback zu ersten 4 navItems */}
+          {(favoriteItems.length > 0 ? favoriteItems : navItems.slice(0, 4)).map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
