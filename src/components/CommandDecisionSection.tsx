@@ -402,7 +402,7 @@ export function CommandDecisionSection({ onBack }: CommandDecisionSectionProps) 
       <div data-ev-id="ev_7d08615f71" className="flex flex-col items-center justify-center py-16 text-slate-500 dark:text-slate-400">
         <AlertCircle className="w-16 h-16 mb-4" />
         <h2 data-ev-id="ev_9267cea687" className="text-xl font-semibold mb-2">Kein Zugriff</h2>
-        <p data-ev-id="ev_b8bea9cbd8">Nur Kommandomitglieder und Administratoren können Kommandoabstimmungen erstellen.</p>
+        <p data-ev-id="ev_b8bea9cbd8">Nur Kommandomitglieder, Erweitertes Kommando und Administratoren können Kommandoabstimmungen erstellen.</p>
         <div data-ev-id="ev_6c5040d3a9" className="flex gap-3 mt-4">
           <button data-ev-id="ev_63a4b8ee09" onClick={onBack} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
             Zurück

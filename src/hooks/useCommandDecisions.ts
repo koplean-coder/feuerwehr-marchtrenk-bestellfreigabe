@@ -42,8 +42,12 @@ export function useCommandDecisions() {
            lower === 'kdt-stellvertreter' || 
            (lower.includes('kdt') && (lower.includes('stv') || lower.includes('stellvertreter')));
   }) ?? false;
+  const isErweitertesKommando = profile?.functions?.some(f => {
+    const lower = typeof f === 'string' ? f.toLowerCase() : '';
+    return lower === 'erweitertes_kommando' || lower === 'erweitertes-kommando';
+  }) ?? false;
   const isAdmin = effectiveIsAdmin;
-  const canCreate = isKommandomitglied || isKommandant || isKdtStellvertreter || isAdmin;
+  const canCreate = isKommandomitglied || isKommandant || isKdtStellvertreter || isErweitertesKommando || isAdmin;
   const canEndVoting = isKommandant || isKdtStellvertreter || isAdmin;
 
   const fetchDecisions = useCallback(async (silent = false) => {
