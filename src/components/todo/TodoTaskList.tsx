@@ -482,28 +482,13 @@ export function TodoTaskList({
             </button>
           </div> :
 
-        <div data-ev-id="ev_add_task_buttons" className="flex items-center gap-2">
-            {/* Quick Add Button */}
-            <button
-            data-ev-id="ev_2a7e17fa83"
-            onClick={() => setIsAddingTask(true)}
-            className="flex items-center gap-3 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex-1">
-
+        <button
+            data-ev-id="ev_add_task_btn"
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-3 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
               <Plus size={22} />
               <span data-ev-id="ev_7e0ef3e758" className="font-medium">Aufgabe hinzufügen</span>
             </button>
-            
-            {/* Full Modal Button */}
-            <button
-            data-ev-id="ev_open_modal_btn"
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 transition-colors"
-            title="Erweiterte Aufgabe erstellen">
-
-              <SquarePen size={16} />
-              <span data-ev-id="ev_2e4ef859da" className="hidden sm:inline">Erweitert</span>
-            </button>
-          </div>
         }
       </div>
 
