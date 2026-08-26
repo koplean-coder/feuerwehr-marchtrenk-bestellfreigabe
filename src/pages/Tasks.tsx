@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTodoLists, type SmartListType } from '@/hooks/useTodoLists';
 import { useTodoTasks } from '@/hooks/useTodoTasks';
@@ -39,12 +39,14 @@ export default function Tasks() {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [selectedTaskTags, setSelectedTaskTags] = useState<TodoTag[]>([]);
 
-  // Determine current filter for tasks
-  const taskFilters = selectedSmartList ?
-  { smartList: selectedSmartList, showCompleted: true } :
-  selectedListId ?
-  { listId: selectedListId, showCompleted: true } :
-  { showCompleted: true };
+  // Determine current filter for tasks - memoized to prevent infinite re-renders
+  const taskFilters = useMemo(() => 
+    selectedSmartList ?
+    { smartList: selectedSmartList, showCompleted: true } :
+    selectedListId ?
+    { listId: selectedListId, showCompleted: true } :
+    { showCompleted: true }
+  , [selectedSmartList, selectedListId]);
 
   const {
     tasks,

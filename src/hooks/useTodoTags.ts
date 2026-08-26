@@ -126,7 +126,7 @@ export function useTodoTags() {
   };
 
   // Get tags for a specific task
-  const getTaskTags = async (taskId: string): Promise<TodoTag[]> => {
+  const getTaskTags = useCallback(async (taskId: string): Promise<TodoTag[]> => {
     if (!supabase) return [];
 
     try {
@@ -141,7 +141,7 @@ export function useTodoTags() {
       console.error('Error fetching task tags:', err);
       return [];
     }
-  };
+  }, []);
 
   // Add tag to task
   const addTagToTask = async (taskId: string, tagId: string): Promise<boolean> => {
