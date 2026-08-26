@@ -265,7 +265,17 @@ export default function Tasks() {
     await deleteGroup(id);
   };
 
-  const handleCreateTask = async (title: string, assignedTo?: string) => {
+  interface CreateTaskInput {
+    title: string;
+    notes?: string;
+    assigned_to?: string;
+    due_date?: string;
+    due_time?: string;
+    priority?: number;
+    is_important?: boolean;
+  }
+
+  const handleCreateTask = async (input: CreateTaskInput) => {
     // Determine which list to create in
     let listId = selectedListId;
 
@@ -286,7 +296,7 @@ export default function Tasks() {
     if (!listId) return;
 
     const taskData: Record<string, unknown> = {
-      title,
+      title: input.title,
       list_id: listId
     };
 
@@ -294,14 +304,16 @@ export default function Tasks() {
     if (selectedSmartList === 'my_day') {
       taskData.is_in_my_day = true;
       taskData.my_day_date = new Date().toISOString().split('T')[0];
-    } else if (selectedSmartList === 'important') {
+    } else if (selectedSmartList === 'important' || input.is_important) {
       taskData.is_important = true;
     }
 
-    // Apply assignee if provided
-    if (assignedTo) {
-      taskData.assigned_to = assignedTo;
-    }
+    // Apply all optional fields from input
+    if (input.assigned_to) taskData.assigned_to = input.assigned_to;
+    if (input.notes) taskData.notes = input.notes;
+    if (input.due_date) taskData.due_date = input.due_date;
+    if (input.due_time) taskData.due_time = input.due_time;
+    if (input.priority !== undefined) taskData.priority = input.priority;
 
     await createTask(taskData as Parameters<typeof createTask>[0]);
     await fetchSmartListCounts();
