@@ -2035,7 +2035,8 @@ export default function SitzungDetail() {
                           await addAgendaItem({
                             title: inputText.trim(),
                             category: person.categoryKey,
-                            for_profile_id: person.id // Assign item to this person
+                            // Bei Allfälliges: aktuellen Benutzer als for_profile_id verwenden (nicht 'allfaelliges' String)
+                            for_profile_id: isAllfaelliges ? profile?.id : person.id
                           });
                           setCategoryInputs((prev) => ({ ...prev, [person.id]: '' }));
                         }
