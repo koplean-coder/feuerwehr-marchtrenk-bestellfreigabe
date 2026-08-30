@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useKommandobeschluesse, type BeschlussStatus } from '@/hooks/useKommandobeschluesse';
 import { useCommandDecisions } from '@/hooks/useCommandDecisions';
@@ -60,6 +60,22 @@ export default function Kommandobeschluesse() {
   const [showDecisionVotingModal, setShowDecisionVotingModal] = useState(false);
   const [deletingDecisionId, setDeletingDecisionId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Auto-open decision from URL parameter
+  useEffect(() => {
+    const decisionId = searchParams.get('decision');
+    if (decisionId && decisions.length > 0 && !selectedDecision) {
+      const decision = decisions.find((d) => d.id === decisionId);
+      if (decision) {
+        setMainTab('decisions');
+        setSelectedDecision(decision);
+        setShowDecisionVotingModal(true);
+        // Clear URL parameter after opening
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, decisions, selectedDecision, setSearchParams]);
 
   // Access check
   if (!hasAccess) {
@@ -71,7 +87,7 @@ export default function Kommandobeschluesse() {
           <p data-ev-id="ev_0a5891ab5f" className="text-muted-foreground text-center max-w-md">
             Diese Seite ist nur für Kommandomitglieder, Kommandanten und Administratoren zugänglich.
           </p>
-          <Link to="/" className="text-primary hover:underline">Zurück zur Startseite</Link>
+          <Link data-ev-id="ev_230a159ed5" to="/" className="text-primary hover:underline">Zurück zur Startseite</Link>
         </div>
       </Layout>);
 

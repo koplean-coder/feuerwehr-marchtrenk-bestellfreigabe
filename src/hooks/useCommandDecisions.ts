@@ -355,7 +355,7 @@ export function useCommandDecisions() {
       if (decision) {
         const { data: kommandomitglieder } = await supabase
           .from('profiles')
-          .select('email')
+          .select('id, email')
           .contains('functions', ['kommandomitglied']);
 
         if (kommandomitglieder && kommandomitglieder.length > 0) {
@@ -375,6 +375,21 @@ export function useCommandDecisions() {
             });
           } catch (emailErr) {
             console.error('Failed to send notification:', emailErr);
+          }
+
+          // Create in-app notifications with direct link to the decision
+          const notifications = kommandomitglieder
+            .filter(k => k.id !== user.id) // Don't notify the creator
+            .map(k => ({
+              user_id: k.id,
+              type: 'command_decision',
+              title: 'Neue Kommandoabstimmung',
+              message: `${profile?.full_name ?? 'Jemand'} hat eine Abstimmung eingereicht: "${decision.title}"`,
+              link: `/kommandobeschluesse?decision=${decision.id}`
+            }));
+
+          if (notifications.length > 0) {
+            await supabase.from('notifications').insert(notifications);
           }
         }
       }
