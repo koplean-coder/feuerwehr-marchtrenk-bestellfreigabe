@@ -10,6 +10,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import AuthCallback from '@/pages/AuthCallback';
 import Index from '@/pages/Index';
 import Orders from '@/pages/Orders';
 import NewOrder from '@/pages/NewOrder';
@@ -104,6 +107,9 @@ export default function App() {
       <Route path="/login" element={user ? <Navigate to={homePage} replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to={homePage} replace /> : <Register />} />
       <Route path="/registrieren" element={user ? <Navigate to={homePage} replace /> : <Register />} />
+      <Route path="/passwort-vergessen" element={user ? <Navigate to={homePage} replace /> : <ForgotPassword />} />
+      <Route path="/passwort-zuruecksetzen" element={<ResetPassword />} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
       {/* Routes requiring full access */}
       <Route path="/bestellungen" element={<FullAccessRoute><Orders /></FullAccessRoute>} />

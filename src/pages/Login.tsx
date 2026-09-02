@@ -86,9 +86,14 @@ export default function Login() {
 
               {/* Password Field */}
               <div data-ev-id="ev_69cde17526">
-                <label data-ev-id="ev_182f9547e0" className="block text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                  Passwort
-                </label>
+                <div data-ev-id="ev_a2b6dc96a5" className="flex items-center justify-between mb-2">
+                  <label data-ev-id="ev_182f9547e0" className="block text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Passwort
+                  </label>
+                  <Link data-ev-id="ev_c136e91c08" to="/passwort-vergessen" className="text-xs text-primary hover:text-primary/80 font-medium">
+                    Passwort vergessen?
+                  </Link>
+                </div>
                 <div data-ev-id="ev_98400c07e6" className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input data-ev-id="ev_c213a78c48"
@@ -98,7 +103,8 @@ export default function Login() {
                   placeholder="••••••••"
                   className="w-full pl-12 pr-4 py-3 bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
                   required
-                  minLength={6} />
+                  minLength={6}
+                  autoComplete="current-password" />
 
                 </div>
               </div>
@@ -125,7 +131,7 @@ export default function Login() {
           <div data-ev-id="ev_888246fe3e" className="px-8 py-4 bg-muted/30 border-t border-border">
             <p data-ev-id="ev_05bfadec7c" className="text-center text-sm text-muted-foreground">
               Feuerwehr-Mitglied?{' '}
-              <Link to="/registrieren" className="text-primary hover:text-primary/80 font-medium">
+              <Link data-ev-id="ev_99a5d3a57d" to="/registrieren" className="text-primary hover:text-primary/80 font-medium">
                 Hier registrieren
               </Link>
             </p>
