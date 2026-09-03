@@ -20,12 +20,13 @@ import {
   Send,
   Edit2,
   Check,
-  Briefcase } from
+  Briefcase,
+  Key } from
 'lucide-react';
 
 export default function UserManagement() {
   const { canCreateUsers, profile: currentProfile, createUser } = useAuth();
-  const { profiles, updateRole, updateProfile, deleteUser, toggleUserActive, loading: profilesLoading, refetch: refetchProfiles } = useProfiles();
+  const { profiles, updateRole, updateProfile, deleteUser, toggleUserActive, resetPassword, loading: profilesLoading, refetch: refetchProfiles } = useProfiles();
   const { functions: functionOptions, loading: functionsLoading } = useFunctions();
 
   const [search, setSearch] = useState('');
@@ -56,6 +57,13 @@ export default function UserManagement() {
   const [deletingUser, setDeletingUser] = useState<{id: string;full_name: string;email: string;} | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  // Modal für Passwort zurücksetzen
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resettingUser, setResettingUser] = useState<{id: string;full_name: string;email: string;} | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   // Nur Admin und Kommandant haben Zugriff
   if (!canCreateUsers) {
@@ -114,6 +122,43 @@ export default function UserManagement() {
 
     setDeleteLoading(false);
     closeDeleteModal();
+  }
+
+  function openResetModal(profile: {id: string;full_name: string;email: string;}) {
+    setResettingUser(profile);
+    setResetError('');
+    setResetSuccess(false);
+    setShowResetModal(true);
+  }
+
+  function closeResetModal() {
+    setShowResetModal(false);
+    setResettingUser(null);
+    setResetError('');
+    setResetSuccess(false);
+  }
+
+  async function handleResetPassword() {
+    if (!resettingUser) return;
+
+    setResetLoading(true);
+    setResetError('');
+
+    const { error, emailSent } = await resetPassword(resettingUser.id);
+
+    if (error) {
+      setResetError(error.message);
+      setResetLoading(false);
+      return;
+    }
+
+    setResetLoading(false);
+    setResetSuccess(true);
+
+    // Modal nach 2 Sekunden automatisch schließen
+    setTimeout(() => {
+      closeResetModal();
+    }, 2000);
   }
 
   function toggleFunction(functionId: string) {
@@ -522,6 +567,17 @@ export default function UserManagement() {
 
                             <Edit2 className="w-4 h-4" />
                           </button>
+                          <button data-ev-id="ev_f83d103aae"
+                      onClick={() => openResetModal(profile)}
+                      disabled={profile.id === currentProfile?.id}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                      profile.id === currentProfile?.id ?
+                      'opacity-30 cursor-not-allowed' :
+                      'hover:bg-amber-100 text-amber-600 hover:text-amber-700'}`
+                      }
+                      title="Passwort zurücksetzen">
+                            <Key className="w-4 h-4" />
+                          </button>
                           <button data-ev-id="ev_50567ddf85"
                       onClick={() => openDeleteModal(profile)}
                       disabled={profile.id === currentProfile?.id}
@@ -890,6 +946,84 @@ export default function UserManagement() {
                 }
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      {/* Modal: Passwort zurücksetzen */}
+      {showResetModal && resettingUser &&
+      <div data-ev-id="ev_75b604e20c" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div data-ev-id="ev_18240f7f12" className="bg-card rounded-2xl shadow-2xl border border-border w-full max-w-md overflow-hidden">
+            <div data-ev-id="ev_c15ebdb7fb" className="p-5 border-b border-border">
+              <div data-ev-id="ev_586b67f66e" className="flex items-center justify-between">
+                <div data-ev-id="ev_e7cf549c83" className="flex items-center gap-3">
+                  <div data-ev-id="ev_26c397ab3c" className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <Key className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <h2 data-ev-id="ev_07baf347d3" className="text-lg font-semibold">Passwort zurücksetzen</h2>
+                </div>
+                <button data-ev-id="ev_773e4d193c" onClick={closeResetModal} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div data-ev-id="ev_4861e2278d" className="p-5">
+              {resetSuccess ?
+            <div data-ev-id="ev_b11372cb1e" className="text-center py-4">
+                  <div data-ev-id="ev_e9f4b4b1a3" className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8 text-green-600" />
+                  </div>
+                  <h3 data-ev-id="ev_e0e80e9ae7" className="text-lg font-semibold text-foreground mb-2">Passwort zurückgesetzt!</h3>
+                  <p data-ev-id="ev_3849561b8d" className="text-muted-foreground text-sm">
+                    Das Passwort wurde auf <strong data-ev-id="ev_684bf4c409" className="font-mono">123456</strong> zurückgesetzt.
+                  </p>
+                </div> :
+
+            <>
+                  <p data-ev-id="ev_bbf2a39e3f" className="text-muted-foreground mb-4">
+                    Möchten Sie das Passwort von <strong data-ev-id="ev_a2646921df" className="text-foreground">{resettingUser.full_name || resettingUser.email}</strong> auf das Standardpasswort zurücksetzen?
+                  </p>
+                  <div data-ev-id="ev_2950a8401c" className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                    <p data-ev-id="ev_17e11632cb" className="text-sm text-amber-800">
+                      <strong data-ev-id="ev_3246ba644f">Neues Passwort:</strong> <span data-ev-id="ev_775468ea5f" className="font-mono">123456</span>
+                    </p>
+                    <p data-ev-id="ev_876741f212" className="text-xs text-amber-600 mt-1">
+                      Der Benutzer erhält eine E-Mail mit dem neuen Passwort.
+                    </p>
+                  </div>
+                  
+                  {resetError &&
+              <div data-ev-id="ev_47260fb775" className="p-3 bg-red-100 text-red-700 rounded-lg text-sm mb-4">
+                      {resetError}
+                    </div>
+              }
+                  
+                  <div data-ev-id="ev_94e8fbdf3a" className="flex gap-3">
+                    <button data-ev-id="ev_a19f73776d"
+                type="button"
+                onClick={closeResetModal}
+                disabled={resetLoading}
+                className="flex-1 px-4 py-2.5 border border-input rounded-xl font-medium hover:bg-muted transition-colors disabled:opacity-50">
+                      Abbrechen
+                    </button>
+                    <button data-ev-id="ev_7426c0ef5f"
+                type="button"
+                onClick={handleResetPassword}
+                disabled={resetLoading}
+                className="flex-1 px-4 py-2.5 bg-amber-600 text-white rounded-xl font-medium hover:bg-amber-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                      {resetLoading ?
+                  <span data-ev-id="ev_362f87a74c" className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
+                  <>
+                          <Key className="w-5 h-5" />
+                          Zurücksetzen
+                        </>
+                  }
+                    </button>
+                  </div>
+                </>
+            }
             </div>
           </div>
         </div>

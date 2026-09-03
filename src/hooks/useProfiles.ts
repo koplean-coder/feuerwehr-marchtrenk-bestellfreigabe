@@ -173,6 +173,24 @@ export function useProfiles() {
     return { error };
   }
 
+  async function resetPassword(userId: string): Promise<{ error: Error | null; emailSent?: boolean }> {
+    if (!supabase) return { error: new Error('Database not connected') };
+    
+    const { data, error } = await supabase.functions.invoke('reset-password', {
+      body: { userId }
+    });
+    
+    if (error) {
+      return { error: new Error(error.message) };
+    }
+    
+    if (data?.error) {
+      return { error: new Error(data.error) };
+    }
+    
+    return { error: null, emailSent: data?.emailSent };
+  }
+
   return {
     profiles,
     loading,
@@ -184,6 +202,7 @@ export function useProfiles() {
     getEffectiveApprover,
     deleteUser,
     toggleUserActive,
+    resetPassword,
     refetch: fetchProfiles
   };
 }
