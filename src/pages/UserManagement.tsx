@@ -549,31 +549,32 @@ export default function UserManagement() {
                       <td data-ev-id="ev_23d8de9373" className="px-2 py-2 text-right">
                         <div data-ev-id="ev_0ffed0aa8e" className="flex items-center justify-end gap-1">
                           {/* Mobile/Tablet: Show role and status */}
-                          <div data-ev-id="ev_mobile_info" className="lg:hidden flex items-center gap-1 mr-1">
+                          <div data-ev-id="ev_mobile_info" className="lg:hidden flex items-center gap-1 mr-2">
                             <span data-ev-id="ev_866617281e" className={`text-[10px] px-1.5 py-0.5 rounded ${getRoleBadgeColor(profile.role)}`}>
                               {roleOptions.find((r) => r.value === profile.role)?.label}
                             </span>
                             <div data-ev-id="ev_e750751096" className={`w-2 h-2 rounded-full ${profile.is_active !== false ? 'bg-green-500' : 'bg-gray-300'}`} />
                           </div>
+                          
+                          {/* Action Buttons - always visible */}
                           <button data-ev-id="ev_15822e113b"
                       onClick={() => openEditModal(profile)}
                       disabled={profile.id === currentProfile?.id}
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`p-2 rounded-lg transition-colors ${
                       profile.id === currentProfile?.id ?
                       'opacity-30 cursor-not-allowed' :
-                      'hover:bg-muted text-muted-foreground hover:text-foreground'}`
+                      'hover:bg-blue-100 text-blue-600 hover:text-blue-700 bg-blue-50'}`
                       }
                       title="Bearbeiten">
-
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button data-ev-id="ev_f83d103aae"
+                          <button data-ev-id="ev_6b2b686386"
                       onClick={() => openResetModal(profile)}
                       disabled={profile.id === currentProfile?.id}
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`p-2 rounded-lg transition-colors ${
                       profile.id === currentProfile?.id ?
                       'opacity-30 cursor-not-allowed' :
-                      'hover:bg-amber-100 text-amber-600 hover:text-amber-700'}`
+                      'hover:bg-amber-100 text-amber-600 hover:text-amber-700 bg-amber-50'}`
                       }
                       title="Passwort zurücksetzen">
                             <Key className="w-4 h-4" />
@@ -581,10 +582,10 @@ export default function UserManagement() {
                           <button data-ev-id="ev_50567ddf85"
                       onClick={() => openDeleteModal(profile)}
                       disabled={profile.id === currentProfile?.id}
-                      className={`p-1.5 rounded-lg transition-colors ${
+                      className={`p-2 rounded-lg transition-colors ${
                       profile.id === currentProfile?.id ?
                       'opacity-30 cursor-not-allowed' :
-                      'hover:bg-red-100 text-red-500 hover:text-red-600'}`
+                      'hover:bg-red-100 text-red-600 hover:text-red-700 bg-red-50'}`
                       }
                       title="Löschen">
                             <Trash2 className="w-4 h-4" />
