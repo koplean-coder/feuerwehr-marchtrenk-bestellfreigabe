@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, UserPlus, Search, Edit2, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Users, UserPlus, Search, Edit2, Check, X, ChevronDown, ChevronUp, Key } from 'lucide-react';
 import { SectionHeader, SectionCard } from '../SettingsContent';
 import type { UserRole } from '@/hooks/useProfiles';
 
@@ -25,6 +25,7 @@ interface MitgliederSectionProps {
   updateProfile: (userId: string, data: Partial<Profile>) => Promise<{error: Error | null;}>;
   updateDefaultBereichsleiter: (userId: string, bereichsleiterId: string | null) => Promise<{error: Error | null;}>;
   createUser: (email: string, password: string, fullName: string) => Promise<{error: Error | null;}>;
+  resetPassword: (userId: string) => Promise<{error: Error | null;emailSent?: boolean;}>;
   refetchProfiles: () => Promise<void>;
   functions: FunctionDef[];
   isAdmin: boolean;
@@ -46,6 +47,7 @@ export function MitgliederSection({
   updateProfile,
   updateDefaultBereichsleiter,
   createUser,
+  resetPassword,
   refetchProfiles,
   functions,
   isAdmin,
@@ -56,6 +58,8 @@ export function MitgliederSection({
   const [showNewUserForm, setShowNewUserForm] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', password: '', fullName: '' });
   const [creating, setCreating] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
 
   const filteredProfiles = profiles.filter(
     (p) =>
@@ -83,6 +87,17 @@ export function MitgliederSection({
     [...currentFunctions, funcName];
     await updateProfile(userId, { functions: newFunctions });
     await refetchProfiles();
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    setResettingPassword(userId);
+    setResetSuccess(null);
+    const { error } = await resetPassword(userId);
+    setResettingPassword(null);
+    if (!error) {
+      setResetSuccess(userId);
+      setTimeout(() => setResetSuccess(null), 3000);
+    }
   };
 
   return (
@@ -256,6 +271,39 @@ export function MitgliederSection({
                   )}
                     </div>
                   </div>
+
+                  {/* Password Reset */}
+                  {(isAdmin || isKommandant) && profile.id !== currentProfile?.id &&
+              <div data-ev-id="ev_d0e8473a50" className="pt-2 border-t border-border">
+                      <div data-ev-id="ev_9401212c93" className="flex items-center justify-between">
+                        <div data-ev-id="ev_3ebeefdc1d">
+                          <span data-ev-id="ev_b3fae75aac" className="text-sm font-medium text-foreground">Passwort zurücksetzen</span>
+                          <p data-ev-id="ev_8f36c04b60" className="text-xs text-muted-foreground">Setzt das Passwort auf "123456" zurück</p>
+                        </div>
+                        {resetSuccess === profile.id ?
+                  <span data-ev-id="ev_80dd339899" className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-sm flex items-center gap-2">
+                            <Check className="w-4 h-4" />
+                            Zurückgesetzt!
+                          </span> :
+
+                  <button data-ev-id="ev_de0903cf97"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleResetPassword(profile.id);
+                  }}
+                  disabled={resettingPassword === profile.id}
+                  className="px-3 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                            {resettingPassword === profile.id ?
+                    <span data-ev-id="ev_982102866b" className="w-4 h-4 border-2 border-amber-700/30 border-t-amber-700 rounded-full animate-spin" /> :
+
+                    <Key className="w-4 h-4" />
+                    }
+                            Zurücksetzen
+                          </button>
+                  }
+                      </div>
+                    </div>
+              }
                 </div>
             }
             </div>

@@ -39,7 +39,7 @@ export default function SettingsNew() {
   const { isSimulationActive, effectiveIsAdmin, effectiveIsKommandant, canAccessSettings: simCanAccessSettings, effectiveUserId } = useSimulation();
   const settings = useSettings();
   const { items: rentalItems, loading: rentalItemsLoading, createItem: createRentalItem, updateItem: updateRentalItem, deleteItem: deleteRentalItem, toggleActive: toggleRentalItemActive } = useRentalItems();
-  const { profiles, updateRole, updateProfile, updateDefaultBereichsleiter, updateSubstitute, setAbsence, loading: profilesLoading, refetch: refetchProfiles } = useProfiles();
+  const { profiles, updateRole, updateProfile, updateDefaultBereichsleiter, updateSubstitute, setAbsence, resetPassword, loading: profilesLoading, refetch: refetchProfiles } = useProfiles();
   const { functions, loading: functionsLoading, addFunction, updateFunction, deleteFunction } = useFunctions();
   const todoSettings = useTodoSettings();
 
@@ -237,6 +237,7 @@ export default function SettingsNew() {
             updateProfile={updateProfile}
             updateDefaultBereichsleiter={updateDefaultBereichsleiter}
             createUser={createUser}
+            resetPassword={resetPassword}
             refetchProfiles={refetchProfiles}
             functions={functions}
             isAdmin={isAdmin}
