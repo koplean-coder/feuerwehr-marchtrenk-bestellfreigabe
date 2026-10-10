@@ -250,11 +250,11 @@ export async function generateCrewListPdfTwoColumn(data: CrewListData): Promise<
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(x, y, width, height, 1, 1, 'FD');
     
-    // Label klein oben links
-    doc.setFontSize(5);
-    setFont(doc, 'normal');
-    doc.setTextColor(120, 120, 120);
-    doc.text(label, x + 2, y + 3);
+    // Label oben links - gut lesbar
+    doc.setFontSize(7);
+    setFont(doc, 'bold');
+    doc.setTextColor(60, 60, 60);
+    doc.text(label, x + 2, y + 4);
     
     // Prefilled name oder Linie
     if (prefillName) {
