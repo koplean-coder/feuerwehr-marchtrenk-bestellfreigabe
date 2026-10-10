@@ -2621,13 +2621,17 @@ export function useOrders() {
   async function extendEscalationDeadline(orderId: string, days: number, reason: string, escalationTimeoutHours: number) {
     if (!supabase || !user) return { error: new Error('Not authenticated') };
     
+    console.log('[extendEscalationDeadline] Starting extension for order:', orderId, 'days:', days);
+    
     const order = orders.find((o) => o.id === orderId);
     if (!order) {
+      console.error('[extendEscalationDeadline] Order not found:', orderId);
       return { error: new Error('Bestellung nicht gefunden') };
     }
     
     // Nur für eingereichte Bestellungen relevant
     if (order.status !== 'eingereicht') {
+      console.error('[extendEscalationDeadline] Wrong status:', order.status);
       return { error: new Error('Eskalationsfrist kann nur für eingereichte Bestellungen verlängert werden') };
     }
     
@@ -2637,20 +2641,25 @@ export function useOrders() {
     if (order.escalation_extended_until) {
       // Wenn bereits verlängert, addiere zur bestehenden Verlängerung
       baseDeadline = new Date(order.escalation_extended_until);
+      console.log('[extendEscalationDeadline] Using existing extension as base:', baseDeadline.toISOString());
     } else if (order.submitted_at) {
       // Sonst: submitted_at + timeout
       baseDeadline = new Date(order.submitted_at);
       baseDeadline.setHours(baseDeadline.getHours() + escalationTimeoutHours);
+      console.log('[extendEscalationDeadline] Using submitted_at + timeout as base:', baseDeadline.toISOString());
     } else {
       // Fallback: ab jetzt
       baseDeadline = new Date();
+      console.log('[extendEscalationDeadline] Using now as fallback base');
     }
     
     // Addiere die zusätzlichen Tage
     const extendedUntil = new Date(baseDeadline);
     extendedUntil.setDate(extendedUntil.getDate() + days);
     
-    const { error } = await supabase
+    console.log('[extendEscalationDeadline] New deadline:', extendedUntil.toISOString());
+    
+    const { error, data } = await supabase
       .from('orders')
       .update({
         escalation_extended_until: extendedUntil.toISOString(),
@@ -2659,12 +2668,23 @@ export function useOrders() {
         escalation_extended_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .select();
     
     if (error) {
-      console.error('extendEscalationDeadline: Database update failed', error);
+      console.error('[extendEscalationDeadline] Database update failed:', error);
       return { error };
     }
+    
+    console.log('[extendEscalationDeadline] Update successful, data:', data);
+    
+    // Verifizieren: Prüfe ob das Update tatsächlich in der DB ist
+    const { data: verifyData } = await supabase
+      .from('orders')
+      .select('id, escalation_extended_until')
+      .eq('id', orderId)
+      .single();
+    console.log('[extendEscalationDeadline] Verification read:', verifyData);
     
     // Protokollierung in Bestellhistorie mit detaillierten Informationen
     const dayLabel = days === 1 ? '1 Tag' : `${days} Tage`;
