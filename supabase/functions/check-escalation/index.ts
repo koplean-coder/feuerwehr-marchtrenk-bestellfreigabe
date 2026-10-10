@@ -8,6 +8,7 @@ interface Order {
   bereichsleiter_id: string | null;
   submitted_at: string;
   escalation_extended_until: string | null;
+  escalation_extended_at: string | null;
 }
 
 interface Profile {
@@ -61,7 +62,7 @@ Deno.serve(async (req: Request) => {
     // Include escalation_extended_until to check for extensions
     const { data: potentialOrders, error: ordersError } = await supabase
       .from('orders')
-      .select('id, title, amount, created_by, bereichsleiter_id, submitted_at, escalation_extended_until')
+      .select('id, title, amount, created_by, bereichsleiter_id, submitted_at, escalation_extended_until, escalation_extended_at')
       .eq('status', 'eingereicht')
       .not('submitted_at', 'is', null);
 
@@ -70,15 +71,34 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: ordersError.message }), { status: 500 });
     }
 
+    console.log(`Found ${potentialOrders?.length || 0} potential orders to check`);
+    
     // Filter orders: check both timeout AND extension deadline
     const ordersToEscalate = (potentialOrders || []).filter((order: Order) => {
       const submittedAt = new Date(order.submitted_at);
       const hasExceededTimeout = submittedAt < cutoffTime;
       
+      console.log(`Checking order ${order.id}: submitted=${order.submitted_at}, extended_until=${order.escalation_extended_until || 'null'}, extended_at=${order.escalation_extended_at || 'null'}`);
+      
+      // Safety check: If extension was made very recently (within last 5 minutes), skip to avoid race conditions
+      if (order.escalation_extended_at) {
+        const extendedAt = new Date(order.escalation_extended_at);
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+        if (extendedAt > fiveMinutesAgo) {
+          console.log(`Order ${order.id} was extended very recently (${order.escalation_extended_at}), skipping to avoid race condition`);
+          return false;
+        }
+      }
+      
       // If order has an extension, check if extension is still valid
       if (order.escalation_extended_until) {
         const extensionDeadline = new Date(order.escalation_extended_until);
-        // Don't escalate if extension is still in the future
+        const nowTime = now.getTime();
+        const extTime = extensionDeadline.getTime();
+        
+        console.log(`Order ${order.id}: extension deadline=${extensionDeadline.toISOString()}, now=${now.toISOString()}, diff=${(extTime - nowTime) / 1000 / 60} minutes`);
+        
+        // Don't escalate if extension is still in the future (with 1 minute buffer)
         if (extensionDeadline > now) {
           console.log(`Order ${order.id} has valid extension until ${extensionDeadline.toISOString()}, skipping`);
           return false;
@@ -89,6 +109,9 @@ Deno.serve(async (req: Request) => {
       }
       
       // No extension, use standard timeout
+      if (hasExceededTimeout) {
+        console.log(`Order ${order.id} exceeded standard timeout (submitted ${order.submitted_at}, cutoff ${cutoffTime.toISOString()})`);
+      }
       return hasExceededTimeout;
     });
 
