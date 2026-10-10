@@ -1,25 +1,5 @@
-import { loadImageAsBase64, loadOptimizedBackground, createCompressedPdf } from './pdfBackground';
+import { loadOptimizedBackground, createCompressedPdf } from './pdfBackground';
 import { loadRobotoFonts, setFont } from './fonts/roboto-font';
-import type jsPDF from 'jspdf';
-
-// Fahrzeug-Icons importieren
-import vehicleKdo from '@/assets/uploads/vehicle-kdo.png';
-import vehicleTlf from '@/assets/uploads/vehicle-tlf.png';
-import vehicleGtlf from '@/assets/uploads/vehicle-gtlf.png';
-import vehicleDlk from '@/assets/uploads/vehicle-dlk.png';
-import vehicleSrf from '@/assets/uploads/vehicle-srf.png';
-import vehicleKrf from '@/assets/uploads/vehicle-krf.png';
-
-// Mapping von Fahrzeugnamen zu Icons
-const VEHICLE_ICONS: Record<string, string> = {
-  'KDO': vehicleKdo,
-  'Tank 1': vehicleTlf,
-  'Tank 2': vehicleGtlf,
-  'Tank 3': vehicleGtlf,
-  'DLK': vehicleDlk,
-  'Rüst 1': vehicleSrf,
-  'Rüst 2': vehicleKrf,
-};
 
 // ============================================
 // ZWEISPALTIGE VERSION - ANGEPASST AN FORMULARGENERATOR
@@ -45,8 +25,8 @@ export async function generateCrewListPdfTwoColumn(data: CrewListData): Promise<
   
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 15;
-  const gap = 6;
+  const margin = 12;
+  const gap = 5;
   const colWidth = (pageWidth - margin * 2 - gap) / 2;
   
   // Farbpalette wie Formulargenerator - schlichter
@@ -161,124 +141,96 @@ export async function generateCrewListPdfTwoColumn(data: CrewListData): Promise<
     doc.text(eventTime + ' Uhr', col2X, infoY + 5);
   }
   
-  yPos = infoBoxY + infoBoxHeight + 8;
+  yPos = infoBoxY + infoBoxHeight + 6;
   
-  // Preload vehicle icons
-  const vehicleIconCache: Record<string, string | null> = {};
-  for (const vehicleName of Object.keys(VEHICLE_ICONS)) {
-    const iconUrl = VEHICLE_ICONS[vehicleName];
-    if (iconUrl && !vehicleIconCache[iconUrl]) {
-      vehicleIconCache[iconUrl] = await loadImageAsBase64(iconUrl);
-    }
-  }
+  // Fahrzeuge sortieren: Normale zuerst, Bereitschaft zuletzt
+  const sortedVehicles = [...inputVehicles].sort((a, b) => {
+    if (a.isStandby && !b.isStandby) return 1;
+    if (!a.isStandby && b.isStandby) return -1;
+    return 0;
+  });
   
-  // Helper: Draw compact vehicle box - NEUER STIL
+  // Helper: Draw compact vehicle box - KOMPAKT ohne Icons
   const drawCompactVehicleBox = (
-    vehicle: typeof inputVehicles[0], 
+    vehicle: typeof sortedVehicles[0], 
     startX: number, 
     startY: number, 
     boxWidth: number
   ): number => {
     const positions = vehicle.positions;
     const isStandby = vehicle.isStandby || false;
-    const headerHeight = 14;
-    const cellHeight = 13;
-    const cellPadding = 3;
-    const cellGap = 3;
+    const headerHeight = 10; // Kompakter
+    const cellHeight = 10; // Kompakter
+    const cellPadding = 2;
+    const cellGap = 2;
     
     const contentHeight = positions.length * (cellHeight + cellGap) + cellPadding;
     const totalHeight = headerHeight + contentHeight;
     
-    // Bereitschafts-Streifen (links, 4px)
+    // Bereitschafts-Streifen (links, 3px)
     if (isStandby) {
       doc.setFillColor(standbyOrange.r, standbyOrange.g, standbyOrange.b);
-      doc.roundedRect(startX, startY, 4, totalHeight, 2, 2, 'F');
-      doc.rect(startX + 2, startY, 2, totalHeight, 'F');
+      doc.roundedRect(startX, startY, 3, totalHeight, 1.5, 1.5, 'F');
+      doc.rect(startX + 1.5, startY, 1.5, totalHeight, 'F');
     }
     
-    const headerX = isStandby ? startX + 4 : startX;
-    const headerWidth = isStandby ? boxWidth - 4 : boxWidth;
+    const headerX = isStandby ? startX + 3 : startX;
+    const headerWidth = isStandby ? boxWidth - 3 : boxWidth;
     
-    // Header - DUNKELGRAU statt Rot (wie Formulargenerator)
+    // Header - DUNKELGRAU
     doc.setFillColor(headerGray.r, headerGray.g, headerGray.b);
     doc.setDrawColor(headerGray.r - 10, headerGray.g - 10, headerGray.b - 10);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.4);
     if (isStandby) {
-      // Rechts abgerundet, links eckig
-      doc.roundedRect(headerX, startY, headerWidth, headerHeight, 0, 2, 'FD');
+      doc.roundedRect(headerX, startY, headerWidth, headerHeight, 0, 1.5, 'FD');
     } else {
-      doc.roundedRect(headerX, startY, headerWidth, headerHeight, 2, 2, 'FD');
+      doc.roundedRect(headerX, startY, headerWidth, headerHeight, 1.5, 1.5, 'FD');
     }
     
-    // Weiße Icon-Box links
-    const iconBoxWidth = 20;
-    const iconBoxHeight = headerHeight - 6;
-    const iconBoxX = headerX + 3;
-    const iconBoxY = startY + 3;
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(iconBoxX, iconBoxY, iconBoxWidth, iconBoxHeight, 1.5, 1.5, 'F');
-    
-    // Vehicle icon
-    const iconUrl = VEHICLE_ICONS[vehicle.name];
-    const iconData = iconUrl ? vehicleIconCache[iconUrl] : null;
-    if (iconData) {
-      try {
-        const iconWidth = iconBoxWidth - 4;
-        const iconHeight = iconBoxHeight - 2;
-        const iconX = iconBoxX + (iconBoxWidth - iconWidth) / 2;
-        const iconY = iconBoxY + (iconBoxHeight - iconHeight) / 2;
-        doc.addImage(iconData, 'PNG', iconX, iconY, iconWidth, iconHeight);
-      } catch (e) {
-        // Fallback
-      }
-    }
-    
-    // Fahrzeugname - weiß auf dunkelgrau
-    doc.setFontSize(11);
+    // Fahrzeugname - weiß auf dunkelgrau, zentriert
+    doc.setFontSize(9);
     setFont(doc, 'bold');
     doc.setTextColor(255, 255, 255);
     
-    // Bereitschafts-Label im Header
     if (isStandby) {
-      const vehicleNameWidth = doc.getTextWidth(vehicle.name.toUpperCase());
+      // BEREITSCHAFT Badge rechts
       const bereitschaftText = 'BEREITSCHAFT';
-      doc.setFontSize(7);
+      doc.setFontSize(6);
       const bereitschaftWidth = doc.getTextWidth(bereitschaftText);
       
-      // Badge für BEREITSCHAFT
-      const badgeX = headerX + headerWidth - bereitschaftWidth - 8;
-      const badgeY = startY + 4;
+      const badgeX = headerX + headerWidth - bereitschaftWidth - 5;
+      const badgeY = startY + 3;
       doc.setFillColor(standbyOrange.r, standbyOrange.g, standbyOrange.b);
-      doc.roundedRect(badgeX - 2, badgeY - 2, bereitschaftWidth + 4, 6, 1, 1, 'F');
+      doc.roundedRect(badgeX - 1.5, badgeY - 1.5, bereitschaftWidth + 3, 5, 1, 1, 'F');
       doc.setTextColor(255, 255, 255);
-      doc.text(bereitschaftText, badgeX, badgeY + 2.5);
+      doc.text(bereitschaftText, badgeX, badgeY + 2);
       
-      // Fahrzeugname links vom Badge
-      doc.setFontSize(11);
+      // Fahrzeugname links
+      doc.setFontSize(9);
       doc.setTextColor(255, 255, 255);
-      doc.text(vehicle.name.toUpperCase(), headerX + iconBoxWidth + 8, startY + 9.5);
+      doc.text(vehicle.name.toUpperCase(), headerX + 4, startY + 6.5);
     } else {
-      doc.text(vehicle.name.toUpperCase(), headerX + iconBoxWidth + 6 + (headerWidth - iconBoxWidth - 6) / 2, startY + 9.5, { align: 'center' });
+      doc.text(vehicle.name.toUpperCase(), headerX + headerWidth / 2, startY + 6.5, { align: 'center' });
     }
     
     // Content area - weiß mit Rahmen
-    const contentY = startY + headerHeight - 1;
-    const contentX = isStandby ? startX + 4 : startX;
-    const contentWidthActual = isStandby ? boxWidth - 4 : boxWidth;
+    const contentY = startY + headerHeight - 0.5;
+    const contentX = isStandby ? startX + 3 : startX;
+    const contentWidthActual = isStandby ? boxWidth - 3 : boxWidth;
     
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(180, 180, 180);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.4);
     if (isStandby) {
-      doc.roundedRect(contentX, contentY, contentWidthActual, contentHeight + 1, 0, 2, 'FD');
+      doc.roundedRect(contentX, contentY, contentWidthActual, contentHeight + 0.5, 0, 1.5, 'FD');
     } else {
-      doc.roundedRect(contentX, contentY, contentWidthActual, contentHeight + 1, 2, 2, 'FD');
+      doc.roundedRect(contentX, contentY, contentWidthActual, contentHeight + 0.5, 1.5, 1.5, 'FD');
     }
     doc.setFillColor(255, 255, 255);
-    doc.rect(contentX + 0.4, contentY, contentWidthActual - 0.8, 3, 'F');
+    doc.rect(contentX + 0.3, contentY, contentWidthActual - 0.6, 2, 'F');
     
     // Position cells - SCHLICHT, einheitlich grau
-    let cellY = contentY + cellPadding + 1;
+    let cellY = contentY + cellPadding;
     const cellWidth = contentWidthActual - cellPadding * 2;
     
     for (const position of positions) {
@@ -286,47 +238,36 @@ export async function generateCrewListPdfTwoColumn(data: CrewListData): Promise<
       cellY += cellHeight + cellGap;
     }
     
-    return totalHeight + 2;
+    return totalHeight + 1;
   };
   
-  // Helper: Draw compact position cell - SCHLICHT
+  // Helper: Draw compact position cell - SCHLICHT & KOMPAKT
   const drawCompactPositionCell = (x: number, y: number, width: number, height: number, label: string, prefillName?: string) => {
-    // Einheitlich grau statt bunt
-    const borderColor = { r: 180, g: 180, b: 180 };
-    const labelBg = { r: 100, g: 100, b: 100 };
+    const borderColor = { r: 200, g: 200, b: 200 };
     
     doc.setDrawColor(borderColor.r, borderColor.g, borderColor.b);
-    doc.setLineWidth(0.5);
+    doc.setLineWidth(0.3);
     doc.setFillColor(255, 255, 255);
-    doc.roundedRect(x, y, width, height, 1.5, 1.5, 'FD');
+    doc.roundedRect(x, y, width, height, 1, 1, 'FD');
     
-    // Grauer Balken links für Label
-    doc.setFillColor(labelBg.r, labelBg.g, labelBg.b);
-    doc.roundedRect(x, y, 3, height, 1.5, 1.5, 'F');
-    doc.rect(x + 1.5, y, 1.5, height, 'F');
+    // Label klein oben links
+    doc.setFontSize(5);
+    setFont(doc, 'normal');
+    doc.setTextColor(120, 120, 120);
+    doc.text(label, x + 2, y + 3);
     
-    // Label
-    doc.setFontSize(6);
-    setFont(doc, 'bold');
-    doc.setTextColor(80, 80, 80);
-    doc.text(label, x + 5, y + 4);
-    
-    // Prefilled name
+    // Prefilled name oder Linie
     if (prefillName) {
-      doc.setFontSize(8);
+      doc.setFontSize(7);
       setFont(doc, 'normal');
       doc.setTextColor(40, 40, 40);
-      doc.text(prefillName, x + 5, y + height - 3);
+      doc.text(prefillName, x + 2, y + height - 2);
+    } else {
+      doc.setDrawColor(180, 180, 180);
+      doc.setLineWidth(0.2);
+      doc.line(x + 2, y + height - 2, x + width - 2, y + height - 2);
     }
-    
-    // Linie für Namen
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineWidth(0.3);
-    doc.line(x + 5, y + height - 2, x + width - 3, y + height - 2);
   };
-  
-  // Seitenxähler
-  let currentPage = 1;
   
   // Track positions for both columns
   let leftY = yPos;
@@ -334,10 +275,10 @@ export async function generateCrewListPdfTwoColumn(data: CrewListData): Promise<
   const leftX = margin;
   const rightX = margin + colWidth + gap;
   
-  // Fahrzeuge verteilen
-  for (let i = 0; i < inputVehicles.length; i++) {
-    const vehicle = inputVehicles[i];
-    const estimatedHeight = 10 + vehicle.positions.length * 15 + 5;
+  // Fahrzeuge verteilen (bereits sortiert: normale zuerst, Bereitschaft zuletzt)
+  for (let i = 0; i < sortedVehicles.length; i++) {
+    const vehicle = sortedVehicles[i];
+    const estimatedHeight = 8 + vehicle.positions.length * 12 + 3;
     
     const useLeftColumn = leftY <= rightY;
     const startX = useLeftColumn ? leftX : rightX;
@@ -381,9 +322,9 @@ export async function generateCrewListPdfTwoColumn(data: CrewListData): Promise<
     const boxHeight = drawCompactVehicleBox(vehicle, startX, useLeftColumn ? leftY : rightY, colWidth);
     
     if (useLeftColumn) {
-      leftY += boxHeight + 5;
+      leftY += boxHeight + 3;
     } else {
-      rightY += boxHeight + 5;
+      rightY += boxHeight + 3;
     }
   }
   
