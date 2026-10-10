@@ -287,8 +287,6 @@ export async function generateCrewListPdfTwoColumn(data: CrewListData): Promise<
     // Seitenumbruch prüfen
     if (startY + estimatedHeight > pageHeight - 25) {
       doc.addPage();
-      currentPage++;
-      
       drawBackground();
       
       // Header auf Folgeseite
