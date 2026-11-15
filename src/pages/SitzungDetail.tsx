@@ -254,6 +254,8 @@ export default function SitzungDetail() {
   const [banfAttachments, setBanfAttachments] = useState<Array<{id: string;file_name: string;file_path: string;file_size: number;mime_type: string;}>>([]);
   const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [newDecisionForm, setNewDecisionForm] = useState({ decision_text: '', prefix: '' });
+  const [savingDecision, setSavingDecision] = useState(false);
+  const [decisionSaveError, setDecisionSaveError] = useState<string | null>(null);
   const [selectedDecisionPrefix, setSelectedDecisionPrefix] = useState<string>('');
   const [customDecisionPrefix, setCustomDecisionPrefix] = useState('');
   const [showCreateDecisionModal, setShowCreateDecisionModal] = useState<{agendaItemId: string;title: string;description: string | null;} | null>(null);
@@ -1224,7 +1226,7 @@ export default function SitzungDetail() {
         <div data-ev-id="ev_9118b3b701" className="text-center py-12">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p data-ev-id="ev_55f5506015" className="text-muted-foreground">{error || 'Sitzung nicht gefunden'}</p>
-          <Link to="/sitzungen" className="text-primary hover:underline mt-4 inline-block">Zurück zur Übersicht</Link>
+          <Link data-ev-id="ev_03075ff198" to="/sitzungen" className="text-primary hover:underline mt-4 inline-block">Zurück zur Übersicht</Link>
         </div>
       </Layout>);
   }
@@ -1242,7 +1244,7 @@ export default function SitzungDetail() {
             Sie haben keine Berechtigung, diese Sitzung zu öffnen.
             Wenn Sie als Gast eingeladen werden, erhalten Sie automatisch Zugriff.
           </p>
-          <Link to="/sitzungen" className="text-primary hover:underline">Zurück zur Übersicht</Link>
+          <Link data-ev-id="ev_c982b4f318" to="/sitzungen" className="text-primary hover:underline">Zurück zur Übersicht</Link>
         </div>
       </Layout>);
   }
@@ -1252,7 +1254,7 @@ export default function SitzungDetail() {
       {/* Header */}
       <div data-ev-id="ev_57bf388276" className="bg-primary text-primary-foreground rounded-t-xl p-4 flex items-center justify-between">
         <div data-ev-id="ev_24f77b4733" className="flex items-center gap-4">
-          <Link to="/sitzungen" className="hover:opacity-80">
+          <Link data-ev-id="ev_931210a1e9" to="/sitzungen" className="hover:opacity-80">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div data-ev-id="ev_1b29570433">
@@ -2242,11 +2244,11 @@ export default function SitzungDetail() {
                     try {
                       const decisionText = order.title + (order.description ? ` - ${order.description}` : '');
                       // Echtes Abstimmungsergebnis verwenden
-                      const isApproved = order.voting_result === 'approved' || 
-                        order.kommandomitglied_approved_at !== null ||
-                        order.status === 'freigegeben_kommandant' ||
-                        order.status === 'freigegeben' ||
-                        order.status === 'genehmigt';
+                      const isApproved = order.voting_result === 'approved' ||
+                      order.kommandomitglied_approved_at !== null ||
+                      order.status === 'freigegeben_kommandant' ||
+                      order.status === 'freigegeben' ||
+                      order.status === 'genehmigt';
                       const result = await confirmBanfDecision(
                         { ...order, title: decisionText },
                         isApproved ? 'genehmigt' : 'abgelehnt',
@@ -2744,6 +2746,7 @@ export default function SitzungDetail() {
               <button data-ev-id="ev_8cb232e717"
             onClick={() => {
               setShowNewDecisionModal(false);
+              setDecisionSaveError(null);
               setSelectedDecisionPrefix('');
               setCustomDecisionPrefix('');
               setNewDecisionGueltigBis('');
@@ -2753,12 +2756,25 @@ export default function SitzungDetail() {
 
                 Abbrechen
               </button>
+              {decisionSaveError &&
+            <p data-ev-id="ev_new_decision_error" className="flex-1 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {decisionSaveError}
+                </p>
+            }
               <button data-ev-id="ev_034d00731a"
+            disabled={savingDecision || !newDecisionForm.decision_text.trim()}
             onClick={async () => {
-              if (newDecisionForm.decision_text.trim()) {
+              if (savingDecision) return;
+              if (!newDecisionForm.decision_text.trim()) {
+                setDecisionSaveError('Bitte einen Beschlusstext eingeben.');
+                return;
+              }
+              {
+                setSavingDecision(true);
+                setDecisionSaveError(null);
                 const prefix = selectedDecisionPrefix === '__custom__' ? customDecisionPrefix : selectedDecisionPrefix;
                 const fullText = prefix ? `${prefix} ${newDecisionForm.decision_text.trim()}` : newDecisionForm.decision_text.trim();
-                await addDecision({
+                const saveResult = await addDecision({
                   decision_text: fullText,
                   source: 'Manuell',
                   votes_for: 0,
@@ -2771,6 +2787,11 @@ export default function SitzungDetail() {
                   gueltig_bis: newDecisionGueltigBis || null,
                   hebt_auf_id: newDecisionHebtAuf || null
                 });
+                setSavingDecision(false);
+                if (saveResult.error) {
+                  setDecisionSaveError(`Beschluss konnte nicht gespeichert werden: ${saveResult.error.message}`);
+                  return;
+                }
                 setNewDecisionForm({ decision_text: '', prefix: '' });
                 setSelectedDecisionPrefix('');
                 setCustomDecisionPrefix('');
@@ -2779,9 +2800,9 @@ export default function SitzungDetail() {
                 setShowNewDecisionModal(false);
               }
             }}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
 
-                Beschluss anlegen
+                {savingDecision ? 'Speichert…' : 'Beschluss anlegen'}
               </button>
             </div>
           </div>
@@ -2885,6 +2906,7 @@ export default function SitzungDetail() {
               <button data-ev-id="ev_1a89652cb6"
             onClick={() => {
               setShowCreateDecisionModal(null);
+              setDecisionSaveError(null);
               setNewDecisionForm({ decision_text: '', prefix: '' });
               setSelectedDecisionPrefix('');
               setCustomDecisionPrefix('');
@@ -2894,9 +2916,22 @@ export default function SitzungDetail() {
             className="px-4 py-2 border border-border rounded-lg">
                 Abbrechen
               </button>
+              {decisionSaveError &&
+            <p data-ev-id="ev_create_decision_error" className="flex-1 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {decisionSaveError}
+                </p>
+            }
               <button data-ev-id="ev_aaa39ac5e4"
+            disabled={savingDecision || !newDecisionForm.decision_text.trim()}
             onClick={async () => {
-              if (newDecisionForm.decision_text.trim()) {
+              if (savingDecision) return;
+              if (!newDecisionForm.decision_text.trim()) {
+                setDecisionSaveError('Bitte einen Beschlusstext eingeben.');
+                return;
+              }
+              {
+                setSavingDecision(true);
+                setDecisionSaveError(null);
                 const prefix = selectedDecisionPrefix === '__custom__' ? customDecisionPrefix : selectedDecisionPrefix;
                 const fullText = prefix ? `${prefix} ${newDecisionForm.decision_text.trim()}` : newDecisionForm.decision_text.trim();
                 const result = await addDecision({
@@ -2910,10 +2945,14 @@ export default function SitzungDetail() {
                   gueltig_bis: createDecisionGueltigBis || null,
                   hebt_auf_id: createDecisionHebtAuf || null
                 });
-                if (!result.error) {
-                  // Mark agenda item as treated
-                  await updateAgendaItemTrafficLight(showCreateDecisionModal.agendaItemId, 'gruen');
+                if (result.error) {
+                  setSavingDecision(false);
+                  setDecisionSaveError(`Beschluss konnte nicht gespeichert werden: ${result.error.message}`);
+                  return;
                 }
+                // Mark agenda item as treated
+                await updateAgendaItemTrafficLight(showCreateDecisionModal.agendaItemId, 'gruen');
+                setSavingDecision(false);
                 setNewDecisionForm({ decision_text: '', prefix: '' });
                 setSelectedDecisionPrefix('');
                 setCustomDecisionPrefix('');
@@ -2922,8 +2961,8 @@ export default function SitzungDetail() {
                 setShowCreateDecisionModal(null);
               }
             }}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
-                Beschluss anlegen & Abstimmung starten
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                {savingDecision ? 'Speichert…' : 'Beschluss anlegen & Abstimmung starten'}
               </button>
             </div>
           </div>

@@ -1146,20 +1146,35 @@ export function useMeetingDetail(meetingId: string | undefined) {
 
   // Decision management
   const addDecision = async (data: Omit<MeetingDecision, 'id' | 'meeting_id' | 'created_at' | 'decided_at'>) => {
-    if (!supabase || !meetingId || !canManage) {
-      return { error: new Error('Keine Berechtigung') };
+    if (!supabase || !meetingId) {
+      return { error: new Error('Verbindung zur Datenbank nicht verfügbar') };
+    }
+    if (!canManage) {
+      console.warn('[addDecision] Abgelehnt: Benutzer hat keine Verwaltungsrechte für Sitzungen');
+      return { error: new Error('Keine Berechtigung: Nur Admin, Kommandant oder KDT-Stellvertreter dürfen Beschlüsse anlegen.') };
     }
 
     try {
-      const { error: insertError } = await supabase
+      console.log('[addDecision] Lege Beschluss an für Sitzung:', meetingId, data);
+      const { data: inserted, error: insertError } = await supabase
         .from('meeting_decisions')
         .insert({
           ...data,
           meeting_id: meetingId,
-        });
+        })
+        .select('id')
+        .maybeSingle();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[addDecision] Fehler beim Speichern:', insertError);
+        throw new Error(insertError.message || 'Unbekannter Datenbankfehler');
+      }
+      if (!inserted) {
+        console.error('[addDecision] Kein Datensatz zurückgegeben – vermutlich Berechtigung (RLS)');
+        throw new Error('Beschluss wurde nicht gespeichert (keine Berechtigung in der Datenbank).');
+      }
 
+      console.log('[addDecision] Beschluss gespeichert:', inserted.id);
       await fetchMeetingDetail();
       return { error: null };
     } catch (err) {
