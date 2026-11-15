@@ -229,15 +229,15 @@ export default function SitzungDetail() {
     updateAgendaItem,
     deleteAgendaItem,
     reorderAgendaItems,
-    updateAgendaItemTrafficLight,
+    updateAgendaItemTrafficLight: updateAgendaItemTrafficLightRaw,
     deferAgendaItem,
-    addDecision,
+    addDecision: addDecisionRaw,
     updateDecision,
     deleteDecision,
-    voteOnDecision,
+    voteOnDecision: voteOnDecisionRaw,
     addDecisionToRegister,
-    confirmBanfDecision,
-    confirmCommandDecisionItem,
+    confirmBanfDecision: confirmBanfDecisionRaw,
+    confirmCommandDecisionItem: confirmCommandDecisionItemRaw,
     calculateQuorum,
     closeMeeting,
     updateMeetingLocally
@@ -314,84 +314,118 @@ export default function SitzungDetail() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Pause Timer (90 minutes first, then 60 minutes repeating)
-  // Timer state is persisted in localStorage so it survives page navigation
-  const timerStorageKey = `sitzung_timer_${id}`;
-
-  const [pauseTimerRunning, setPauseTimerRunning] = useState(() => {
-    if (!id) return false;
-    const stored = localStorage.getItem(timerStorageKey);
-    if (!stored) return false;
-    const data = JSON.parse(stored);
-    const elapsed = Math.floor((Date.now() - data.startedAt) / 1000);
-    return elapsed < data.duration;
-  });
-
-  const [pauseTimerSeconds, setPauseTimerSeconds] = useState(() => {
-    if (!id) return 90 * 60;
-    const stored = localStorage.getItem(timerStorageKey);
-    if (!stored) return 90 * 60;
-    const data = JSON.parse(stored);
-    const elapsed = Math.floor((Date.now() - data.startedAt) / 1000);
-    const remaining = data.duration - elapsed;
-    return remaining > 0 ? remaining : 0;
-  });
-
+  // Timer (90 Minuten bis zur ersten Pause, danach alle 60 Minuten)
+  // Der Timer wird bei der Sitzung in der Datenbank gespeichert – dadurch läuft er
+  // auf allen Geräten gleich und übersteht Neuladen/Gerätewechsel.
+  const timerStartedAtMs = meeting?.timer_started_at ? new Date(meeting.timer_started_at).getTime() : null;
+  const timerDuration = meeting?.timer_duration_seconds ?? 90 * 60;
+  const pauseCount = meeting?.timer_pause_count ?? 0;
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [showPausePopup, setShowPausePopup] = useState(false);
+  const [timerToast, setTimerToast] = useState<string | null>(null);
+  const [timerSeenRunning, setTimerSeenRunning] = useState(false);
 
-  const [pauseCount, setPauseCount] = useState(() => {
-    if (!id) return 0;
-    const stored = localStorage.getItem(timerStorageKey);
-    if (!stored) return 0;
-    return JSON.parse(stored).pauseCount || 0;
-  });
+  const pauseTimerSeconds = timerStartedAtMs ?
+  Math.max(0, timerDuration - Math.floor((nowMs - timerStartedAtMs) / 1000)) :
+  0;
+  const pauseTimerRunning = !!timerStartedAtMs && pauseTimerSeconds > 0 && meeting?.status !== 'abgeschlossen';
 
-  // Start timer and save to localStorage
-  const startTimer = useCallback((duration: number, newPauseCount: number) => {
-    if (!id) return;
-    const timerData = {
-      startedAt: Date.now(),
-      duration,
-      pauseCount: newPauseCount
-    };
-    localStorage.setItem(timerStorageKey, JSON.stringify(timerData));
-    setPauseTimerSeconds(duration);
-    setPauseTimerRunning(true);
-    setPauseCount(newPauseCount);
-  }, [id, timerStorageKey]);
-
-  // Stop timer and clear from localStorage
-  const stopTimer = useCallback(() => {
-    if (!id) return;
-    localStorage.removeItem(timerStorageKey);
-    setPauseTimerRunning(false);
-    setPauseTimerSeconds(0);
-    setPauseCount(0);
-  }, [id, timerStorageKey]);
-
-  // Pause Timer Effect
+  // Alte, nur lokal gespeicherte Timer-Daten aufräumen
   useEffect(() => {
-    if (!pauseTimerRunning) return;
+    if (id) localStorage.removeItem(`sitzung_timer_${id}`);
+  }, [id]);
 
-    if (pauseTimerSeconds <= 0) {
-      setPauseTimerRunning(false);
-      setShowPausePopup(true);
-      return;
-    }
-
-    const interval = setInterval(() => {
-      setPauseTimerSeconds((prev) => {
-        if (prev <= 1) {
-          setPauseTimerRunning(false);
-          setShowPausePopup(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
+  // Sekundentakt, solange der Timer läuft
+  useEffect(() => {
+    if (!timerStartedAtMs) return;
+    setNowMs(Date.now());
+    const interval = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [pauseTimerRunning, pauseTimerSeconds]);
+  }, [timerStartedAtMs]);
+
+  // Pause-Hinweis nur zeigen, wenn der Timer in dieser Ansicht tatsächlich abgelaufen ist
+  useEffect(() => {
+    if (pauseTimerRunning) {
+      setTimerSeenRunning(true);
+    } else if (timerSeenRunning && timerStartedAtMs && pauseTimerSeconds <= 0) {
+      setTimerSeenRunning(false);
+      setShowPausePopup(true);
+    }
+  }, [pauseTimerRunning, timerSeenRunning, timerStartedAtMs, pauseTimerSeconds]);
+
+  // Toast automatisch ausblenden
+  useEffect(() => {
+    if (!timerToast) return;
+    const t = setTimeout(() => setTimerToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [timerToast]);
+
+  const saveTimerState = useCallback(async (updates: {
+    timer_started_at: string | null;
+    timer_duration_seconds: number | null;
+    timer_pause_count: number;
+    started_at?: string;
+  }) => {
+    if (!id) return;
+    updateMeetingLocally(updates);
+    if (!supabase || !canManage) return;
+    const { error: timerError } = await supabase.from('meetings').update(updates).eq('id', id);
+    if (timerError) {
+      console.error('[Timer] Speichern fehlgeschlagen:', timerError);
+      setTimerToast(`Timer konnte nicht gespeichert werden: ${timerError.message}`);
+    }
+  }, [id, canManage, updateMeetingLocally]);
+
+  // Timer starten (erster Start speichert zusätzlich den Sitzungsbeginn)
+  const startTimer = useCallback((duration: number, newPauseCount: number) => {
+    const nowIso = new Date().toISOString();
+    setNowMs(Date.now());
+    void saveTimerState({
+      timer_started_at: nowIso,
+      timer_duration_seconds: duration,
+      timer_pause_count: newPauseCount,
+      ...(meeting?.started_at ? {} : { started_at: nowIso })
+    });
+  }, [saveTimerState, meeting?.started_at]);
+
+  // Timer beenden
+  const stopTimer = useCallback(() => {
+    setTimerSeenRunning(false);
+    void saveTimerState({ timer_started_at: null, timer_duration_seconds: null, timer_pause_count: 0 });
+  }, [saveTimerState]);
+
+  // Automatischer Start: beim ersten Arbeitsschritt in der Sitzung (ab Sitzungstag),
+  // falls der Timer noch nie gestartet wurde.
+  const ensureTimerStarted = useCallback(() => {
+    if (!meeting || !canManage) return;
+    if (meeting.status === 'abgeschlossen' || meeting.started_at || meeting.timer_started_at) return;
+    const today = new Date().toISOString().slice(0, 10);
+    if (meeting.scheduled_date && today < meeting.scheduled_date.slice(0, 10)) return;
+    console.log('[Timer] Automatisch gestartet (erster Arbeitsschritt in der Sitzung)');
+    startTimer(90 * 60, 0);
+    setTimerToast('Timer gestartet');
+  }, [meeting, canManage, startTimer]);
+
+  const addDecision: typeof addDecisionRaw = (...args) => {
+    ensureTimerStarted();
+    return addDecisionRaw(...args);
+  };
+  const voteOnDecision: typeof voteOnDecisionRaw = (...args) => {
+    ensureTimerStarted();
+    return voteOnDecisionRaw(...args);
+  };
+  const updateAgendaItemTrafficLight: typeof updateAgendaItemTrafficLightRaw = (...args) => {
+    ensureTimerStarted();
+    return updateAgendaItemTrafficLightRaw(...args);
+  };
+  const confirmBanfDecision: typeof confirmBanfDecisionRaw = (...args) => {
+    ensureTimerStarted();
+    return confirmBanfDecisionRaw(...args);
+  };
+  const confirmCommandDecisionItem: typeof confirmCommandDecisionItemRaw = (...args) => {
+    ensureTimerStarted();
+    return confirmCommandDecisionItemRaw(...args);
+  };
 
   // Handle pause popup confirmation - start 60min timer for subsequent pauses
   const handlePauseConfirm = () => {
@@ -1292,6 +1326,11 @@ export default function SitzungDetail() {
                 <Clock className="w-4 h-4" /> Timer
               </button>
           }
+          {timerToast &&
+          <div data-ev-id="ev_timer_toast" role="status" className="px-3 py-1.5 bg-green-600 rounded-lg text-sm flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> {timerToast}
+            </div>
+          }
           {pauseCount > 0 && !pauseTimerRunning && !showPausePopup &&
           <div data-ev-id="ev_e909395e64" className="px-3 py-1.5 bg-green-500 rounded-lg text-sm flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4" /> {pauseCount} Pause{pauseCount > 1 ? 'n' : ''}
@@ -1416,6 +1455,16 @@ export default function SitzungDetail() {
       {/* Status Info */}
       <div data-ev-id="ev_e9262321af" className="bg-muted/30 border-x border-border px-4 py-2 text-sm text-muted-foreground">
         Status: <span data-ev-id="ev_220d0693e8" className="font-medium">{meeting.status === 'geplant' ? 'Vorbereitung' : meeting.status}</span>
+        {meeting.started_at &&
+        <> | Beginn: <span data-ev-id="ev_meeting_started_at" className="font-medium">{new Date(meeting.started_at).toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })}</span></>
+        }
+        {meeting.started_at && meeting.closed_at &&
+        <> | Ende: <span data-ev-id="ev_meeting_closed_at" className="font-medium">{new Date(meeting.closed_at).toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' })}</span>
+          {' '}(Dauer: {(() => {
+            const mins = Math.max(0, Math.round((new Date(meeting.closed_at).getTime() - new Date(meeting.started_at).getTime()) / 60000));
+            return `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')} h`;
+          })()})</>
+        }
         {meeting.next_meeting_date ?
         <> | Nächste Sitzung: {formatDate(meeting.next_meeting_date)}</> :
 

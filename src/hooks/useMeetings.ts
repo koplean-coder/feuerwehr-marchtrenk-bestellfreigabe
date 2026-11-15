@@ -32,6 +32,10 @@ export interface Meeting {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
+  started_at?: string | null;
+  timer_started_at?: string | null;
+  timer_duration_seconds?: number | null;
+  timer_pause_count?: number;
 }
 
 export interface MeetingAttendance {
