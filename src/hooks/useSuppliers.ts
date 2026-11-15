@@ -145,26 +145,37 @@ export function useSuppliers() {
       });
     
     if (!error) {
-      // Fetch admin and kommandant emails for notification
-      const { data: adminKommandants } = await supabase
-        .from('profiles')
-        .select('email, full_name')
-        .in('role', ['admin', 'kommandant']);
-
-      if (adminKommandants && adminKommandants.length > 0) {
-        const recipientEmails = adminKommandants.map(p => p.email);
-        await sendSupplierNotification(
-          'new_supplier_pending',
-          data.name,
-          undefined,
-          profile?.full_name || profile?.email,
-          undefined,
-          undefined,
-          recipientEmails
-        );
-      }
-
+      // Liste sofort aktualisieren
       fetchSuppliers();
+
+      // Benachrichtigung im Hintergrund – blockiert das Speichern nicht
+      const client = supabase;
+      void (async () => {
+        try {
+          const { data: adminKommandants } = await client
+            .from('profiles')
+            .select('email, full_name')
+            .in('role', ['admin', 'kommandant']);
+
+          const recipientEmails = (adminKommandants ?? [])
+            .map(p => p.email)
+            .filter((e): e is string => !!e);
+
+          if (recipientEmails.length > 0) {
+            await sendSupplierNotification(
+              'new_supplier_pending',
+              data.name,
+              undefined,
+              profile?.full_name || profile?.email,
+              undefined,
+              undefined,
+              recipientEmails
+            );
+          }
+        } catch (notifyError) {
+          console.error('[createSupplier] Benachrichtigung fehlgeschlagen:', notifyError);
+        }
+      })();
     }
     return { error };
   }

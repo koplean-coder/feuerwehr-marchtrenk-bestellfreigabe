@@ -182,6 +182,16 @@ export function useMeetings() {
   // Case-insensitive comparison for sitzungenViewRoles
   const sitzungenViewRolesLower = sitzungenViewRoles.map(r => r.toLowerCase());
   
+  // DEBUG: Log role/function checks
+  console.log('[useMeetings DEBUG]', {
+    sitzungenViewRoles,
+    sitzungenViewRolesLower,
+    effectiveFunctionsLower,
+    effectiveRole,
+    effectiveIsAdmin,
+    effectiveIsKommandant
+  });
+  
   const canManage = effectiveIsAdmin || 
                    effectiveIsKommandant || 
                    effectiveFunctionsLower.some(f => {

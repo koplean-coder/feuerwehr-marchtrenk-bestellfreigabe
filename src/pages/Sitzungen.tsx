@@ -42,7 +42,21 @@ export default function Sitzungen() {
 
   const canAccessKommando = canAccess('kommandositzung');
   const canAccessErweitert = canAccess('erweitertes_kommando');
-  
+
+  // DEBUG: Log access check details
+  console.log('[Sitzungen DEBUG]', {
+    profileId: profile?.id,
+    profileName: profile?.full_name,
+    profileRole: profile?.role,
+    profileFunctions: profile?.functions,
+    canAccessKommando,
+    canAccessErweitert,
+    hasRoleAccessKommando: hasRoleAccess('kommandositzung'),
+    hasRoleAccessErweitert: hasRoleAccess('erweitertes_kommando'),
+    meetingsCount: meetings.length,
+    invitedMeetingsCount: invitedMeetings.length
+  });
+
   // Check if user only has invitation-based access (not role-based)
   const isGuestOnlyKommando = canAccessKommando && !hasRoleAccess('kommandositzung');
   const isGuestOnlyErweitert = canAccessErweitert && !hasRoleAccess('erweitertes_kommando');
@@ -118,10 +132,10 @@ export default function Sitzungen() {
   };
 
   const renderMeetingCard = (meeting: Meeting) =>
-  <Link
-    key={meeting.id}
-    to={`/sitzungen/${meeting.id}`}
-    className="block bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-md transition-all group">
+  <Link data-ev-id="ev_50cc461b35"
+  key={meeting.id}
+  to={`/sitzungen/${meeting.id}`}
+  className="block bg-card border border-border rounded-xl p-4 hover:border-primary/30 hover:shadow-md transition-all group">
 
       <div data-ev-id="ev_7d1f2915a2" className="flex items-start justify-between gap-4">
         <div data-ev-id="ev_d3c1f54baf" className="flex-1 min-w-0">

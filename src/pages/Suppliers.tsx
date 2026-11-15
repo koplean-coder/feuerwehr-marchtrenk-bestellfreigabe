@@ -235,16 +235,22 @@ export default function Suppliers() {
       special_conditions: canEditDiscountFields ? formSpecialConditions || undefined : undefined
     };
 
-    const { error } = editingSupplier ?
-    await updateSupplier(editingSupplier.id, data) :
-    await createSupplier(data);
+    try {
+      const { error } = editingSupplier ?
+      await updateSupplier(editingSupplier.id, data) :
+      await createSupplier(data);
 
-    if (error) {
-      setFormError(error.message);
-    } else {
-      closeModal();
+      if (error) {
+        setFormError(error.message);
+      } else {
+        closeModal();
+      }
+    } catch (err) {
+      console.error('[Suppliers] Speichern fehlgeschlagen:', err);
+      setFormError(err instanceof Error ? err.message : 'Speichern fehlgeschlagen. Bitte erneut versuchen.');
+    } finally {
+      setFormLoading(false);
     }
-    setFormLoading(false);
   }
 
   async function handleDelete(id: string) {
