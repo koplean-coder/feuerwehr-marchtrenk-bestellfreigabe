@@ -74,8 +74,10 @@ export default function Antragsformulare() {
   const isKassier = effectiveHasKassierFunction || profileFunctionsLower.includes('kassier');
   const isKommandomitglied = profileFunctionsLower.includes('kommandomitglied');
   // Leserecht: Kassier, Kommandant, Admin, Kommandant-Stellvertreter, Kommandomitglieder (Transparenz)
+  // + Benutzer, die in den Einstellungen explizit für Antragsformulare freigeschaltet sind
+  const isExplicitAntragsformulareUser = !!effectiveUserId && (antragsformulareViewUsers ?? []).includes(effectiveUserId);
   const canViewPaymentOrders = isKassier || effectiveIsKommandant || effectiveIsAdmin ||
-  profileFunctionsLower.includes('kommandant_stellvertreter') || isKommandomitglied;
+  profileFunctionsLower.includes('kommandant_stellvertreter') || isKommandomitglied || isExplicitAntragsformulareUser;
   const canMarkPaid = isKassier || effectiveIsKommandant || effectiveIsAdmin;
 
   // Sicherheitscheck: Wenn Benutzer versucht auf payment_orders zuzugreifen ohne Berechtigung
@@ -340,7 +342,12 @@ export default function Antragsformulare() {
       setEditingOrderId(null);
       setActiveTab('overview');
     } catch (err) {
-      alert(editingOrderId ? 'Fehler beim Aktualisieren der Auszahlungsanweisung' : 'Fehler beim Erstellen der Auszahlungsanweisung');
+      console.error('[Antragsformulare] Speichern fehlgeschlagen:', err);
+      const detail = err instanceof Error ? err.message : (err as { message?: string })?.message;
+      alert(
+        (editingOrderId ? 'Fehler beim Aktualisieren der Auszahlungsanweisung' : 'Fehler beim Erstellen der Auszahlungsanweisung') +
+        (detail ? `\n\nDetails: ${detail}` : '')
+      );
     } finally {
       setSubmitting(false);
     }
